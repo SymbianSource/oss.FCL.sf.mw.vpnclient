@@ -1,0 +1,5 @@
+EXPORTS
+	NewUiRunnerL__Fv @ 1 NONAME R3UNUSED ; NewUiRunnerL(void)
+	NewLC__12CVpnUiLoaderRC5TRectG4TUid @ 2 NONAME R3UNUSED ; CVpnUiLoader::NewLC(TRect const &, TUid)
+	NewL__12CVpnUiLoaderRC5TRectG4TUid @ 3 NONAME R3UNUSED ; CVpnUiLoader::NewL(TRect const &, TUid)
+
