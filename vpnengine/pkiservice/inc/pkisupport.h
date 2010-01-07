@@ -94,17 +94,19 @@ class CPKISupport : public CActive
             const TBool& aIsDeletable, TRequestStatus& aStatus);
         
         void AttachCertificateL(const TDesC &aLabel, 
-            const TPKIKeyIdentifier &aKeyId, 
             const TDesC8 &aBufferPtr, TRequestStatus& aStatus);
         
         void RetrieveCertificateL(const TDesC &aLabel, 
+            const TPKIKeyIdentifier& aCertificateKeyId,
             TPtr8 &aBufferPtr, const TPKICertificateOwnerType& aType, 
             TRequestStatus& aStatus);
                     
         void RemoveCertificateL(const TDesC &aLabel, 
+            const TPKIKeyIdentifier& aCertificateKeyId,
             TRequestStatus& aStatus);
                         
         void SelectCertificateL(const TDesC &aLabel, 
+                                const TPKIKeyIdentifier& aCertificateKeyId,
                                 const TPKICertificateOwnerType& aType = EPKICACertificate);
         
         // Asynchronous sertificate store request
@@ -114,13 +116,16 @@ class CPKISupport : public CActive
         TInt GetRequiredBufferSize();
         void SetCallerStatusPending(TRequestStatus& aStatus);
         void CompleteCallerStatus(TInt aError);
-        void SetTrustL(
-            const TDesC &aLabel, TBool aTrusted, TRequestStatus& aStatus);
-        void TrustedL(const TDesC &aLabel, TRequestStatus& aStatus);
-        void SetApplicabilityL(
-            const TDesC &aLabel, const RArray<TUid>& aApplUids, 
-            TRequestStatus& Status);
-        void ApplicationsL(const TDesC &aLabel, TRequestStatus& Status);
+        void SetTrustL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+                       TBool aTrusted, TRequestStatus& aStatus);
+        void TrustedL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+                      TRequestStatus& aStatus);
+        void SetApplicabilityL(const TDesC &aLabel, 
+                               const TPKIKeyIdentifier& aCertificateKeyId, 
+                               const RArray<TUid>& aApplUids, 
+                               TRequestStatus& Status);
+        void ApplicationsL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+                           TRequestStatus& Status);
                     
         inline void SetCertStoreType(TPkiServiceStoreType aStoreType) 
             {
@@ -203,7 +208,7 @@ class CPKISupport : public CActive
         TInt                        iCurrentFunction;
         TInitPhaseState             iInitState;
         TSubState                   iSubState;        
-        RMPointerArray<CCTCertInfo> *iCerts;
+        RMPointerArray<CCTCertInfo> iCerts;
         CCertAttributeFilter        *iCertFilter;        
         RMessage2                   iMessage;
         TKeyIdentifier              iKeyId;
@@ -211,7 +216,6 @@ class CPKISupport : public CActive
         TBool                       iTrusted;
         RArray<TUid>                iApplUids;
         TInt                        iImportCounter;
-        CMapDescriptor              *iImportCertMapping;
         HBufC8                      *iImportCertData;
 		TBool						iToggleSwitch;		
 		
@@ -221,6 +225,5 @@ class CPKISupport : public CActive
                 
         REventMediator              iEventMediator; // for logging
         HBufC8*                     iCertInfoForLogging;
-
 };
 #endif

@@ -29,6 +29,7 @@
 
 #include "pkiwrapper.h"
 #include "PKIMapper.h"
+#include "mapdescriptor.h"
 #include "pkisupport.h"
 #include "pkisession.h"
 #include "log_r6.h"
@@ -62,16 +63,11 @@ CPKISupport::~CPKISupport()
     LOG_("CPKISupport::~CPKISupport");
     Cancel();    
 
-    if(iCerts != NULL)
-        {
-        iCerts->Close();
-        delete iCerts;
-        }
+    iCerts.Close();
     delete iCertFilter;
     delete iCertStore;
     iFSession.Close();
     iApplUids.Close();
-    delete iImportCertMapping;
     delete iImportCertData;
     iEventMediator.Close();
     delete iCertInfoForLogging; 
@@ -100,9 +96,7 @@ void  CPKISupport::StartInitializeL(const RMessage2& aMessage)
     {
     LOG_("-> CPKISupport::StartInitialize()");
     User::LeaveIfError(iFSession.Connect());
-    iCertStore = CUnifiedCertStore::NewL(iFSession, ETrue);
-    PKISERVICE_ASSERT(!iCerts);
-    iCerts = new (ELeave) RMPointerArray<CCTCertInfo>;
+    iCertStore = CUnifiedCertStore::NewL(iFSession, ETrue);    
     
     iMessage = aMessage;
     iCallerStatus = NULL;
@@ -215,41 +209,23 @@ void  CPKISupport::ListAllCertificatesL()
 void  CPKISupport::ReadNextCertForImportL()
 {
     LOG_("-> CPKISupport::ImportNextCertL()");
-    PKISERVICE_ASSERT(iImportCounter < iCerts->Count());
+    PKISERVICE_ASSERT(iImportCounter < iCerts.Count());
     
     if(iImportCounter == 0)
         {
-        LOG_1("Import %d certificates\n", iCerts->Count());
+        LOG_1("Import %d certificates\n", iCerts.Count());
         }
         
     LOG_1("Import certificate:%d", iImportCounter);
-    LOG_1("Label: %S", &((*iCerts)[iImportCounter]->Label()));
-    
-    PKISERVICE_ASSERT((*iCerts)[iImportCounter]->CertificateFormat() == EX509Certificate);
-
-    TSecurityObjectDescriptor descriptor;    
-    descriptor.SetSubjectKeyId(
-        (*iCerts)[iImportCounter]->SubjectKeyId());
-    descriptor.SetOwnerType(
-        (TPKICertificateOwnerType)(*iCerts)[iImportCounter]->
-        CertificateOwnerType());
-	descriptor.SetIsDeletable(
-	    (*iCerts)[iImportCounter]->IsDeletable());
-      
-    delete iImportCertMapping;
-    iImportCertMapping = NULL;
-    iImportCertMapping = new (ELeave) CMapDescriptor(descriptor);
-            
-    iImportCertMapping->SetMapObjectName((*iCerts)[iImportCounter]->Label());
-    
+    LOG_1("Label: %S", &(iCerts[iImportCounter]->Label()));
+        
     delete iImportCertData;
     iImportCertData = NULL;
-    iImportCertData = HBufC8::NewL((*iCerts)[iImportCounter]->Size());        
+    iImportCertData = HBufC8::NewL(iCerts[iImportCounter]->Size());        
     iImportCertDataPtr.Set(iImportCertData->Des());
-    
-    LOG_(" Values set OK, retrieving");
+        
     iCertStore->Retrieve(
-        *(*iCerts)[iImportCounter], iImportCertDataPtr, iStatus);
+        *(iCerts[iImportCounter]), iImportCertDataPtr, iStatus);
     iPending = ECertRetrieve;
     SetActive();
     LOG_("<- CPKISupport::ImportCTFCertsL() SetActive() and ret: EFalse");
@@ -261,114 +237,76 @@ void  CPKISupport::ReadNextCertForImportL()
 //
 void CPKISupport::SaveCertInfoToCacheL()
     {
-    if((iImportCertMapping != NULL) && (iImportCertData != NULL))
+    LOG_("Saving cert info to cache");
+    PKISERVICE_ASSERT(iImportCertData != NULL);
+    
+    CX509Certificate* certificate = CX509Certificate::NewLC(iImportCertDataPtr);       
+    const CCTCertInfo* currentCertInfo = iCerts[iImportCounter]; 
+    TPkiServiceStoreType storeType = EPkiStoreTypeAny;
+    switch(currentCertInfo->Token().TokenType().Type().iUid)
         {
-        LOG_("Saving cert info to cache");
-       
-        CX509Certificate* certificate = CX509Certificate::NewLC(iImportCertDataPtr);            
-        const CSubjectPublicKeyInfo& publicKeyInfo = certificate->PublicKey();            
-        const TPtrC8 keyData = publicKeyInfo.KeyData();
-
-        TX509KeyFactory keyFactory;
-        switch(publicKeyInfo.AlgorithmId())
-            {
-            case ERSA:
-                {                        
-                iImportCertMapping->iKeyAlgorithm = EPKIRSA;
-                const CRSAPublicKey* keyRSA = keyFactory.RSAPublicKeyL( keyData );
-                const TInteger&  n = keyRSA->N();
-                iImportCertMapping->iKeySize = n.BitCount();
-                delete keyRSA;                    
-                }
-                break;        	
-            case EDSA:
-                {                        
-                iImportCertMapping->iKeyAlgorithm = EPKIDSA;
-                TPtrC8 params = publicKeyInfo.EncodedParams();
-                const CDSAPublicKey* keyDSA = keyFactory.DSAPublicKeyL( params, keyData );
-                const TInteger& y = keyDSA->Y();
-                iImportCertMapping->iKeySize = y.BitCount();
-                delete keyDSA;
-                }
-                break;
-            default:
-                iImportCertMapping->iKeyAlgorithm = EPKIInvalidAlgorithm;
-                break;                    
-            }                    
-        CleanupStack::PopAndDestroy(certificate);                        
-
-        iWrapper.SaveIdentityL(*iImportCertMapping,
-                               iImportCertDataPtr,
-                               ((*iCerts)[iImportCounter])->CertificateOwnerType());
-
-        TInt storeType = (*iCerts)[iImportCounter]->Token().TokenType().Type().iUid;
-        if ( storeType == STORETYPE_DEVICE_CERT_ID )
-            {
-            iImportCertMapping->SetCertStoreType(EPkiStoreTypeDevice);
-            }
-        else if ( storeType == STORETYPE_USER_CERT_ID )
-            {
-            iImportCertMapping->SetCertStoreType(EPkiStoreTypeUser);
-            }
-        else
-            {
-            iImportCertMapping->SetCertStoreType(EPkiStoreTypeAny);
-            }
+        case STORETYPE_DEVICE_CERT_ID:
+            storeType = EPkiStoreTypeDevice;
+            break;
+        case STORETYPE_USER_CERT_ID:
+            storeType = EPkiStoreTypeUser;
+            break;
+        default:
+            storeType = EPkiStoreTypeAny;
+            break;
+        }
+    
+    CMapDescriptor* newMapping = CMapDescriptor::NewL(currentCertInfo->Label(),
+                                                      *certificate,
+                                                      (TPKICertificateOwnerType)currentCertInfo->CertificateOwnerType(),
+                                                      storeType);  
+    CleanupStack::PushL(newMapping);
+    
+    newMapping->SetMapDeletable(currentCertInfo->IsDeletable());
+    newMapping->SetMapApplications(iApplUids);
+    iApplUids.Reset();
+    User::LeaveIfError(iMapper.AddMapping(newMapping));
             
-		for(TInt i=0;i<iApplUids.Count();i++)
-			{
-			iImportCertMapping->iApplUids.Append(iApplUids[i]);
-			}
-        User::LeaveIfError( 
-            iMapper.AddMapping(*iImportCertMapping) );
-
-        iApplUids.Close();            
-            
-        iImportCertMapping = NULL;    
-        iImportCounter++;
-        }    
+    CleanupStack::Pop(newMapping);
+    CleanupStack::PopAndDestroy(certificate);
+    iImportCounter++;    
     }
 
 // ---------------------------------------------------------------------------
 // GetApplicationsOfCTFCertL
 // ---------------------------------------------------------------------------
 //
-TBool  CPKISupport::GetApplicationsOfCTFCertL()
+TBool CPKISupport::GetApplicationsOfCTFCertL()
 {
     LOG_("-> CPKISupport::GetApplicationsOfCTFCertL()");
-	if((iImportCertMapping != NULL) && (iImportCertData != NULL))
-		{
-		if(iToggleSwitch == EFalse)
-			{
-			if((*iCerts)[iImportCounter]->CertificateOwnerType() == ECACertificate)
-				{
-				PKISERVICE_ASSERT(iApplUids.Count() == 0);
-				
-				iToggleSwitch = ETrue;
-				// Get applications				
-				iCertStore->Applications(*(*iCerts)[iImportCounter], iApplUids, iStatus);
-				iPending = EApplications;
-                LOG_("<- CPKISupport::GetApplicationsOfCTFCertL() SetActive(), ret: ETrue");
-				SetActive();
-				return ETrue;
-				}
-			else
-				{
-                LOG_("<- CPKISupport::GetApplicationsOfCTFCertL() Not a CA cert, ret: EFalse");
-				return EFalse;
-				}
-			}
-		else
-			{
-            LOG_("<- CPKISupport::GetApplicationsOfCTFCertL() iToggleSwitch == ETrue, ret: EFalse");
-			iToggleSwitch = EFalse;
-			return EFalse;
-			}
-		}
-	else
-		{
-		return EFalse;
-		}
+    PKISERVICE_ASSERT(iImportCertData != NULL);
+    
+    if(iToggleSwitch == EFalse)
+        {
+        if(iCerts[iImportCounter]->CertificateOwnerType() == ECACertificate)
+            {
+            PKISERVICE_ASSERT(iApplUids.Count() == 0);
+            
+            iToggleSwitch = ETrue;
+            // Get applications				
+            iCertStore->Applications(*(iCerts[iImportCounter]), iApplUids, iStatus);
+            iPending = EApplications;
+            LOG_("<- CPKISupport::GetApplicationsOfCTFCertL() SetActive(), ret: ETrue");
+            SetActive();
+            return ETrue;
+            }
+        else
+            {
+            LOG_("<- CPKISupport::GetApplicationsOfCTFCertL() Not a CA cert, ret: EFalse");
+            return EFalse;
+            }
+        }
+    else
+        {
+        LOG_("<- CPKISupport::GetApplicationsOfCTFCertL() iToggleSwitch == ETrue, ret: EFalse");
+        iToggleSwitch = EFalse;
+        return EFalse;
+        }
 }
 
 
@@ -635,7 +573,7 @@ void CPKISupport::StoreCertificateL(const TDesC &aLabel,
     MCTWritableCertStore* certStore(NULL);
 
     CX509Certificate* tempCert = CX509Certificate::NewLC(aBufferPtr);
-    iKeyId = tempCert->KeyIdentifierL();
+    iKeyId = tempCert->SubjectKeyIdentifierL();
     CleanupStack::PopAndDestroy();
 
     if(aOwnerType == EUserCertificate)
@@ -720,7 +658,7 @@ void  CPKISupport::ExtractCertInfoL(const TDesC& aLabel,
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::AttachCertificateL(const TDesC& aLabel, 
-    const TPKIKeyIdentifier &aKeyId, const TDesC8 &aBufferPtr, 
+    const TDesC8 &aBufferPtr, 
     TRequestStatus& aStatus)
 {
     TKeyIdentifier tempKeyId;
@@ -728,18 +666,10 @@ void CPKISupport::AttachCertificateL(const TDesC& aLabel,
 
     LOG_("Attach certificate");
     
-    iSupportStatus = KErrNone;
-    iKeyId = aKeyId;
+    iSupportStatus = KErrNone;   
     
-    ExtractCertInfoL(aLabel, EUserCertificate, aBufferPtr);
-    
-    // fetch the keyId from the certificate
-    tempKeyId = certificate->KeyIdentifierL();
-    // If given keyId is empty, use the keyId from the certificate
-    if(iKeyId.Length() == 0)
-        {
-        iKeyId = tempKeyId;
-        }
+    ExtractCertInfoL(aLabel, EUserCertificate, aBufferPtr);    
+    iKeyId = certificate->SubjectKeyIdentifierL();
         
     SetCallerStatusPending( aStatus );
     CleanupStack::PopAndDestroy(certificate);    // certificate
@@ -781,7 +711,7 @@ void CPKISupport::AttachCertificateL(const TDesC& aLabel,
     certStore->Add(aLabel, 
                    EX509Certificate, 
                    EUserCertificate, 
-                   &iKeyId, 
+                   NULL, 
                    NULL, 
                    aBufferPtr, 
                    iStatus);
@@ -795,16 +725,17 @@ void CPKISupport::AttachCertificateL(const TDesC& aLabel,
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::RetrieveCertificateL(const TDesC &aLabel, 
+    const TPKIKeyIdentifier& aCertificateKeyId,
     TPtr8 &aBufferPtr, const TPKICertificateOwnerType& aType, 
     TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Retrieve certificate\n")));
     iSupportStatus = KErrNone;
-    iCerts->Close();
+    iCerts.Close();
     iSubState = ESSContinue;
     iOutBufferPtr = &aBufferPtr;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aType);
+    SelectCertificateL(aLabel, aCertificateKeyId, aType);
 }
 
 // ---------------------------------------------------------------------------
@@ -816,11 +747,11 @@ void CPKISupport::ContinueRetrieveCertificate()
     iSubState = ESSComplete;
     iPending = ECertRetrieve;
     
-    TUint certificateSize = (*iCerts)[0]->Size();
+    TUint certificateSize = iCerts[0]->Size();
     iRequiredBufferLength = certificateSize;
     if (certificateSize <= iOutBufferPtr->MaxLength())
         {        
-        iCertStore->Retrieve(*(*iCerts)[0], *iOutBufferPtr, iStatus);
+        iCertStore->Retrieve(*(iCerts[0]), *iOutBufferPtr, iStatus);
         SetActive();
         }
     else
@@ -846,33 +777,27 @@ void CPKISupport::ContinueRetrieveCertificate()
 void CPKISupport::CleanupCertListL() 
     {
     LOG_("Removing invalid certs (MIDP2 certs)");
-    if (iCerts) 
+
+    TInt certcount = iCerts.Count();
+    _LIT(KMidp2Label, "MIDP2");
+    LOG_1("Total cert count, before cleanup: %d", iCerts.Count());
+    RMPointerArray<CCTCertInfo> removedInfos;
+    CleanupClosePushL(removedInfos);
+    for (TInt i = certcount - 1; i >= 0; i--) 
         {
-        TInt certcount = iCerts->Count();
-        _LIT(KMidp2Label, "MIDP2");
-        LOG_1("Total cert count, before cleanup: %d", iCerts->Count());
-        RMPointerArray<CCTCertInfo> removedInfos;
-        CleanupClosePushL(removedInfos);
-        for (TInt i = certcount - 1; i >= 0; i--) 
+        CCTCertInfo* info = iCerts[i];
+        if (info->Label().Compare(KMidp2Label) == 0 ||
+            info->CertificateFormat() != EX509Certificate) 
             {
-            CCTCertInfo* info = (*iCerts)[i];
-            if (info->Label().Compare(KMidp2Label) == 0 ||
-                info->CertificateFormat() != EX509Certificate) 
-                {
-                // CCTCertInfo has private destructor
-                removedInfos.AppendL( info );
-                iCerts->Remove(i);
-                continue;
-                }
+            // CCTCertInfo has private destructor
+            removedInfos.AppendL( info );
+            iCerts.Remove(i);
+            continue;
             }
-        CleanupStack::PopAndDestroy(); // removedInfos
-        iCerts->Compress();
-        LOG_1("Total cert count, after cleanup: %d", iCerts->Count());
         }
-    else 
-        {
-        LOG_("Certs list empty!");
-        }
+    CleanupStack::PopAndDestroy(); // removedInfos
+    iCerts.Compress();
+    LOG_1("Total cert count, after cleanup: %d", iCerts.Count());
     }
 
 // ---------------------------------------------------------------------------
@@ -913,8 +838,17 @@ void CPKISupport::DoRunOperationL()
             // if it hasn't been already done
             CleanupCertListL();
             iInitState = EInitCompleteImportCerts;
-            
-            //Falls through
+            if(iImportCounter < iCerts.Count())
+                {
+                ReadNextCertForImportL();
+                }
+            else
+                {
+                LOG_(" Cert store is empty");
+                iInitState = EInitDone;
+                iMessage.Complete(KErrNone);
+                }
+            break;
         case EInitCompleteImportCerts:
             LOG_("CPKISupport::DoRunOperationL() EInitCompleteImportCerts");            
 			if(GetApplicationsOfCTFCertL())
@@ -923,7 +857,7 @@ void CPKISupport::DoRunOperationL()
 				break;
 				}
             SaveCertInfoToCacheL();    // Handles one certificate, if found
-            if(iImportCounter < iCerts->Count())
+            if(iImportCounter < iCerts.Count())
                 {
                 ReadNextCertForImportL();
                 }
@@ -931,14 +865,10 @@ void CPKISupport::DoRunOperationL()
                 {
                 LOG_(" All certificates imported, doing clean ups");
                 // Cleanup
-
-                delete iImportCertMapping;
-                iImportCertMapping = NULL;
-
                 delete iImportCertData;
                 iImportCertData = NULL;
 
-                iCerts->Close();
+                iCerts.Close();
 
                 delete iCertFilter;
                 iCertFilter = NULL;
@@ -985,21 +915,21 @@ void CPKISupport::DoRunLoggedInOperationL()
                 {
                 case ESSContinue:
                     {
-                    if(iCerts->Count() > 1)
+                    if(iCerts.Count() > 1)
                         {
                         LOG(Log::Printf(_L("Duplicate Certificate\n")));
                         iSubState = ESSCompleteRequest;
                         iSupportStatus = KErrNotFound;
                         }
-                    else if (iCerts->Count() < 1)
+                    else if (iCerts.Count() < 1)
                         {
                         LOG(Log::Printf(_L("No matching certificates found\n")));
                         iSubState = ESSCompleteRequest;
                         iSupportStatus = KErrNotFound;
                         }
-					else if ((((*iCerts)[0])->CertificateOwnerType() == EUserCertificate) &&
-							(((iCertStoreType == EPkiStoreTypeDevice) && (((*iCerts)[0])->Token().Label().Compare(KDeviceCertStore)!=0)) ||
-                    	  	((iCertStoreType == EPkiStoreTypeUser) && (((*iCerts)[0])->Token().Label().Compare(KUserCertStore)!=0))))
+					else if ((iCerts[0]->CertificateOwnerType() == EUserCertificate) &&
+							(((iCertStoreType == EPkiStoreTypeDevice) && (iCerts[0]->Token().Label().Compare(KDeviceCertStore)!=0)) ||
+                    	  	((iCertStoreType == EPkiStoreTypeUser) && (iCerts[0]->Token().Label().Compare(KUserCertStore)!=0))))
 						{
 						LOG_1("User certificate's certificate info does not match certificate store type. Store type is: %d", iCertStoreType);
 						iSubState = ESSCompleteRequest;
@@ -1027,7 +957,7 @@ void CPKISupport::DoRunLoggedInOperationL()
                 {
                 case ESSContinue:
                     {
-                    if(iCerts->Count() != 1)
+                    if(iCerts.Count() != 1)
                         {
                         iSubState = ESSCompleteRequest;
                         iSupportStatus = KErrNotFound;
@@ -1065,7 +995,7 @@ void CPKISupport::DoRunLoggedInOperationL()
                 {
                 case ESSContinue:
                     {
-                    if(iCerts->Count() != 1)
+                    if(iCerts.Count() != 1)
                         {
                         iSubState = ESSCompleteRequest;
                         iSupportStatus = KErrNotFound;
@@ -1106,7 +1036,7 @@ void CPKISupport::DoRunLoggedInOperationL()
             switch(iSubState)
                 {
                 case ESSContinue:
-                    if(iCerts->Count() != 1)
+                    if(iCerts.Count() != 1)
                         {
                         iSupportStatus = KPKIErrNotFound;
                         iSubState = ESSCompleteRequest;
@@ -1141,14 +1071,15 @@ void CPKISupport::DoRunLoggedInOperationL()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::RemoveCertificateL(const TDesC &aLabel, 
+    const TPKIKeyIdentifier& aCertificateKeyId,
     TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Remove certificate\n")));
     iSupportStatus = KErrNone;
-    iCerts->Close();
+    iCerts.Close();
     iSubState = ESSContinue;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel);
+    SelectCertificateL(aLabel, aCertificateKeyId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1157,7 +1088,7 @@ void CPKISupport::RemoveCertificateL(const TDesC &aLabel,
 //
 void CPKISupport::ContinueRemoveCertificate()
 {
-    iCertStore->Remove(*(*iCerts)[0], iStatus);
+    iCertStore->Remove(*(iCerts[0]), iStatus);
     iPending = ECertRemove;
     iSubState = ESSComplete;
     SetActive();
@@ -1169,15 +1100,16 @@ void CPKISupport::ContinueRemoveCertificate()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::SetTrustL(const TDesC &aLabel, 
+    const TPKIKeyIdentifier& aCertificateKeyId,
     TBool aTrusted, TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("SetTrust\n")));
     iSupportStatus = KErrNone;
-    iCerts->Close();
+    iCerts.Close();
     iSubState = ESSContinue;
     iTrusted = aTrusted;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel);
+    SelectCertificateL(aLabel, aCertificateKeyId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1187,7 +1119,7 @@ void CPKISupport::SetTrustL(const TDesC &aLabel,
 void CPKISupport::ContinueSetTrust()
 {
     iSubState = ESSComplete;    
-    iCertStore->SetTrust(*(*iCerts)[0], iTrusted, iStatus);
+    iCertStore->SetTrust(*(iCerts[0]), iTrusted, iStatus);
     iPending = ESetTrust;
     SetActive();
 }
@@ -1196,14 +1128,16 @@ void CPKISupport::ContinueSetTrust()
 // ?description_if_needed
 // ---------------------------------------------------------------------------
 //
-void CPKISupport::TrustedL(const TDesC &aLabel, TRequestStatus& aStatus)
+void CPKISupport::TrustedL(const TDesC &aLabel, 
+                           const TPKIKeyIdentifier& aCertificateKeyId, 
+                           TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Trusted\n")));
     iSupportStatus = KErrNone;
-    iCerts->Close();
+    iCerts.Close();
     iSubState = ESSContinue;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel);
+    SelectCertificateL(aLabel, aCertificateKeyId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1213,7 +1147,7 @@ void CPKISupport::TrustedL(const TDesC &aLabel, TRequestStatus& aStatus)
 void CPKISupport::ContinueTrusted()
 {
     iSubState = ESSComplete;
-    iCertStore->Trusted(*(*iCerts)[0], iTrusted, iStatus);
+    iCertStore->Trusted(*(iCerts[0]), iTrusted, iStatus);
     iPending = ETrusted;
     SetActive();
 }
@@ -1222,11 +1156,13 @@ void CPKISupport::ContinueTrusted()
 // ?description_if_needed
 // ---------------------------------------------------------------------------
 //
-void CPKISupport::SetApplicabilityL(const TDesC &aLabel, const RArray<TUid>& aApplUids, TRequestStatus& aStatus)
+void CPKISupport::SetApplicabilityL(const TDesC &aLabel, 
+                                    const TPKIKeyIdentifier& aCertificateKeyId,
+                                    const RArray<TUid>& aApplUids, TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("SetApplicability\n")));
     iSupportStatus = KErrNone;
-    iCerts->Close();
+    iCerts.Close();
     iSubState = ESSContinue;
 	iApplUids.Close();
 	for(TInt i = 0;i<aApplUids.Count();i++)
@@ -1234,7 +1170,7 @@ void CPKISupport::SetApplicabilityL(const TDesC &aLabel, const RArray<TUid>& aAp
 		iApplUids.Append(aApplUids[i]);
 		}
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel);
+    SelectCertificateL(aLabel, aCertificateKeyId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1243,9 +1179,9 @@ void CPKISupport::SetApplicabilityL(const TDesC &aLabel, const RArray<TUid>& aAp
 //
 void CPKISupport::ContinueSetApplicability()
     {
-    PKISERVICE_ASSERT(iCerts && iCerts->Count());
+    PKISERVICE_ASSERT(iCerts.Count());
     iSubState = ESSComplete;
-    iCertStore->SetApplicability(*(*iCerts)[0], iApplUids, iStatus);
+    iCertStore->SetApplicability(*(iCerts[0]), iApplUids, iStatus);
     iPending = ESetApplicability;
     SetActive();
     }
@@ -1254,14 +1190,15 @@ void CPKISupport::ContinueSetApplicability()
 // ?description_if_needed
 // ---------------------------------------------------------------------------
 //
-void CPKISupport::ApplicationsL(const TDesC &aLabel, TRequestStatus& aStatus)
+void CPKISupport::ApplicationsL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+                                TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Applications\n")));
     iSupportStatus = KErrNone;
-    iCerts->Close();
+    iCerts.Close();
     iSubState = ESSContinue;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel);
+    SelectCertificateL(aLabel, aCertificateKeyId);
 }
 
 // ---------------------------------------------------------------------------
@@ -1272,7 +1209,7 @@ void CPKISupport::ContinueApplications()
 {
     iSubState = ESSComplete;
 	iApplUids.Close();
-    iCertStore->Applications(*(*iCerts)[0], iApplUids, iStatus);
+    iCertStore->Applications(*(iCerts[0]), iApplUids, iStatus);
     iPending = EApplications;
     SetActive();
 }
@@ -1283,6 +1220,7 @@ void CPKISupport::ContinueApplications()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::SelectCertificateL(const TDesC &aLabel, 
+                                     const TPKIKeyIdentifier& aCertificateKeyId,
                                      const TPKICertificateOwnerType& aType )
 {
     delete iCertFilter;
@@ -1291,6 +1229,7 @@ void CPKISupport::SelectCertificateL(const TDesC &aLabel,
 
     LOG(Log::Printf(_L(" Select by label: %S\n"), &aLabel));
     iCertFilter->SetLabel(aLabel);
+    iCertFilter->SetSubjectKeyId(aCertificateKeyId);
     if (aType != 0) 
         {
         LOG_1(" Select by owner type: %d", aType);
@@ -1310,12 +1249,12 @@ void CPKISupport::GetCertificateStoreListAsync()
     LOG_1("-> CPKISupport::GetCertificateStoreListAsync() iSubState:%d",
             iSubState );
     // preconditions
-    PKISERVICE_ASSERT( iCerts && iCertFilter && iStatus != KRequestPending );
+    PKISERVICE_ASSERT( iCertFilter && iStatus != KRequestPending );
     LOG_1("CPKISupport::GetSertificateStoreListAsync iSubState:%d", 
         iSubState );
 
     // Get list of all known certificates
-    iCertStore->List(*iCerts, *iCertFilter, iStatus);
+    iCertStore->List(iCerts, *iCertFilter, iStatus);
     iPending = EListCerts;
     SetActive();
     LOG_("<- CPKISupport::GetCertificateStoreListAsync()");

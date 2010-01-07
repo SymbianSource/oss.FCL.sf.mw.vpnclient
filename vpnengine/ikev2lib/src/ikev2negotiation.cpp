@@ -3055,12 +3055,12 @@ TBool CIkev2Negotiation::ProcessCookieL(const CArrayFixFlat<TNotifPayloadIkev2*>
         // Local end COOKIE usage has not been implemented yet
         //
 
-          //
-          // Init a new IKE message buffer and copy received COOKIE
-          // Notify to the first payload. Concatenate then all
-          // payloads from original IKE_SA_INIT request to this new
-          // IKE message (and set next payload field in Notify)
-          //
+            //
+            // Init a new IKE message buffer and copy received COOKIE
+            // Notify to the first payload. Concatenate then all
+            // payloads from original IKE_SA_INIT request to this new
+            // IKE message (and set next payload field in Notify)
+            //
             DEBUG_LOG1(_L("Cookie received, IKE_SA_INIT repeated: %d"), iState);
             if ( iCookieReturned )
             {	
@@ -3071,9 +3071,16 @@ TBool CIkev2Negotiation::ProcessCookieL(const CArrayFixFlat<TNotifPayloadIkev2*>
                DEBUG_LOG(_L("Cookie already returned once, IKE_SA_INIT exchange stopped"));				   
                return EFalse;
             }		
+            
             CIkeV2Message* originalIkeSaInitRequest = iHdr.iLastRequest;            
+            
             const TPtrC8 cookieData(NotifyPayload->NotifData(), NotifyPayload->NotifDataLength());
-            originalIkeSaInitRequest->PrependCookieNotifyPayloadL(cookieData);
+            
+            // Use protocol id sent by gateway. RFC says id should be zero, but some GWs
+            // work against the spec.
+            TUint8 protocolId = NotifyPayload->GetProtocolId();
+            
+            originalIkeSaInitRequest->PrependCookieNotifyPayloadL(protocolId, cookieData);
             iHdr.iLastRequest = NULL; //claims the ownership of the message    
             
             SendIkeMsgL(originalIkeSaInitRequest);

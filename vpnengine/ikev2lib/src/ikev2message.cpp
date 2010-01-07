@@ -1022,10 +1022,10 @@ void CIkeV2Message::AppendNotifyPayloadL(TUint8 aProtocolId,
     AppendPayloadL(notifyPayload);
     }
 
-void CIkeV2Message::PrependCookieNotifyPayloadL(const TDesC8& aCookieData)
+void CIkeV2Message::PrependCookieNotifyPayloadL(TUint8 aProtocolId, const TDesC8& aCookieData)
     {
     _LIT8(KZeroDesc, "");
-    CIkeV2NotifyPayload* notifyPayload = CIkeV2NotifyPayload::NewL(0, KZeroDesc,
+    CIkeV2NotifyPayload* notifyPayload = CIkeV2NotifyPayload::NewL(aProtocolId, KZeroDesc,
                                                                    COOKIE, aCookieData);
     
     delete iIkeV2Datagram;

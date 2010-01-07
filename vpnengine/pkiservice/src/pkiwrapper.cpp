@@ -22,8 +22,10 @@
 
 #include "pkiwrapper.h"
 #include "PKIMapper.h"
+#include "mapdescriptor.h"
 #include "pkisession.h"
 #include "pkisupport.h"
+#include "pkiserviceassert.h"
 #include "log_r6.h"
 
 
@@ -41,7 +43,6 @@ CPKIWrapper::~CPKIWrapper()
     {
     LOG_("-> CPKIWrapper::~CPKIWrapper()");
     Cancel();
-    delete iCurrentMapping;
     delete iObjectName;
     delete iCertBuffer;
     iUidArray.Close();
@@ -87,28 +88,29 @@ void CPKIWrapper::InitializeL(const RMessage2& aMessage)
 *   Initialization routine
 */
 //====================================================================================================================================    
-TInt CPKIWrapper::InitOperation(const RMessage2& aMessage)
+void CPKIWrapper::InitOperation(const RMessage2& aMessage)
 {
-    if (IsActive())
+    if (iMessage.Handle() != 0)
         {
         LOG(Log::Printf(_L("Pkiservice busy. Function %d\n"), aMessage.Function()));
-        return KPKIErrServiceBusy;
+        aMessage.Complete(KPKIErrServiceBusy);
+
         }
-    
-    LOG(Log::Printf(_L("InitOperation function %d\n"), aMessage.Function()));
-    iCurrentStatus = KErrNone;              // Clear status
-    iCurrentState = EExecute;               // Set state
-    iMessage = aMessage;                    // Save message
-    iPKISupport->SetCurrentFunction(iMessage.Function());
-    iIndex = KErrNotFound;
-    
-    // Trigger function
-    iStatus = KRequestPending;
-    SetActive();
-    TRequestStatus *status = &iStatus;
-    User::RequestComplete(status, KErrNone);
-    
-    return KErrNone;
+    else
+        {
+        LOG(Log::Printf(_L("InitOperation function %d\n"), aMessage.Function()));
+        iCurrentStatus = KErrNone;              // Clear status
+        iCurrentState = EExecute;               // Set state
+        iMessage = aMessage;                    // Save message
+        iPKISupport->SetCurrentFunction(iMessage.Function());
+        iIndex = KErrNotFound;
+        
+        // Trigger function
+        iStatus = KRequestPending;
+        SetActive();
+        TRequestStatus *status = &iStatus;
+        User::RequestComplete(status, KErrNone);
+        }
 }
     
 /**---------------------------------------------------------
@@ -301,13 +303,15 @@ void CPKIWrapper::ExecuteReadCertificateL()
 
     LOG(Log::Printf(_L("CPKIWrapper::ExecuteReadCertificateL()\n")));
     iCurrentStatus = iMapper.ResolveCertMappingL(iCurrentDescriptor(), *iObjectName, 
-                                                           index, iInfoOnly, 
-                                                           iPKISupport->CertStoreType());
+                                                 index, iInfoOnly, 
+                                                 iPKISupport->CertStoreType());
     if(iCurrentStatus == KErrNone)
         {
-        TSecurityObjectDescriptor sdesc = iCurrentDescriptor();
+        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);        
         iCurrentState = EComplete;
-        iPKISupport->RetrieveCertificateL(*iObjectName, iPtrCertBuffer, sdesc.iOwnerType, iStatus);
+        iPKISupport->RetrieveCertificateL(mapping.Label(),
+                                          mapping.CertificateKeyId(),
+                                          iPtrCertBuffer, mapping.OwnerType(), iStatus);
         SetActive();
         }
     LOG_1("CPKIWrapper::ExecuteReadCertificateL() exit:%d", iCurrentStatus);
@@ -332,33 +336,39 @@ void CPKIWrapper::ExecuteStoreCertificateL()
         if (certIsNew)
             {
             LOG(Log::Printf(_L("Creating new certificate entry\n")));
-            delete iCurrentMapping;
-            iCurrentMapping = NULL;
-            iCurrentMapping = new (ELeave) CMapDescriptor(iCurrentDescriptor());
-            iMapper.GenerateUniqueNameL(iPtrCertBuffer, *iObjectName);
-            iCurrentMapping->SetMapObjectName(*iObjectName);
-            SaveIdentityL(*iCurrentMapping, iPtrCertBuffer, (TCertificateOwnerType)iCurrentDescriptor().iOwnerType);
             
+            iMapper.GenerateUniqueNameL(iPtrCertBuffer, *iObjectName);
             TPkiServiceStoreType storeType = iPKISupport->CertStoreType();
             if (storeType == EPkiStoreTypeAny)
                 {
                 storeType = EPkiStoreTypeUser;
                 }
-            iCurrentMapping->SetCertStoreType(storeType);
 
-            if(iCurrentStatus == KErrNone)
-                {
-                LOG(Log::Printf(_L("Status OK, identity saved\n")));
-                iCurrentStatus = KErrNone;
-                iCurrentState = EComplete;
-                LOG(Log::Printf(_L("Storing CERT with LABEL:")));
-                LOG(Log::Printf(iCurrentMapping->iObjectName));
-                iPKISupport->StoreCertificateL(iCurrentMapping->iObjectName, 
-                    (TCertificateOwnerType)iCurrentDescriptor().iOwnerType, 
-                    iPtrCertBuffer, iCurrentDescriptor().iIsDeletable, iStatus);
-                LOG(Log::Printf(_L("CERT stored\n")));
-                SetActive();
-                }
+            CX509Certificate* certificate = CX509Certificate::NewLC(iPtrCertBuffer);  
+
+            PKISERVICE_ASSERT(iCurrentMapping == NULL);
+            CMapDescriptor* newMapping = CMapDescriptor::NewL(*iObjectName,
+                                                              *certificate,
+                                                              iCurrentDescriptor().iOwnerType,
+                                                              storeType);  
+            CleanupStack::PushL(newMapping);            
+            newMapping->SetMapDeletable(iCurrentDescriptor().iIsDeletable);            
+                                           
+            iCurrentStatus = KErrNone;
+            iCurrentState = EComplete;
+            LOG(Log::Printf(_L("Storing CERT with LABEL:")));
+            LOG(Log::Printf(*iObjectName));
+            iPKISupport->StoreCertificateL(*iObjectName, 
+                (TCertificateOwnerType)iCurrentDescriptor().iOwnerType, 
+                iPtrCertBuffer, iCurrentDescriptor().iIsDeletable, iStatus);
+            
+            iCurrentMapping = newMapping;
+            CleanupStack::Pop(newMapping);
+            CleanupStack::PopAndDestroy(certificate);
+            
+            LOG(Log::Printf(_L("CERT stored\n")));
+            SetActive();
+
             }
         else 
             {
@@ -387,29 +397,38 @@ void CPKIWrapper::ExecuteAttachCertificateL()
     LOG(Log::Printf(_L("ExecuteAttachCertificateL")));
 
     iMapper.GenerateUniqueNameL(iPtrCertBuffer, *iObjectName, EUserCertificate);
-
-    delete iCurrentMapping;
-    iCurrentMapping = NULL;
-    iCurrentMapping = new (ELeave) CMapDescriptor(iCurrentDescriptor());
-    iCurrentMapping->SetMapObjectName(*iObjectName);
-    SaveIdentityL(*iCurrentMapping, iPtrCertBuffer, (TCertificateOwnerType)iCurrentDescriptor().iOwnerType);
-
+    
     TPkiServiceStoreType storeType = iPKISupport->CertStoreType();
     if (storeType == EPkiStoreTypeAny)
         {
         storeType = EPkiStoreTypeUser;
-        }
-    iCurrentMapping->SetCertStoreType(storeType);
-    if(iCurrentStatus == KErrNone)
-        {
-        iCurrentStatus = KErrNone;
-        iCurrentState = EComplete;
-        LOG(Log::Printf(_L("Attaching certificate")));
-        LOG(Log::Printf(iCurrentMapping->iObjectName));
-        iPKISupport->AttachCertificateL(iCurrentMapping->iObjectName, iCurrentDescriptor().iSubjectKeyId, iPtrCertBuffer, iStatus);
-        LOG(Log::Printf(_L("Certificate attached")));
-        SetActive();
-        }
+        }  
+    
+    PKISERVICE_ASSERT(iCurrentMapping == NULL);
+    
+    CX509Certificate* certificate = CX509Certificate::NewLC(iPtrCertBuffer);  
+    CMapDescriptor* newMapping = CMapDescriptor::NewL(*iObjectName,
+                                                      *certificate,
+                                                      iCurrentDescriptor().iOwnerType,
+                                                      storeType);  
+    CleanupStack::PushL(newMapping);            
+    newMapping->SetMapDeletable(iCurrentDescriptor().iIsDeletable);
+
+            
+    
+    iCurrentStatus = KErrNone;
+    iCurrentState = EComplete;
+    LOG(Log::Printf(_L("Attaching certificate")));
+    LOG(Log::Printf(*iObjectName));
+    iPKISupport->AttachCertificateL(*iObjectName, iPtrCertBuffer, iStatus);
+    LOG(Log::Printf(_L("Certificate attached")));
+
+    iCurrentMapping = newMapping;
+    CleanupStack::Pop(newMapping);                 
+    CleanupStack::PopAndDestroy(certificate);
+
+    
+    SetActive();
     }
 
 
@@ -427,12 +446,11 @@ void CPKIWrapper::ExecuteRemoveCertificateL()
                                         iPKISupport->CertStoreType());
     if(iCurrentStatus == KErrNone)
         {
-        delete iCurrentMapping;
-        iCurrentMapping = NULL;
-        iCurrentMapping = new (ELeave) CMapDescriptor(iCurrentDescriptor());
-        *iCurrentMapping = iMapper.GetMapDescriptorAtIndex(index);
+        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
+        TPKIKeyIdentifier keyId = mapping.CertificateKeyId();
+        iMapper.DeleteMapping(index);
         iCurrentState = EComplete;
-        iPKISupport->RemoveCertificateL(*iObjectName, iStatus);
+        iPKISupport->RemoveCertificateL(*iObjectName, keyId, iStatus);
         SetActive();
         }
     }
@@ -452,10 +470,11 @@ void CPKIWrapper::ExecuteSetTrustL()
     if(iCurrentStatus == KErrNone)
         {
         const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
-        if (mapping.iOwnerType == EPKICACertificate)
+        if (mapping.OwnerType() == EPKICACertificate)
             {            
             iCurrentState = EComplete;
-            iPKISupport->SetTrustL(*iObjectName, iTrusted, iStatus);
+            iPKISupport->SetTrustL(*iObjectName, mapping.CertificateKeyId(), 
+                                   iTrusted, iStatus);
             SetActive();
             }
         else
@@ -479,8 +498,9 @@ void CPKIWrapper::ExecuteTrustedL()
                                                             iPKISupport->CertStoreType());
     if(iCurrentStatus == KErrNone)
         {
+        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
         iCurrentState = EComplete;
-        iPKISupport->TrustedL(*iObjectName, iStatus);
+        iPKISupport->TrustedL(*iObjectName, mapping.CertificateKeyId(), iStatus);
         SetActive();
         }
     }
@@ -493,18 +513,17 @@ void CPKIWrapper::ExecuteTrustedL()
 void CPKIWrapper::ExecuteSetApplicabilityL()
     {
     TInt index(KErrNotFound);
-    iCurrentStatus = iMapper.ResolveCertMappingL(
-        iCurrentDescriptor(), *iObjectName, 
-        index, iInfoOnly,
-        iPKISupport->CertStoreType());
-    
+    iCurrentStatus = iMapper.ResolveCertMappingL(iCurrentDescriptor(), *iObjectName, 
+                                                 index, iInfoOnly,
+                                                 iPKISupport->CertStoreType());    
 	// Save index
 	iIndex = index;
     if(iCurrentStatus == KErrNone)
         {
         LOG_1("ExecuteSetApplicabilityL:%d", iIndex);
+        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
         iCurrentState = EComplete;
-        iPKISupport->SetApplicabilityL(*iObjectName, iUidArray, iStatus);
+        iPKISupport->SetApplicabilityL(*iObjectName, mapping.CertificateKeyId(), iUidArray, iStatus);
         SetActive();
         }
     }
@@ -524,8 +543,9 @@ void CPKIWrapper::ExecuteApplicationsL()
     iUidArray.Close();
     if(iCurrentStatus == KErrNone)
         {
+        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
         iCurrentState = EComplete;
-        iPKISupport->ApplicationsL(*iObjectName, iStatus);
+        iPKISupport->ApplicationsL(*iObjectName, mapping.CertificateKeyId(), iStatus);
         SetActive();
         }
 }
@@ -561,32 +581,26 @@ void CPKIWrapper::CompleteRequestAndCleanupL()
             if (iCurrentStatus == KErrNone)
                 {
                 User::LeaveIfError( 
-                    iMapper.AddMapping(*iCurrentMapping) );
-                iCurrentMapping = NULL;    
+                    iMapper.AddMapping(iCurrentMapping) );                                    
                 }
+            else
+                {
+                delete iCurrentMapping;
+                }
+            iCurrentMapping = NULL;
             if (iCurrentStatus == KErrBadName)
                 {
                 // Already exists
                 iCurrentStatus = KErrNone;
                 }
-            break;
-                        
+            break;                        
         case PkiService::ERemoveCertificate:
-            if (iCurrentStatus == KErrNone)
-                {
-                iMapper.DeleteMapping(*iCurrentMapping);
-                }
             break;
 
 		case PkiService::ESetApplicability:
 			if (iCurrentStatus == KErrNone)
 				{
-				iMapper.GetMapDescriptorAtIndex(iIndex).iApplUids.Close();
-				TUint i;
-				for(i=0;i<iCount;i++)
-					{
-					iMapper.GetMapDescriptorAtIndex(iIndex).iApplUids.Append(iUidArray[i]);
-					}
+				iMapper.GetMapDescriptorAtIndex(iIndex).SetMapApplications(iUidArray); 
 				}
 			break;
 
@@ -634,8 +648,6 @@ void CPKIWrapper::CompleteRequestAndCleanupL()
         iMessage.Function(), iCurrentStatus));
 
     delete iCertBuffer;
-    delete iCurrentMapping;
-    iCurrentMapping = NULL;
     iCertBuffer = NULL;
     iMessage.Complete(iCurrentStatus);
     }
@@ -737,9 +749,7 @@ void CPKIWrapper::RunL()
 TInt CPKIWrapper::RunError(TInt aError)
     {
     LOG(Log::Printf(_L("CPKIWrapper::RunError, Complete function %d, status %d\n"), iMessage.Function(), aError));
-    delete iCertBuffer;
-    delete iCurrentMapping;
-    iCurrentMapping = NULL; 
+    delete iCertBuffer; 
     iCertBuffer = NULL;
     
     iMessage.Complete(aError);
@@ -754,93 +764,14 @@ void CPKIWrapper::DoCancel()
         iPKISupport->Cancel();
         }
     iMessage.Complete(KErrCancel);
-    }
-      
-
-
-void CPKIWrapper::SaveIdentityL(CMapDescriptor &aCertDesc, 
-                                const TDesC8& aCertDataIn,
-                                TCertificateOwnerType aOwner)
-{
-    LOG(Log::Printf(_L("CPKIWrapper::SaveIdentityL()\n")));
-
-    CX509Certificate* certificate = CX509Certificate::NewLC(aCertDataIn);            
-
-    // Validity period
-    aCertDesc.SetMapStartTime(certificate->ValidityPeriod().Start());
-    aCertDesc.SetMapEndTime(certificate->ValidityPeriod().Finish());    
-    
-    
-    // Copy issuer
-    const TPtrC8* issuer = certificate->DataElementEncoding(CX509Certificate::EIssuerName);
-    aCertDesc.SetMapTrustedAuthorityL(*issuer);
-
-    // Copy subject name
-    const TPtrC8* subject = certificate->DataElementEncoding(CX509Certificate::ESubjectName);    
-    aCertDesc.SetMapIdentitySubjectNameL(*subject);
-
-    // Copy rfc822 name from subjectAlt name    
-    const CX509CertExtension* subjAltName = certificate->Extension(KSubjectAltName);
-    if(subjAltName != NULL)
-        {
-        CX509AltNameExt* subjectAlt = CX509AltNameExt::NewLC(subjAltName->Data());
-        if(subjectAlt != NULL)
-            {
-            const CArrayPtrFlat<CX509GeneralName> *nameArray; 
-            nameArray = &subjectAlt->AltName();
-            // Search rfc822
-            for(TInt i = 0; i < nameArray->Count(); i++)
-                {
-                if(nameArray->At(i)->Tag() == EX509RFC822Name)
-                    {
-                    TPtrC8 data = nameArray->At(i)->Data();
-                    aCertDesc.SetMapIdentityRfc822NameL(data.Right(data.Length() - 2));
-                    break;
-                    }
-                }                            
-            }
-        CleanupStack::PopAndDestroy(subjectAlt);
-        }
-
-    // Key usage
-    const CX509CertExtension* keyUsage = certificate->Extension(KKeyUsage);
-    if((keyUsage != NULL) && keyUsage->Critical())
-        {
-        aCertDesc.iKeyUsageDer.Copy(keyUsage->Data());        
-        }
-
-    // Serial number
-	const TPtrC8* serial = certificate->DataElementEncoding(CX509Certificate::ESerialNumber);
-	if(serial != NULL)
-		{
-		aCertDesc.SetMapSerialNumberL(*serial);               
-		}
-    
-	// Set Subject Key Identifier if we are handling CA
-	if(aOwner == ECACertificate)
-	{
-	    TPKIKeyIdentifier keyId = certificate->SubjectKeyIdentifierL();
-	    aCertDesc.SetMapSubjectKeyId(keyId);
-	}
-	
-    CleanupStack::PopAndDestroy(certificate); 
-    
-
-    if(CPKIMapper::CertValidity(aCertDesc.iStartTime, aCertDesc.iEndTime) == EExpired)
-    {
-        LOG(Log::Printf(_L("Certificate expired\n")));
-    }
-}
-
+    }      
 
 void CPKIWrapper::SetCertStoreType(TPkiServiceStoreType aStoreType)
     {
 	LOG(Log::Printf(_L("CPKIWrapper: SETTING CERT STORE TYPE: %d\n"), aStoreType));
     iPKISupport->SetCertStoreType(aStoreType);
     }
-
-    
-    
+        
 TPkiServiceStoreType CPKIWrapper::CertStoreType() const
     {
     return iPKISupport->CertStoreType();
@@ -851,3 +782,7 @@ void CPKIWrapper::SetInformational(const TBool aInfoOnly)
     iInfoOnly = aInfoOnly;
     }
     
+TBool CPKIWrapper::Informational() const
+    {
+    return iInfoOnly;
+    }

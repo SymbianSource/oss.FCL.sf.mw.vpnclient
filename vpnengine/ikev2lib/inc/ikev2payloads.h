@@ -479,7 +479,7 @@ class TNotifPayloadIkev2
 	public:
 		static inline TNotifPayloadIkev2 *Cast(const TAny* aPayload) { return (TNotifPayloadIkev2 *)aPayload;}		
 		static inline TInt Size() { return sizeof(TNotifPayloadIkev2); }
-		inline TUint8 GetProtocolId() { return u.iData8[4]; };
+		inline TUint8 GetProtocolId() const { return u.iData8[4]; };
 		inline void SetProtocolId(TUint8 aProtId) { u.iData8[4] = aProtId; };
 		inline TUint8 GetSPISize() const { return u.iData8[5]; }
 		inline void SetSPISize(TUint8 aSpiSize) { u.iData8[5] = aSpiSize; }

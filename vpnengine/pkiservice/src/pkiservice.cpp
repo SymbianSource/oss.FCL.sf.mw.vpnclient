@@ -15,7 +15,7 @@
 *
 */
 
-
+#include <ecom/ecom.h>
 
 #include "pkiservice.h"
 #include "pkisession.h"
@@ -66,6 +66,8 @@ CPKIService::~CPKIService(void)
     delete iMapper;    
     delete iShutdown;
     delete iCertificateRequestStore;
+    
+    REComSession::FinalClose();
     }
 
 
@@ -122,7 +124,6 @@ void CPKIService::SessionDeleted()
     
     LOG_1("iSessionCount (%d)", iSessionCount);    
     PKISERVICE_ASSERT(iSessionCount >= 0);
-    
     
     if (iSessionCount == 0)
         {

@@ -94,7 +94,7 @@ void CPKISession::ServiceL(const RMessage2& aMessage)
         {                            
         case PkiService::ECancelPendingOperation:
             iWrapper->CancelPendingOperation();
-            aMessage.Complete(Status);
+            aMessage.Complete(KErrNone);
             break;
         
         case PkiService::EGetRequiredBufferSize:
@@ -111,8 +111,8 @@ void CPKISession::ServiceL(const RMessage2& aMessage)
             break;
 
         case PkiService::ECertCount:        
-            count = iMapper.CertCount();
-            aMessage.Complete(count);          // Status <==> count
+            count = iMapper.CertCount(iWrapper->Informational());
+            aMessage.Complete(count);
             break;
             
         case PkiService::EApplicableCertCount:
@@ -141,15 +141,30 @@ void CPKISession::ServiceL(const RMessage2& aMessage)
     		CleanupStack::PopAndDestroy(1);     // list
     		
     		TInt matchCount = iMapper.ApplicableCertCount(iUidArray);
-    		aMessage.Complete(matchCount);          // Status <==> count
+    		aMessage.Complete(matchCount); 
     		}
     		break;
        case PkiService::EGetCertDetails:
-		    Status = iMapper.GetCertListL(aMessage, iWrapper->CertStoreType(), ETrue);
+            {
+            TPckgBuf<TSecurityObjectDescriptor> secDescPtr;
+            aMessage.ReadL(1, secDescPtr);
+            TCertificateListEntry* resultCertInfo = new (ELeave) TCertificateListEntry;
+            CleanupStack::PushL(resultCertInfo);            
+            Status = iMapper.GetCertDetailsL(secDescPtr(), 
+                                             iWrapper->CertStoreType(), 
+                                             iWrapper->Informational(),
+                                             *resultCertInfo);
+		    if (Status == KErrNone)
+		        {
+		        TPckg<TCertificateListEntry> certDetailsPtr(*resultCertInfo);
+	            aMessage.WriteL(0, certDetailsPtr);
+		        }
 		    aMessage.Complete(Status);
+		    CleanupStack::PopAndDestroy(resultCertInfo);            
+            }
 		    break;
         case PkiService::EGetCertList:
-		    iMapper.GetCertListL(aMessage, iWrapper->CertStoreType());
+		    iMapper.GetCertListL(aMessage, iWrapper->Informational());
 		    aMessage.Complete(KErrNone);
 		    break;
 
@@ -185,7 +200,7 @@ void CPKISession::ServiceL(const RMessage2& aMessage)
     		
         case PkiService::ECertReqCount:                    
             count = iServer.CertificateRequestStore().CertReqCountL();
-            aMessage.Complete(count);          // Status <==> count
+            aMessage.Complete(count); 
             break;    		
     		
         case PkiService::EGetCertReqList:
@@ -331,7 +346,7 @@ void CPKISession::ServiceL(const RMessage2& aMessage)
             }
             break;
             
-        case PkiService::EInitialize://falls through    		
+        case PkiService::EInitialize://falls through
         case PkiService::EKeyCount: //falls through    		                
         case PkiService::EGetKeyDetails: //falls through    		
         case PkiService::EDecrypt: //falls through    		
@@ -349,7 +364,7 @@ void CPKISession::ServiceL(const RMessage2& aMessage)
             break;  
         default:      
             iRequiredBufferSize = KBufferSizeNotDefined;
-            Status = iWrapper->InitOperation(aMessage);
+            iWrapper->InitOperation(aMessage);
             break;
         }
     }

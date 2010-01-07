@@ -40,7 +40,7 @@ class CPKIWrapper : public CActive
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Interface
         ////////////////////////////////////////////////////////////////////////////////////////////
-        TInt InitOperation(const RMessage2& aMessage);
+        void InitOperation(const RMessage2& aMessage);
         void CancelPendingOperation();
         TInt GetRequiredBufferSizeL(const RMessage2& aMessage);
         void CompleteRequestAndCleanupL();
@@ -54,10 +54,8 @@ class CPKIWrapper : public CActive
         TPkiServiceStoreType CertStoreType() const;               
         
         void SetInformational(const TBool aInfoOnly);
+        TBool Informational() const;
         
-        static void SaveIdentityL(CMapDescriptor &aCertMapping, 
-                           const TDesC8& aCertDataIn,
-                           TCertificateOwnerType aOwner);
     private: // From CActive    
         void RunL();
         void DoCancel();

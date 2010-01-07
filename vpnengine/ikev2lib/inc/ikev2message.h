@@ -307,7 +307,8 @@ public:
      * A special method for adding a cookie notify in the
      * beginning of an existing ike message. 
      */
-    void PrependCookieNotifyPayloadL(const TDesC8& aCookieData);    
+    void PrependCookieNotifyPayloadL(TUint8 aProtocolId,
+                                     const TDesC8& aCookieData);    
     
     void AppendConfigurationPayloadL(TUint8 aCfgType, 
                                     const TDesC8& aConfigurationData);
