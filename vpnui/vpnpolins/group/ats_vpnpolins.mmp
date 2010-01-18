@@ -15,6 +15,7 @@
 *
 */
 
+#include <platform_paths.hrh>
 
 TARGET          vpnpolins.exe
 TARGETTYPE      exe
@@ -25,25 +26,23 @@ VENDORID		VID_DEFAULT
 
 MACRO ATS_BUILD
 
-SOURCEPATH      ..\src
+SOURCEPATH      ../src
 SOURCE          policyinstaller.cpp 
 SOURCE          zipfiledecompressor.cpp
 SOURCE          cmdfileparser.cpp
 SOURCE          vpnbundlehandler.cpp
 SOURCE          vpndevlockhandler.cpp
 
-USERINCLUDE     ..\inc
-USERINCLUDE     ..\..\vpnpolicyrecognizer\inc
-USERINCLUDE     ..\..\..\vpnengine\vpnextapi\inc
-USERINCLUDE     ..\..\..\vpnengine\vpnmanager\inc
-USERINCLUDE     ..\..\..\vpnengine\acuagent\inc
-USERINCLUDE     ..\..\..\vpnengine\acupluginlib\inc
-USERINCLUDE			..\..\vpnecomnotifier\inc
-USERINCLUDE     ..\..\..\vpnengine\pkiserviceapi\inc
-USERINCLUDE     ..\..\..\vpnengine\vpncommon\inc
-USERINCLUDE     ..\..\..\vpnengine\utlpkcs12\inc
-USERINCLUDE     ..\..\..\vpnengine\utlxml\inc
-SYSTEMINCLUDE   \epoc32\include
+USERINCLUDE     ../inc
+USERINCLUDE     ../../vpnpolicyrecognizer/inc
+USERINCLUDE     ../../../vpnengine/vpnmanager/inc
+USERINCLUDE		../../vpnecomnotifier/inc
+USERINCLUDE     ../../../vpnengine/pkiserviceapi/inc
+USERINCLUDE     ../../../vpnengine/vpncommon/inc
+USERINCLUDE     ../../../vpnengine/utlpkcs12/inc
+USERINCLUDE     ../../../vpnengine/utlxml/inc
+
+MW_LAYER_SYSTEMINCLUDE
 
 START RESOURCE ..\data\vpnpolins_reg.rss
 TARGETPATH  \private\10003a3f\apps
@@ -62,4 +61,5 @@ LIBRARY         utlxml.lib
 
 // File logger only needed for debug builds
 DEBUGLIBRARY         flogger.lib
+
 

@@ -128,9 +128,14 @@ HBufC8* IpsecProposal::BuildIpsecSaRequestL(const TUint8 aSaType, const TUint8 a
 	if ( IntegAlg )
 	{
 		TransCnt ++;				
-		if ( Transform ) 
-		     Transform = (TTransformIkev2*)TPayloadIkev2::Cast(Transform)->Next();
-		else Proposal->TransformPl();
+		if ( Transform )
+		    {
+		    Transform = (TTransformIkev2*)TPayloadIkev2::Cast(Transform)->Next();
+		    }
+		else 
+		    {
+		    Transform = Proposal->TransformPl();
+		    }
 		TPayloadIkev2::Cast(Transform)->Init();   // Initialize Payload general header				
 		TPayloadIkev2::Cast(Transform)->SetNextPayload(IKEV2_PAYLOAD_TRANS);
 		Transform->SetType(IKEV2_INTEG);          // Integrity Algorithm transform
@@ -257,6 +262,7 @@ HBufC8* IpsecProposal::BuildIpsecSaFromPolicyL(const CIpsecSaSpecList& aSaList, 
             break;
 
         default:
+        	  User::Leave(KErrNotSupported);
             break;
 
     }   

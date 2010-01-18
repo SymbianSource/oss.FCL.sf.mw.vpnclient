@@ -26,7 +26,7 @@
 #include <f32file.h>
 #include "vpnmanagerserverdefs.h"
 
-class CRequestDispatcher;
+class CVpnApiServant;
 
 /** 
  * The main server class
@@ -107,7 +107,7 @@ private:
     TInt iSessionCount;
 
     /** The handler of client requests */
-    CRequestDispatcher* iRequestDispatcher;
+    CVpnApiServant* iVpnApiServant;
     
     /** The common file server session used throughout the VPN Manager */ 
     RFs iFs;

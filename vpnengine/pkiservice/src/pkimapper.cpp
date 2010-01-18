@@ -147,7 +147,7 @@ TInt CPKIMapper::GetCertDetailsL(TSecurityObjectDescriptor& aSecDesc,
                                  TCertificateListEntry& aResultCertInfo)
     {
     TInt index;
-    TInt err;
+    TInt err = KErrNone;
     
     TRAPD(leave, err = ResolveCertMappingL(aSecDesc, iObjectName, 
                                            index, aInfoOnly, 

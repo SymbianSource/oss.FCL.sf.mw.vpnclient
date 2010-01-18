@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003-2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003-2009 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -402,8 +402,11 @@ HBufC8* CPolicyPatchInfo::CheckSubjectNameSyntaxL(const TDesC8& aSubj)
         //Checking also last attribute of Subject Name string
         if ( j<commaArrItemCount )
             {
-            updateArr->AppendL(equalSignArr->At(equalArrItemCount-1));
-            updateArr->AppendL(subjLth-1);
+            updateArr->AppendL(equalSignArr->At(equalArrItemCount-1) + 1);
+            updateArr->AppendL(subjLth);
+            
+            updateArrCount++;
+            updateArrCount++;
             }
        
        TBuf8<256> resultBuf;
@@ -416,10 +419,6 @@ HBufC8* CPolicyPatchInfo::CheckSubjectNameSyntaxL(const TDesC8& aSubj)
            {
            while (i<updateArrCount)
                {
-               TBuf8<3> updateStr(KReplacementChar);
-               
-               updateStr.Append(aSubj.Mid(updateArr->At(i),1));
-               
                if ( resultBuf.Length()<256 )
                    resultBuf.Insert(updateArr->At(i) + i, KReplacementChar);
                else

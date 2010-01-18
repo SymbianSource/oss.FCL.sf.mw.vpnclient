@@ -219,6 +219,7 @@ EXPORT_C CX509Certificate* IkePkiUtils::VerifyCertificateL(const CArrayFixFlat<T
         }
     if ( caArray->Count() == 1)
            {
+ 	         __ASSERT_DEBUG(firstCertPayload != NULL, User::Invariant());
          const TPtrC8 userCertStream(firstCertPayload->Certificate(),
                                     (TPayloadIkev2::Cast(firstCertPayload)->GetLength() - 
                                      TCertPayloadIkev2::Size()));

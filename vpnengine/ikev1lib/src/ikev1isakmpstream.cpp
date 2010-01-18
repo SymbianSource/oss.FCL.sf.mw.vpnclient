@@ -116,7 +116,7 @@ void TIkev1IsakmpStream::IsakmpProposal()
                                                                     //including the SPI
         iBuf.SetLength(pos + sizeof(proposal)); //leave room to insert later the proposal
         TAttrib *attr=prop->iAttrList;
-        for (TInt i=0; i < proposal.GetNumTrans(); i++) //Adds all the transforms
+        for (TInt i=0; (i < proposal.GetNumTrans()) && (attr != NULL); i++) //Adds all the transforms
         {
             if ( !attr->iNext )
                next_payload = ISAKMP_PAYLOAD_NONE; // Last trasnform    

@@ -93,8 +93,6 @@ CVPNConnAgt::~CVPNConnAgt()
     iServiceStartedCallback.Cancel();
     iConnectCompleteCallback.Cancel();
     iDisconnectCallback.Cancel();
-
-    delete iAD;
     }
 
 // ---------------------------------------------------------------------------
@@ -123,8 +121,6 @@ inline void CVPNConnAgt::ConstructL()
     iDisconnecting = EFalse;
     LOG_("CVPNConnAgt::ReadConfigurationL EventMediator");
     User::LeaveIfError(iEventMediator.Connect());
-
-    iAD = CAsyncDisconnecter::NewL(this);  
     }
 
 // ---------------------------------------------------------------------------
@@ -412,7 +408,8 @@ void CVPNConnAgt::DisconnectionComplete()
         return;
         }
 
-    iAD->ConfirmDisconnect();
+    iNotify->AgentProgress(EVPNConnAgtDisconnected, KErrNone);
+    iNotify->DisconnectComplete();
     iDisconnecting = EFalse;
     }
 
@@ -514,10 +511,11 @@ void CVPNConnAgt::EventOccured(TInt aStatus, TEventType aType, TDesC8* aData)
                 iEventActivatedClose = EFalse;
                 iNotify->Notification(EAgentToNifEventTypeDisableConnection, NULL);
                 }
-
-            iAD->ConfirmDisconnect();
+            
+            iNotify->AgentProgress(EVPNConnAgtDisconnected, KErrNone);
+            iNotify->DisconnectComplete();
+            
             iDisconnecting = EFalse;
-
             iConnected = EFalse;
             
             iState = EIdle;
@@ -585,6 +583,7 @@ void CVPNConnAgt::EventOccured(TInt aStatus, TEventType aType, TDesC8* aData)
             break;
             }
         default:
+            LOG(Log::Printf(_L("Unknown event --> Silently Ignore.\n")));
             break;
         }
     }
@@ -758,48 +757,3 @@ void CVPNConnAgt::ReadConfigurationL()
     LOG_1("CVPNConnAgt::ReadConfigurationL RealNetworkId:%d", 
         iVPNParameters.GetRealNetworkId());
     }
-
-
-//////////////////////CAsyncDisconnecter////////////////////
-
-// ---------------------------------------------------------------------------
-// CAsyncDisconnecter 
-// ---------------------------------------------------------------------------
-//
-CAsyncDisconnecter::CAsyncDisconnecter(
-    CVPNConnAgt* aAgent):
-    CAsyncOneShot(EPriorityNormal)
-    {
-    iAgent = aAgent;
-    }
-
-// ---------------------------------------------------------------------------
-// NewL 
-// ---------------------------------------------------------------------------
-//
-CAsyncDisconnecter* CAsyncDisconnecter::NewL(
-    CVPNConnAgt* aAgent)
-    {
-    return new (ELeave) CAsyncDisconnecter(aAgent);
-    }
-
-// ---------------------------------------------------------------------------
-// ConfirmDisconnect 
-// ---------------------------------------------------------------------------
-//
-void CAsyncDisconnecter::ConfirmDisconnect()
-    {
-    Call();
-    }
-
-// ---------------------------------------------------------------------------
-// RunL 
-// ---------------------------------------------------------------------------
-//
-void CAsyncDisconnecter::RunL()
-    {
-    LOG_1("CAsyncDisconnecter::RunL, iStatus:%d", iStatus.Int() );
-    iAgent->Notify()->AgentProgress(EVPNConnAgtDisconnected, KErrNone);
-    iAgent->Notify()->DisconnectComplete();
-    }
-

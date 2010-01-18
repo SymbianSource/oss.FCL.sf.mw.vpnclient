@@ -1039,10 +1039,10 @@ TBool CIkev1Negotiation::ExecuteTransactionL( const ThdrISAKMP& aHdr,
 			                KKmdIkeAuthFailedErr,
 			                iPluginSession->VpnIapId(),
 			                &iRemoteAddr );
-			 SendDeleteL(PROTO_ISAKMP);
-             SetFinished(); 
-          }   
-       }       
+			 SendDeleteL( PROTO_ISAKMP );
+			 SetErrorStatus( KKmdIkeAuthFailedErr );
+          }
+       }    
     }
 	else ret = EFalse;
 

@@ -381,15 +381,55 @@ void CVpnApiServant::AddPolicyL(const RMessage2& aMessage)
 
     // Read policy data
     TInt len = aMessage.GetDesLength(SECOND_ARGUMENT);
-    HBufC8* policyData = HBufC8::NewL(len);
-    CleanupStack::PushL(policyData);
-
+    HBufC8* policyData = HBufC8::NewLC(len);
     TPtr8 ptrPolicyData = policyData->Des();
     aMessage.ReadL(SECOND_ARGUMENT, ptrPolicyData);
 
+    //Make a validy check to the policy data
+    //by parsing it and checking certificate formats
+    HBufC* policyData16 = HBufC::NewLC(policyData->Length());
+    policyData16->Des().Copy(*policyData);
+    
+    CIkeDataArray* ikeDataArray = CIkeDataArray::NewL(1);
+    CleanupStack::PushL(ikeDataArray);
+    
+    TIkeParser* ikeParser = new (ELeave) TIkeParser(*policyData16);
+    CleanupStack::PushL(ikeParser);
+    ikeParser->ParseIKESectionsL(ikeDataArray);
 
+    for (TInt i = 0; i < ikeDataArray->Count(); ++i)
+        {
+        const CIkeData* ikeData = ikeDataArray->At(i);
+        if (ikeData->iCAList != NULL)
+            {
+            for (TInt j = 0; j < ikeData->iCAList->Count(); j++)
+                {
+                if (ikeData->iCAList->At(j)->iFormat == BIN_CERT)
+                    {
+                    LOG(Log::Printf(_L("Policy contains BIN certificates --> Failing")));
+                    //Ca cert in wrong format --> Error
+                    User::Leave(KVpnErrInvalidPolicyFile);
+                    }
+                }            
+            }
+        if ((ikeData->iOwnCert.iData.Length() > 0 &&
+             ikeData->iOwnCert.iFormat == BIN_CERT) ||
+            (ikeData->iPrivKey.iData.Length() > 0 &&
+             ikeData->iPrivKey.iFormat == BIN_CERT) ||
+            (ikeData->iPeerCert.iData.Length() > 0 &&
+            ikeData->iPeerCert.iFormat == BIN_CERT))
+            {
+            LOG(Log::Printf(_L("Policy contains BIN certificates --> Failing")));    
+            //Key or user cert in wrong format
+            User::Leave(KVpnErrInvalidPolicyFile);
+            }        
+        }
+    
+    CleanupStack::PopAndDestroy(); //ikeParser
+    CleanupStack::PopAndDestroy(ikeDataArray);
+    CleanupStack::PopAndDestroy(policyData16);
+    
     LOG(Log::Printf(_L("Calling: iPolicyStore->AddNewPolicyL")));    
-    // Add the policy to the policy store
     TRAPD(err, iPolicyStore->AddNewPolicyL(*policyDetails, *policyData));
     if (err == KErrNone)
     {

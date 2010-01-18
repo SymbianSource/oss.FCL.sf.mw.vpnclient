@@ -21,7 +21,7 @@
 
 #include "vpnmanagerserver.h"
 #include "vpnmanagersession.h"
-#include "requestdispatcher.h"
+#include "vpnapiservant.h"
 
 
 const TUint CVpnManagerServer::iVpnManRangeCount = 3;
@@ -60,7 +60,7 @@ CVpnManagerServer::CVpnManagerServer(TInt aPriority) : CPolicyServer(aPriority,i
 
 CVpnManagerServer::~CVpnManagerServer()
     {
-    delete iRequestDispatcher;
+    delete iVpnApiServant;
     iFs.Close();
     }
 
@@ -83,7 +83,7 @@ void CVpnManagerServer::ConstructL()
     {
     User::LeaveIfError(iFs.Connect());
     User::LeaveIfError(iFs.CreatePrivatePath(EDriveC));
-    iRequestDispatcher = CRequestDispatcher::NewL(iFs);    
+    iVpnApiServant = CVpnApiServant::NewL(iFs);       
     StartL(KVpnManagerServer);
     }
 
@@ -102,7 +102,7 @@ CSession2* CVpnManagerServer::NewSessionL(
 
     // Make new session
     return CVpnManagerSession::NewL(*const_cast<CVpnManagerServer*>(this),
-                                    *iRequestDispatcher);
+                                    *iVpnApiServant);
     }
 
 void CVpnManagerServer::IncrementSessions()

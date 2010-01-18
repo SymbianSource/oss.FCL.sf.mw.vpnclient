@@ -20,29 +20,29 @@
 #include "vpnmanagerserver.h"
 #include "vpnmanagerserverdefs.h"
 #include "vpnmanagersession.h"
-#include "requestdispatcher.h"
+#include "vpnapiservant.h"
 #include <e32svr.h>
 
 CVpnManagerSession* CVpnManagerSession::NewL(CVpnManagerServer& aServer,
-                                             CRequestDispatcher& aRequestDispatcher)
+                                             CVpnApiServant& aVpnApiServant)
     {
-    CVpnManagerSession* self = CVpnManagerSession::NewLC(aServer, aRequestDispatcher);
+    CVpnManagerSession* self = CVpnManagerSession::NewLC(aServer, aVpnApiServant);
     CleanupStack::Pop(self);
     return self;
     }
 
 CVpnManagerSession* CVpnManagerSession::NewLC(CVpnManagerServer& aServer,
-                                              CRequestDispatcher& aRequestDispatcher)
+                                              CVpnApiServant& aVpnApiServant)
     {
-    CVpnManagerSession* self = new (ELeave) CVpnManagerSession(aServer, aRequestDispatcher);
+    CVpnManagerSession* self = new (ELeave) CVpnManagerSession(aServer, aVpnApiServant);
     CleanupStack::PushL(self) ;
     self->ConstructL() ;
     return self ;
     }
 
 CVpnManagerSession::CVpnManagerSession(CVpnManagerServer& aServer,
-                                       CRequestDispatcher& aRequestDispatcher)
-    : iServer(aServer), iRequestDispatcher(aRequestDispatcher)
+                                       CVpnApiServant& aVpnApiServant)
+    : iServer(aServer), iVpnApiServant(aVpnApiServant)
     {
     }
 
@@ -58,5 +58,5 @@ CVpnManagerSession::~CVpnManagerSession()
 
 void CVpnManagerSession::ServiceL(const RMessage2& aMessage)
     {
-    iRequestDispatcher.ServiceL(aMessage, this);
+    iVpnApiServant.ServiceL(aMessage);
     }

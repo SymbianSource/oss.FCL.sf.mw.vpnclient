@@ -23,8 +23,8 @@
 #include <e32base.h>
 
 class CVpnManagerServer;
-class CRequestDispatcher;
-   
+class CVpnApiServant;   
+
 /** 
  * A handler for the service requests received from clients.
  * An instance of class CVpnManagerSession is created for each client.
@@ -42,7 +42,7 @@ public:
      * @result Pointer to the new session
      */
     static CVpnManagerSession* NewL(CVpnManagerServer& aServer,
-                                    CRequestDispatcher& aRequestDispatcher);
+                                    CVpnApiServant& aVpnApiServant);
     /**
      * Creates a CVpnManagerSession object using two phase construction,
      * and returns a pointer to the created object
@@ -54,7 +54,7 @@ public:
      * @result Pointer to the new session
      */
     static CVpnManagerSession* NewLC(CVpnManagerServer& aServer,
-                                     CRequestDispatcher& aRequestDispatcher);
+                                     CVpnApiServant& aVpnApiServant);
 
 	/**
      * Destroy the object and release all memory objects
@@ -78,7 +78,7 @@ private: // New methods
      * @param The server
      */
     CVpnManagerSession(CVpnManagerServer& aServer,
-                       CRequestDispatcher& aRequestDispatcher);
+                       CVpnApiServant& aVpnApiServant);
 
     /**
      * The second phase of two phase construction
@@ -88,7 +88,7 @@ private: // New methods
 private:
     RMessage2               iMessage;
     CVpnManagerServer&      iServer;
-    CRequestDispatcher&     iRequestDispatcher;    
+    CVpnApiServant&         iVpnApiServant;    
     };
 
 #endif // __VPNMANAGERSESSION_H__

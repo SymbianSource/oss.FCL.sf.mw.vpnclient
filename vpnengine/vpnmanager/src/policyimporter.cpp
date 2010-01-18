@@ -92,6 +92,10 @@ void CPolicyImporter::ConstructL()
     {
     CActiveScheduler::Add(this);
     User::LeaveIfError(iPkiService.Connect());
+    
+    //Policy importer allow installation of
+    //future and expired certificates.
+    iPkiService.SetInformational(ETrue);
     }
 
 CPolicyImporter::~CPolicyImporter()

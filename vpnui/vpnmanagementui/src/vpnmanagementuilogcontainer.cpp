@@ -549,6 +549,8 @@ void CVpnManagementUiLogContainer::LogDetailsL(TInt aIndex)
         message = StringLoader::LoadLC( R_VPN_DETAIL_LOG_ENTRY_ERROR );
         }
 
+    __ASSERT_DEBUG(message != NULL, User::Invariant());
+    
     HBufC* messageText = HBufC::NewLC(message->Length() + eventText->Length() + 2);
 
     messageText->Des().Append(*message); //Append category

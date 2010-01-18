@@ -36,7 +36,6 @@ SOURCE          vpnapiservant.cpp
 SOURCE          vpnmanagersession.cpp
 SOURCE          vpnmanagerstarter.cpp
 SOURCE          uuid.cpp
-SOURCE          requestdispatcher.cpp
 SOURCE          eventlogger.cpp
 SOURCE          vpnmanagerserver.cpp
 SOURCE          cmmanagerutils.cpp
