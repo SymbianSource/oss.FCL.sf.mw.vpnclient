@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -11,7 +11,7 @@
 *
 * Contributors:
 *
-* Description:   Cleans VPN data from device
+* Description:  Cleans VPN data from device
 *
 */
 
@@ -23,20 +23,27 @@
 #include "vpncleaner.h"
 
 
-LOCAL_C void setKeysL();
+LOCAL_C void  setKeysL();
+LOCAL_C TBool vpnOnRom();
 
 
 // The starting point
 GLDEF_C TInt E32Main()
     {
     __UHEAP_MARK;
+
     CTrapCleanup* cleanup = CTrapCleanup::New();
-    
-    TVpnCleaner vpnc;
-    vpnc.Clean();
-    
-    TRAP_IGNORE( setKeysL() );
+
+    if( EFalse == vpnOnRom() )
+        {
+        TVpnCleaner vpnc;
+        vpnc.Clean();
+
+        TRAP_IGNORE( setKeysL() );
+        }
+
     delete cleanup;
+
     __UHEAP_MARKEND;
     return KErrNone;
     }
@@ -45,27 +52,37 @@ GLDEF_C TInt E32Main()
 LOCAL_C void setKeysL()
     {
     // Connecting and initialization:
-    CRepository* repository = CRepository::NewL( 
+    CRepository* repository = CRepository::NewL(
         KCRUidCommunicationSettings );
-    
+
+    repository->Set( KSettingsVPNSupported, 0 );
+    repository->Delete( KSettingsVPNImplementation );
+
+    delete repository;
+    }
+
+
+LOCAL_C TBool vpnOnRom()
+    {
+    TBool ret = EFalse;
+
     TUint fileAttr;
     RFs fs;
     TInt err = fs.Connect();
-    
+
     if ( KErrNone == err )
         {
-        _LIT( KRomPath, "z:\\sys\\bin\\kmdserver.exe" ); 
-        
-        if ( KErrNone != fs.Att( KRomPath, fileAttr ) )
+        _LIT( KRomPath, "z:\\sys\\bin\\kmdserver.exe" );
+
+        if ( KErrNone == fs.Att( KRomPath, fileAttr ) )
             {
-            repository->Set( KSettingsVPNSupported, 0 );
-            repository->Delete( KSettingsVPNImplementation );
+            ret = ETrue;
             }
         }
 
     fs.Close();
 
-    delete repository;
+    return ret;
     }
 
 

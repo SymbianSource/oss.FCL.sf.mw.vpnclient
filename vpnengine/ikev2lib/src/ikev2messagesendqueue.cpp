@@ -164,7 +164,7 @@ void CIkev2MessageSendQueue::NewSaBehindNatL(TUint aSaId)
     DEBUG_LOG1(_L("CIkev2MessageSendQueue::NewSaBehindNatL: SaId=%d"), aSaId);
     __ASSERT_DEBUG(iSasBehindNat.Find(aSaId) == KErrNotFound, User::Invariant());
     User::LeaveIfError(iSasBehindNat.Append(aSaId));    
-    if (!iSender->IsActive() && iNatKeepAliveInterval > 0)
+    if (!IsActive() && !iSender->IsActive() && iNatKeepAliveInterval > 0)
         {
         //No sending acticve arm the nat keepalive timer.
         ArmKeepaliveTimer();
@@ -221,6 +221,7 @@ void CIkev2MessageSendQueue::DoCancel()
 void CIkev2MessageSendQueue::ArmKeepaliveTimer()
     {
     DEBUG_LOG(_L("CIkev2MessageSendQueue::ArmKeepaliveTimer"));    
+    __ASSERT_DEBUG(!IsActive(), User::Invariant());
     //Arm NAT keepalive timer.
     if (iNatKeepAliveInterval > KMaxTInt/1000000 ) 
         {
