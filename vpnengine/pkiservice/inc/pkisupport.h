@@ -96,17 +96,14 @@ class CPKISupport : public CActive
         void AttachCertificateL(const TDesC &aLabel, 
             const TDesC8 &aBufferPtr, TRequestStatus& aStatus);
         
-        void RetrieveCertificateL(const TDesC &aLabel, 
-            const TPKIKeyIdentifier& aCertificateKeyId,
+        void RetrieveCertificateL(const TDesC &aLabel,             
             TPtr8 &aBufferPtr, const TPKICertificateOwnerType& aType, 
             TRequestStatus& aStatus);
                     
         void RemoveCertificateL(const TDesC &aLabel, 
-            const TPKIKeyIdentifier& aCertificateKeyId,
             TRequestStatus& aStatus);
                         
         void SelectCertificateL(const TDesC &aLabel, 
-                                const TPKIKeyIdentifier& aCertificateKeyId,
                                 const TPKICertificateOwnerType& aType = EPKICACertificate);
         
         // Asynchronous sertificate store request
@@ -116,15 +113,14 @@ class CPKISupport : public CActive
         TInt GetRequiredBufferSize();
         void SetCallerStatusPending(TRequestStatus& aStatus);
         void CompleteCallerStatus(TInt aError);
-        void SetTrustL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+        void SetTrustL(const TDesC &aLabel,
                        TBool aTrusted, TRequestStatus& aStatus);
-        void TrustedL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+        void TrustedL(const TDesC &aLabel,
                       TRequestStatus& aStatus);
-        void SetApplicabilityL(const TDesC &aLabel, 
-                               const TPKIKeyIdentifier& aCertificateKeyId, 
+        void SetApplicabilityL(const TDesC &aLabel,  
                                const RArray<TUid>& aApplUids, 
                                TRequestStatus& Status);
-        void ApplicationsL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+        void ApplicationsL(const TDesC &aLabel,
                            TRequestStatus& Status);
                     
         inline void SetCertStoreType(TPkiServiceStoreType aStoreType) 

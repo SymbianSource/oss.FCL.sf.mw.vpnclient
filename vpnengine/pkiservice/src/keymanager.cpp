@@ -367,6 +367,11 @@ void CKeyManager::RunL()
                     PKISERVICE_ASSERT(tempLength <= publicKeyPtr.MaxLength());
                     publicKeyPtr.Copy(publicKeyPtr.Ptr() + skip, tempLength);                                
                     }
+                else
+                		{
+                		delete *iPublicKeyData;	
+                		*iPublicKeyData = NULL;
+                		}
                 Cleanup();
                 User::RequestComplete(iClientStatus, iStatus.Int());                       
                 }

@@ -725,7 +725,6 @@ void CPKISupport::AttachCertificateL(const TDesC& aLabel,
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::RetrieveCertificateL(const TDesC &aLabel, 
-    const TPKIKeyIdentifier& aCertificateKeyId,
     TPtr8 &aBufferPtr, const TPKICertificateOwnerType& aType, 
     TRequestStatus& aStatus)
 {
@@ -735,7 +734,7 @@ void CPKISupport::RetrieveCertificateL(const TDesC &aLabel,
     iSubState = ESSContinue;
     iOutBufferPtr = &aBufferPtr;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aCertificateKeyId, aType);
+    SelectCertificateL(aLabel, aType);
 }
 
 // ---------------------------------------------------------------------------
@@ -1071,7 +1070,6 @@ void CPKISupport::DoRunLoggedInOperationL()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::RemoveCertificateL(const TDesC &aLabel, 
-    const TPKIKeyIdentifier& aCertificateKeyId,
     TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Remove certificate\n")));
@@ -1079,7 +1077,7 @@ void CPKISupport::RemoveCertificateL(const TDesC &aLabel,
     iCerts.Close();
     iSubState = ESSContinue;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aCertificateKeyId);
+    SelectCertificateL(aLabel);
 }
 
 // ---------------------------------------------------------------------------
@@ -1100,7 +1098,6 @@ void CPKISupport::ContinueRemoveCertificate()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::SetTrustL(const TDesC &aLabel, 
-    const TPKIKeyIdentifier& aCertificateKeyId,
     TBool aTrusted, TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("SetTrust\n")));
@@ -1109,7 +1106,7 @@ void CPKISupport::SetTrustL(const TDesC &aLabel,
     iSubState = ESSContinue;
     iTrusted = aTrusted;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aCertificateKeyId);
+    SelectCertificateL(aLabel);
 }
 
 // ---------------------------------------------------------------------------
@@ -1129,7 +1126,6 @@ void CPKISupport::ContinueSetTrust()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::TrustedL(const TDesC &aLabel, 
-                           const TPKIKeyIdentifier& aCertificateKeyId, 
                            TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Trusted\n")));
@@ -1137,7 +1133,7 @@ void CPKISupport::TrustedL(const TDesC &aLabel,
     iCerts.Close();
     iSubState = ESSContinue;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aCertificateKeyId);
+    SelectCertificateL(aLabel);
 }
 
 // ---------------------------------------------------------------------------
@@ -1157,7 +1153,6 @@ void CPKISupport::ContinueTrusted()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::SetApplicabilityL(const TDesC &aLabel, 
-                                    const TPKIKeyIdentifier& aCertificateKeyId,
                                     const RArray<TUid>& aApplUids, TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("SetApplicability\n")));
@@ -1170,7 +1165,7 @@ void CPKISupport::SetApplicabilityL(const TDesC &aLabel,
 		iApplUids.Append(aApplUids[i]);
 		}
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aCertificateKeyId);
+    SelectCertificateL(aLabel);
 }
 
 // ---------------------------------------------------------------------------
@@ -1190,7 +1185,7 @@ void CPKISupport::ContinueSetApplicability()
 // ?description_if_needed
 // ---------------------------------------------------------------------------
 //
-void CPKISupport::ApplicationsL(const TDesC &aLabel, const TPKIKeyIdentifier& aCertificateKeyId,
+void CPKISupport::ApplicationsL(const TDesC &aLabel,
                                 TRequestStatus& aStatus)
 {
     LOG(Log::Printf(_L("Applications\n")));
@@ -1198,7 +1193,7 @@ void CPKISupport::ApplicationsL(const TDesC &aLabel, const TPKIKeyIdentifier& aC
     iCerts.Close();
     iSubState = ESSContinue;
     SetCallerStatusPending( aStatus );
-    SelectCertificateL(aLabel, aCertificateKeyId);
+    SelectCertificateL(aLabel);
 }
 
 // ---------------------------------------------------------------------------
@@ -1220,7 +1215,6 @@ void CPKISupport::ContinueApplications()
 // ---------------------------------------------------------------------------
 //
 void CPKISupport::SelectCertificateL(const TDesC &aLabel, 
-                                     const TPKIKeyIdentifier& aCertificateKeyId,
                                      const TPKICertificateOwnerType& aType )
 {
     delete iCertFilter;
@@ -1229,7 +1223,7 @@ void CPKISupport::SelectCertificateL(const TDesC &aLabel,
 
     LOG(Log::Printf(_L(" Select by label: %S\n"), &aLabel));
     iCertFilter->SetLabel(aLabel);
-    iCertFilter->SetSubjectKeyId(aCertificateKeyId);
+
     if (aType != 0) 
         {
         LOG_1(" Select by owner type: %d", aType);

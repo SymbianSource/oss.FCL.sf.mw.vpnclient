@@ -310,7 +310,6 @@ void CPKIWrapper::ExecuteReadCertificateL()
         const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);        
         iCurrentState = EComplete;
         iPKISupport->RetrieveCertificateL(mapping.Label(),
-                                          mapping.CertificateKeyId(),
                                           iPtrCertBuffer, mapping.OwnerType(), iStatus);
         SetActive();
         }
@@ -413,9 +412,7 @@ void CPKIWrapper::ExecuteAttachCertificateL()
                                                       storeType);  
     CleanupStack::PushL(newMapping);            
     newMapping->SetMapDeletable(iCurrentDescriptor().iIsDeletable);
-
-            
-    
+                
     iCurrentStatus = KErrNone;
     iCurrentState = EComplete;
     LOG(Log::Printf(_L("Attaching certificate")));
@@ -446,11 +443,9 @@ void CPKIWrapper::ExecuteRemoveCertificateL()
                                         iPKISupport->CertStoreType());
     if(iCurrentStatus == KErrNone)
         {
-        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
-        TPKIKeyIdentifier keyId = mapping.CertificateKeyId();
         iMapper.DeleteMapping(index);
         iCurrentState = EComplete;
-        iPKISupport->RemoveCertificateL(*iObjectName, keyId, iStatus);
+        iPKISupport->RemoveCertificateL(*iObjectName, iStatus);
         SetActive();
         }
     }
@@ -473,7 +468,7 @@ void CPKIWrapper::ExecuteSetTrustL()
         if (mapping.OwnerType() == EPKICACertificate)
             {            
             iCurrentState = EComplete;
-            iPKISupport->SetTrustL(*iObjectName, mapping.CertificateKeyId(), 
+            iPKISupport->SetTrustL(*iObjectName, 
                                    iTrusted, iStatus);
             SetActive();
             }
@@ -498,9 +493,8 @@ void CPKIWrapper::ExecuteTrustedL()
                                                             iPKISupport->CertStoreType());
     if(iCurrentStatus == KErrNone)
         {
-        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
         iCurrentState = EComplete;
-        iPKISupport->TrustedL(*iObjectName, mapping.CertificateKeyId(), iStatus);
+        iPKISupport->TrustedL(*iObjectName, iStatus);
         SetActive();
         }
     }
@@ -521,9 +515,8 @@ void CPKIWrapper::ExecuteSetApplicabilityL()
     if(iCurrentStatus == KErrNone)
         {
         LOG_1("ExecuteSetApplicabilityL:%d", iIndex);
-        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
         iCurrentState = EComplete;
-        iPKISupport->SetApplicabilityL(*iObjectName, mapping.CertificateKeyId(), iUidArray, iStatus);
+        iPKISupport->SetApplicabilityL(*iObjectName, iUidArray, iStatus);
         SetActive();
         }
     }
@@ -543,9 +536,8 @@ void CPKIWrapper::ExecuteApplicationsL()
     iUidArray.Close();
     if(iCurrentStatus == KErrNone)
         {
-        const CMapDescriptor& mapping = iMapper.GetMapDescriptorAtIndex(index);
         iCurrentState = EComplete;
-        iPKISupport->ApplicationsL(*iObjectName, mapping.CertificateKeyId(), iStatus);
+        iPKISupport->ApplicationsL(*iObjectName, iStatus);
         SetActive();
         }
 }
