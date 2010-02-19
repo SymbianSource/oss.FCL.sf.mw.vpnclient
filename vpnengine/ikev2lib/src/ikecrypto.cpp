@@ -22,9 +22,11 @@
 
 CDHKeys* CDHKeys::NewL(const TDesC8& aN, const TDesC8& aG)
 {
-    CDHKeys *keys = new (ELeave) CDHKeys();
+    CDHKeys* keys = new (ELeave) CDHKeys();
+    CleanupStack::PushL(keys);
     keys->iDHKey = TUtlCrypto::MakeDiffieHellmanL(aN, aG);
-	keys->iModuluslength = aN.Length();
+    keys->iModuluslength = aN.Length();
+    CleanupStack::Pop(keys);
     return keys;
 }
 

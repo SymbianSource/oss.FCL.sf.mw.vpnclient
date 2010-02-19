@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2000-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2000-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -24,8 +24,10 @@
 #include <in_iface.h>
 #include <tunnelnifvar.h>
 #include <d32dbmsconstants.h>
+#include <featmgr.h>
 
 #include "vpnconnagt.h"
+#include "vpnsipobserver.h"
 
 
 /***************CVPNConnAgtFactory********************/
@@ -76,6 +78,8 @@ CVPNConnAgt::CVPNConnAgt() :
 
     iEventActivatedClose = EFalse;
     iDisconnectType = (TDeactivateType)NORMAL_DISCONNECT_MODE; // means the normal way to shutdown
+    
+    iFeatureManagerInitialized = EFalse;
     }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +91,18 @@ CVPNConnAgt::~CVPNConnAgt()
     LOG(TName name;
     name.AppendFormat(_L("[0x%08x]"), this);
     Log::Printf(_L("%s Destructing VPN Connection Agent\n"),name.PtrZ()));
+
+    if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
+        {
+        delete iSipObserver;
+        iSipObserver = NULL;
+        }
+        
+    if ( iFeatureManagerInitialized )
+        {
+        // We can safely call UnInitializeLib as we have really intialized it.
+        FeatureManager::UnInitializeLib();  // Decreases ref.count
+        }
 
     iEventMediator.Close();
     
@@ -121,6 +137,17 @@ inline void CVPNConnAgt::ConstructL()
     iDisconnecting = EFalse;
     LOG_("CVPNConnAgt::ReadConfigurationL EventMediator");
     User::LeaveIfError(iEventMediator.Connect());
+        
+    // Initialize Feature Manager.
+    FeatureManager::InitializeLibL();  // Successfull call increases reference count
+    iFeatureManagerInitialized = ETrue;
+   
+    // Create CVpnSipObserver for communicating with SIP profile server via 
+    // P&S keys for SIP de/re-registration. this pointer is passed to have call back.
+    if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
+        {
+        iSipObserver = CVpnSipObserver::NewL( *this );
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -293,6 +320,38 @@ void CVPNConnAgt::ServiceStarted(TInt& aError)
         return;
         }
  
+    // SIP is deregistered before starting a VPN session. First tell SIP profile server to 
+    // perform deregistration.  And when it's completed, continue VPN session start.
+    // Note: A wait note is not used here for holding VPN session starting process because 
+    // CInternetConnectionManager is showing one.
+    // Tell SIP Profile Server to perform deregistration before proceeding VPN start.
+    // Multiple VPN connection use cases are handled in SIP side.  VPN just notifies SIP
+    // a VPN session is about to start.
+    if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
+        {
+        // For some reason, if the request fails, just proceeds.
+        if ( iSipObserver->RequestDeregister() != KErrNone )
+            {
+            ProceedServiceStart();
+            }
+        // Return for now. ProceedServiceStart() will be called later by iSipObserver when
+        // deregistration process has been completed. Then VPN start process will be actually
+        // initiated.
+        return;
+        }
+    // If KFeatureIdFfImsDeregistrationInVpn is disabled, no SIP deregisration is performed.
+    else
+        {
+        ProceedServiceStart();
+        }
+    }
+ 
+/****************************************************************************/
+/* ProceedServiceStart()                                                    */
+/* Proceed VPN session start process                                        */
+/****************************************************************************/
+void CVPNConnAgt::ProceedServiceStart()
+    {
     LOG_1("[0x%08x] Get protocol version\n", this);
     iProtocolVersionDes().iId = iEventMediator.NewEventSpecId();
     iProtocolVersionDes().iPolicyId = *(iVPNParameters.GetVPNPolicy());
@@ -408,6 +467,13 @@ void CVPNConnAgt::DisconnectionComplete()
         return;
         }
 
+    if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
+        {
+        // SIP is re-registered when a VPN session ends.
+        // Note: return value ignored. Nothing to do here for error cases.
+        iSipObserver->RequestRegister();
+        }
+
     iNotify->AgentProgress(EVPNConnAgtDisconnected, KErrNone);
     iNotify->DisconnectComplete();
     iDisconnecting = EFalse;
@@ -499,6 +565,14 @@ void CVPNConnAgt::EventOccured(TInt aStatus, TEventType aType, TDesC8* aData)
             break;
         case ECloseVpnConnEvent:
             LOG(Log::Printf(_L("%s ECloseVpnConnEvent\n"),name.PtrZ()));
+                
+            if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
+                {
+                // SIP is re-registered when a VPN session ends.
+                // Note: return value ignored. Nothing to do here for error cases.
+                iSipObserver->RequestRegister();
+                }    
+            
             closeData = (TCloseVpnConnEventData*)(aData->Ptr());
             if ( closeData->iTaskStatus )
                 {

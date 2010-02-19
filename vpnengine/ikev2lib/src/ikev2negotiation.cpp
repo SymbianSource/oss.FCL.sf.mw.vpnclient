@@ -2942,8 +2942,7 @@ TBool CIkev2Negotiation::ProcessInfoMsgL(CIkev2Payloads* aIkeMsg)
 		     SendIkeMsgL(ikeMsg);
              if ( (iState != KStateIkeInfoRequest) && (iState != KStateIkeDeleteRequest) && (iState != KStateIkeDeleteResponse) )
                  {
-                 iState = KStateIkeInfoResponse;
-                 iIkeV2PlugInSession.UpdateIkev2SAL(&iHdr, NULL);
+                 iState = KStateIkeSaCompleted;
                  }
 		  }
 	   }
@@ -3187,8 +3186,7 @@ TBool CIkev2Negotiation::ProcessDeletePayloadsL(const CArrayFixFlat<TDeletePlIke
         CleanupStack::Pop(ikeMsg);
         SendIkeMsgL(ikeMsg);
     	CleanupStack::PopAndDestroy(SpiList); 
-		iState = KStateIkeInfoResponse;		
-		iIkeV2PlugInSession.UpdateIkev2SAL(&iHdr, NULL);
+		iState = KStateIkeSaCompleted;		
 		aRequest = EFalse;
 	}
 		

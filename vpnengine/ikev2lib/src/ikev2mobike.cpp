@@ -192,7 +192,7 @@ TBool Ikev2MobIke::ProcessNotifysL(CIkev2Negotiation* aNegotiation,
 		aNegotiation->SendIkeMsgL(ikeMsg);
 		aNegotiation->iIkeV2PlugInSession.UpdateIkev2SAL(&aNegotiation->iHdr, NULL);
 		if ( (aNegotiation->iState != KStateIkeInfoRequest) && (aNegotiation->iState != KStateIkeDeleteRequest) && (aNegotiation->iState != KStateIkeDeleteResponse) )
-		   aNegotiation->iState = KStateIkeInfoResponse;
+		   aNegotiation->iState = KStateIkeSaCompleted;
 	}
    //	
    // else
