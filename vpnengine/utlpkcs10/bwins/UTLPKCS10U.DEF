@@ -9,4 +9,5 @@ EXPORTS
 	?SetDistinguishedNameExtendedL@CPkcs10Req@@QAEHABVTDesC8@@@Z @ 8 NONAME ; int CPkcs10Req::SetDistinguishedNameExtendedL(class TDesC8 const &)
 	?SetPublicKey@CPkcs10Req@@QAEHABVTDesC8@@@Z @ 9 NONAME ; int CPkcs10Req::SetPublicKey(class TDesC8 const &)
 	?SetSubjectAltNameRfc822@CPkcs10Req@@QAEHABVTDesC8@@@Z @ 10 NONAME ; int CPkcs10Req::SetSubjectAltNameRfc822(class TDesC8 const &)
+	??0CPkcs10Req@@QAE@XZ @ 11 NONAME ; CPkcs10Req::CPkcs10Req(void)
 

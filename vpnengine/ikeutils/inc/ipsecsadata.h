@@ -33,7 +33,7 @@ class TIpsecSALifetime;
 class TIpsecSAData
     {
 public:
-    TIpsecSAData();
+    IMPORT_C TIpsecSAData();
     
 public: // data
     TUint8      iSAType;

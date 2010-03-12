@@ -65,8 +65,7 @@ void CmManagerUtils::CreateVPNConnectionMethodToIntranetL(const TVpnPolicyInfo& 
     if ( internetDestinationId != 0)
         {                        
         //Generate name for the connection method
-        HBufC* name = CreateConnectionMethodNameLC(cmManagerExt,
-                                                   aVpnPolicyInfo.iName);
+        HBufC* name = CreateConnectionMethodNameLC(aVpnPolicyInfo.iName);
         
         //Create VPN connection method        
         RCmConnectionMethodExt vpnConnectionMethod =
@@ -111,59 +110,16 @@ void CmManagerUtils::SetVpnConnectionMethodAttributesL(RCmConnectionMethodExt& a
     LOG_("CmManagerUtils::SetVpnConnectionMethodAttributesL - end \n");
     }
 
-HBufC* CmManagerUtils::CreateConnectionMethodNameLC(RCmManagerExt& aCmManagerExt,
-                                                    const TDesC& aPolicyName)
+HBufC* CmManagerUtils::CreateConnectionMethodNameLC(const TDesC& aPolicyName)
     {
-    using namespace CMManager;
-    
+       
     LOG_("CmManagerUtils::CreateConnectionMethodNameLC \n");
     
     HBufC* name = HBufC::NewLC(KMaxDestinationNameLength);
     TPtr namePtr = name->Des();
     
-    RArray<TUint32> connections;
-    CleanupClosePushL( connections );    
-    aCmManagerExt.ConnectionMethodL( connections, EFalse, EFalse, EFalse );
+    namePtr.Copy(aPolicyName.Left(KMaxDestinationNameLength));   
     
-    TInt connectionMethodCount = connections.Count();    
-    TBool matchFound = EFalse;
-    TInt counter = 1;
-    do 
-        {       
-        matchFound = EFalse;
-        
-        namePtr.Copy(aPolicyName.Left(KMaxDestinationNameLength));   
-        if (counter > 1)
-            {
-            TBuf<10> numberValue;
-            numberValue.Format(_L("(%d)"), counter);
-            if (namePtr.MaxLength() < numberValue.Length() + namePtr.Length())                
-                {
-                namePtr.SetLength(namePtr.MaxLength() - numberValue.Length());
-                
-                }
-            namePtr.Append(numberValue);
-            }
-             
-        for (TInt i = 0; i < connectionMethodCount; i++)
-            {
-           RCmConnectionMethodExt connectionMethod = aCmManagerExt.ConnectionMethodL( connections[i] );
-           CleanupClosePushL(connectionMethod);
-           HBufC* existingName = connectionMethod.GetStringAttributeL( ECmName );
-           CleanupStack::PopAndDestroy(); //connectionMethod
-            
-            if (name->Compare(*existingName) == 0)
-                {
-                delete existingName;
-                matchFound = ETrue;
-                break;
-                }                   
-            delete existingName;                    
-            }
-        counter++;
-        }while(matchFound);
-        
-    CleanupStack::PopAndDestroy(); // connections    
     LOG_("CmManagerUtils::CreateConnectionMethodNameLC - end \n");
     return name;
     }

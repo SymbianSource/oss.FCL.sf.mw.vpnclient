@@ -8,8 +8,7 @@
     <layer name="mw_layer">
       <module name="vpnclient"> 
      	<unit unitID="netdo.vpnclient"
-       mrp="" bldFile="&layer_real_source_path;/group"
-       filter="!oem_build" name="vpnclient" />
+       mrp="" bldFile="&layer_real_source_path;/group" name="vpnclient" />
      </module>
     </layer>
   </systemModel>

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -833,37 +833,12 @@ void CIkev1Negotiation::GetAcquireDataL(const TPfkeyMessage &aReq)
         }  
     }
 
-    //Only Hard Lifetimes taken into account
-    TInt64 lifetime64 = aReq.iProposal.iComb->sadb_comb_soft_addtime;
-    iHardLifetime = aReq.iProposal.iComb->sadb_comb_hard_addtime;
-    
-    if ( lifetime64 == 0 )
-        {
-        lifetime64 = iHardLifetime;
-        }
-    
-    TUint high = 0;
-    TUint low = 0;
-    if (lifetime64!=0)
-    {
-        high = ByteOrder::Swap32(I64HIGH(lifetime64));
-        if (high > 0)
-            attr_II->iLifeDurationSecs.Copy((TUint8 *)&high, sizeof(high));
-        low = ByteOrder::Swap32(I64LOW(lifetime64));
-        attr_II->iLifeDurationSecs.Append((TUint8 *)&low, sizeof(low));
-    }
-
-    //Bytes lifetime
-    lifetime64 = aReq.iProposal.iComb->sadb_comb_soft_bytes;
-    lifetime64 = (lifetime64/1024); //Bytes to KB
-    if (lifetime64 != 0)
-    {
-        high = ByteOrder::Swap32(I64HIGH(lifetime64));      
-        if (high > 0)
-            attr_II->iLifeDurationKBytes.Copy((TUint8 *)&high, sizeof(high));
-        low = ByteOrder::Swap32(I64LOW(lifetime64));        
-        attr_II->iLifeDurationKBytes.Append((TUint8 *)&low, sizeof(low));
-    }
+    SetPhase2LifeDurations( aReq.iProposal.iComb->sadb_comb_soft_addtime,
+                            aReq.iProposal.iComb->sadb_comb_hard_addtime,
+                            aReq.iProposal.iComb->sadb_comb_soft_bytes,
+                            aReq.iProposal.iComb->sadb_comb_hard_bytes,
+                            *attr_II,
+                            EFalse );
 
     //Save some pf_key data to use later in PFKEY_UPDATE msg
     iAcquireSeq = aReq.iBase.iMsg->sadb_msg_seq;        //msg Seq. number
@@ -1735,31 +1710,14 @@ TInt CIkev1Negotiation::BuildProposals2L()
             break;
 		}
 		
-        //Only Hard Lifetimes taken into account
-        TInt64 lifetime64 = spec->iHard.iAddTime;
-        TUint high = 0;
-        TUint low = 0;
-        if (lifetime64!=0)
-        {
-            high = ByteOrder::Swap32(I64HIGH(lifetime64));          
-            if (high > 0)
-                attr_II->iLifeDurationSecs.Copy((TUint8 *)&high, sizeof(high));
-            low = ByteOrder::Swap32(I64LOW(lifetime64));                        
-            attr_II->iLifeDurationSecs.Append((TUint8 *)&low, sizeof(low));
-        }
+	    SetPhase2LifeDurations( spec->iSoft.iAddTime,
+                                spec->iHard.iAddTime,
+                                spec->iSoft.iBytes,
+                                spec->iHard.iBytes,
+	                            *attr_II,
+	                            ETrue );
 
-        //Bytes lifetime
-        lifetime64 = spec->iHard.iBytes;
-        lifetime64 = (lifetime64/1024); //Bytes to KB
-        if (lifetime64 != 0)
-        {
-            high = ByteOrder::Swap32(I64HIGH(lifetime64));                      
-            if (high > 0)
-                attr_II->iLifeDurationKBytes.Copy((TUint8 *)&high, sizeof(high));
-            low = ByteOrder::Swap32(I64LOW(lifetime64));                                    
-            attr_II->iLifeDurationKBytes.Append((TUint8 *)&low, sizeof(low));
-        }
-        if (iPFS)
+	    if (iPFS)
         {
             switch (iHostData->iGroupDesc_II)
             {
@@ -3938,7 +3896,6 @@ TBool CIkev1Negotiation::ProcessStage1Phase2L(const ThdrISAKMP &aHdr)
         AppendAttributeError(num, err_buf);
         DEBUG_LOG(err_buf);
 #endif        
-        SetErrorStatus( KKmdIkeNoProposalErr );
         SendNotifyL(NO_PROPOSAL_CHOSEN);
         CleanupStack::PopAndDestroy(3); //transarray + recv_proposals + payload
         return EFalse;
@@ -4011,7 +3968,7 @@ void CIkev1Negotiation::CreateChosenProposalL(CProposal_IIList* aPropList, TInt 
     }
     
     TTransModifier *tmodif;
-    TInt64 own_time, own_bytes, peer_time, peer_bytes;
+    TInt64 own_time, own_bytes, peer_time, peer_bytes, responderLifetime_time, responderLifetime_bytes;
     delete iChosenProp_IIList;  //Must be erased because can contain data from previous retransmissions
 	iChosenProp_IIList = NULL;	
     iChosenProp_IIList = new (ELeave) CProposal_IIList(1);
@@ -4037,6 +3994,7 @@ void CIkev1Negotiation::CreateChosenProposalL(CProposal_IIList* aPropList, TInt 
         attr_II = prop->iAttrList->At(tmodif->iTransNum);   //look for the chosen transform in the prop
         ComputeLifetimes_II(tmodif->iReducedLifeSecs, tmodif->iReducedLifeKBytes, own_time, own_bytes);
         ComputeLifetimes_II(attr_II->iLifeDurationSecs, attr_II->iLifeDurationKBytes, peer_time, peer_bytes);
+        ComputeLifetimes_II(tmodif->iResponderLifetimeSecs, tmodif->iResponderLifetimeKBytes, responderLifetime_time, responderLifetime_bytes);
         
         //Only copy the chosen transform
         new_attr_II = new (ELeave) TChosenAttrib_II();
@@ -4057,7 +4015,19 @@ void CIkev1Negotiation::CreateChosenProposalL(CProposal_IIList* aPropList, TInt 
         }
         else
             new_attr_II->iReducedLifeKBytes.Set(NULL, 0);
+        
+        if (responderLifetime_time)
+        {
+            new_attr_II->iResponderLifetimeSecs = tmodif->iResponderLifetimeSecs;
+            DEBUG_LOG1(_L("Responder lifetime set to %d"), responderLifetime_time);        
+        }
 
+        if (responderLifetime_bytes)
+        {
+            new_attr_II->iResponderLifetimeKBytes = tmodif->iResponderLifetimeKBytes;
+            DEBUG_LOG1(_L("Responder lifetime in bytes set to %d"), responderLifetime_bytes);        
+        }
+        
         new_propII->iAttrList->AppendL(new_attr_II);
         CleanupStack::Pop();    //new_attrII safe
 
@@ -7347,17 +7317,12 @@ TBool CIkev1Negotiation::ComputeKeysL()
         prf_data->Des().Copy(iNONCE_I.Ptr(),iNONCE_I.Length());
         prf_data->Des().Append(iNONCE_R.Ptr(),iNONCE_R.Length());
         DEBUG_LOG(_L("Pre-shared Key"));
-#ifdef _UNICODE
-        HBufC8 *preshared_key_buf = HBufC8::NewLC(iHostData->iPresharedKey.iKey.Length());
-        preshared_key_buf->Des().Copy(iHostData->iPresharedKey.iKey);
+
+        HBufC8 *preshared_key_buf = GetPskFromPolicyL();
+        CleanupStack::PushL(preshared_key_buf);        
         TPtrC8 preshared_key_ptr(preshared_key_buf->Des());
-#else
-        TPtrC8 preshared_key_ptr(iHostData->iPresharedKey.iKey);
-#endif
         ComputePRFL(iSKEYID, preshared_key_ptr, prf_data->Des());
-#ifdef _UNICODE
-        CleanupStack::PopAndDestroy();  //presharedkey_buf
-#endif
+        CleanupStack::PopAndDestroy(preshared_key_buf);
         }
         break;
     default://method not implemented
@@ -8091,7 +8056,10 @@ void CIkev1Negotiation::CheckSendResponderLifetime(TIkev1IsakmpStream &aMsg)
         attr_II = (TChosenAttrib_II *)prop->iAttrList->At(0);   //only 1 transform is chosen no matter how many there are
 
         if ((attr_II->iReducedLifeSecs.Length() != 0) || (attr_II->iReducedLifeKBytes.Length() != 0))   //Any lifetime to update
-            aMsg.IsakmpResponderLifetime(prop->iProtocol, inboundspi_node.iSPI, attr_II->iReducedLifeSecs, attr_II->iReducedLifeKBytes);
+            aMsg.IsakmpResponderLifetime(prop->iProtocol,
+                                         inboundspi_node.iSPI,
+                                         attr_II->iResponderLifetimeSecs,
+                                         attr_II->iResponderLifetimeKBytes);
 
     }
 }
@@ -8302,5 +8270,127 @@ void CIkev1Negotiation::SaveLastMsgL()
         }    
 }
 
+HBufC8* CIkev1Negotiation::GetPskFromPolicyL()
+{
+    ASSERT(iHostData);
+    //
+    // Get Preshared Key from IKE policy and return in to caller in
+    // HBufc8.
+    //
+    HBufC8* psk = NULL;
+    if ( iHostData->iPresharedKey.iFormat ==  STRING_KEY )
+    {
+        psk = HBufC8::NewL(iHostData->iPresharedKey.iKey.Length());
+        psk->Des().Copy(iHostData->iPresharedKey.iKey);
+    }
+    else if ( iHostData->iPresharedKey.iFormat == HEX_KEY ) 
+    {
+        psk = HBufC8::NewL(iHostData->iPresharedKey.iKey.Length() / 2);        
+        
+        for(TInt i = 0; i < iHostData->iPresharedKey.iKey.Length(); i += 2)
+        {        
+            TPtrC hexByte(iHostData->iPresharedKey.iKey.Mid(i, 2));
+            TLex lex(hexByte);
+            TUint8 value;
+            User::LeaveIfError(lex.Val(value, EHex));
+            
+            psk->Des().Append(&value, 1);
+        }
+        
+    }
+
+    return psk;
+}
+
+void CIkev1Negotiation::SetPhase2LifeDurations( const TInt64 aSoftAddTime,
+                                                const TInt64 aHardAddTime,
+                                                const TInt64 aSoftBytes,
+                                                const TInt64 aHardBytes,
+                                                TAttrib_II& aAttr_II,
+                                                TBool aResponder )    
+{
+    TInt64 lifetime64 = aSoftAddTime;
+    iHardLifetime = aHardAddTime;
+    
+    if ( lifetime64 == 0 ||
+         aResponder )
+        {
+        lifetime64 = iHardLifetime;
+        }
+    
+    TUint high = 0;
+    TUint low = 0;
+    if ( lifetime64 != 0 )
+        {
+        high = ByteOrder::Swap32(I64HIGH(lifetime64));
+        if (high > 0)
+            {
+            aAttr_II.iLifeDurationSecs.Copy((TUint8 *)&high, sizeof(high));
+            }
+        low = ByteOrder::Swap32(I64LOW(lifetime64));
+        aAttr_II.iLifeDurationSecs.Append((TUint8 *)&low, sizeof(low));
+        }
+    
+    if ( aResponder )
+        {
+        // Set responder lifetime.
+        lifetime64 = aSoftAddTime;
+        if ( lifetime64 == 0 )
+            {
+            lifetime64 = iHardLifetime;
+            }    
+        
+        if ( lifetime64 != 0 )
+            {
+            high = ByteOrder::Swap32(I64HIGH(lifetime64));
+            if (high > 0)
+                {
+                aAttr_II.iResponderLifetimeSecs.Copy((TUint8 *)&high, sizeof(high));            
+                }
+            low = ByteOrder::Swap32(I64LOW(lifetime64));
+            aAttr_II.iResponderLifetimeSecs.Append((TUint8 *)&low, sizeof(low));
+            }        
+        }
+
+    //Bytes lifetime
+    lifetime64 = aSoftBytes;
+    
+    if ( lifetime64 == 0 ||
+         aResponder )
+        {
+        lifetime64 = aHardBytes;
+        }
+        
+    lifetime64 = (lifetime64/1024); //Bytes to KB
+    if ( lifetime64 != 0 )
+        {
+        high = ByteOrder::Swap32(I64HIGH(lifetime64));      
+        if (high > 0)
+            aAttr_II.iLifeDurationKBytes.Copy((TUint8 *)&high, sizeof(high));
+        low = ByteOrder::Swap32(I64LOW(lifetime64));        
+        aAttr_II.iLifeDurationKBytes.Append((TUint8 *)&low, sizeof(low));
+        }    
+    
+    if ( aResponder )
+        {
+        // Set responder lifetime.
+        if ( lifetime64 == 0 )
+            {
+            lifetime64 = iHardLifetime;
+            }    
+        lifetime64 = (lifetime64/1024); //Bytes to KB
+        
+        if ( lifetime64 != 0 )
+            {
+            high = ByteOrder::Swap32(I64HIGH(lifetime64));
+            if (high > 0)
+                {
+                aAttr_II.iResponderLifetimeKBytes.Copy((TUint8 *)&high, sizeof(high));            
+                }
+            low = ByteOrder::Swap32(I64LOW(lifetime64));
+            aAttr_II.iResponderLifetimeKBytes.Append((TUint8 *)&low, sizeof(low));
+            }        
+        }    
+}
 
 

@@ -29,7 +29,7 @@
 // Build internal address info object from internal address information. 
 // ---------------------------------------------------------------------------
 //
-void VPNAddrInfo::BuildVPNAddrInfo( const CInternalAddress* aInternalAddr,
+EXPORT_C void VPNAddrInfo::BuildVPNAddrInfo( const CInternalAddress* aInternalAddr,
                                     const TInetAddr& aDnsServerAddr,
                                     TVPNAddress& aVPNAddress,
                                     MIkeDebug& aDebug )

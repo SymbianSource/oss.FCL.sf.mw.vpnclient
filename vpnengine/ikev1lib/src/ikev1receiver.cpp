@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -82,7 +82,18 @@ void CIkev1Receiver::ConstructL()
 //
 void CIkev1Receiver::StartReceive()
     {
+    iReceiving = ETrue;
     DoReceive();
+    }
+
+// ---------------------------------------------------------------------------
+// Cancels receive.
+// ---------------------------------------------------------------------------
+//
+void CIkev1Receiver::CancelReceive()
+    {
+    iReceiving = EFalse;
+    Cancel();
     }
 
 // ---------------------------------------------------------------------------
@@ -112,13 +123,15 @@ void CIkev1Receiver::RunL()
         }
     else
         {
+        iReceiving = EFalse;
         iCallback.ReceiveError( iStatus.Int() );
         }
     
     delete iUdpData;
     iUdpData = NULL;
     
-    if ( iStatus.Int() == KErrNone )
+    if ( iReceiving &&
+         iStatus.Int() == KErrNone )
         {
         // Continue receiving.
         DoReceive();
@@ -145,6 +158,8 @@ void CIkev1Receiver::DoCancel()
 //
 TInt CIkev1Receiver::RunError( TInt aError )
     {
+    iReceiving = EFalse;
+    
     delete iUdpData;
     iUdpData = NULL;
     

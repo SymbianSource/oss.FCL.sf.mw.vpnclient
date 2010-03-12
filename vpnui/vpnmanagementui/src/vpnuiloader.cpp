@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003 - 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003 - 2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -70,12 +70,6 @@ CVpnUiLoader::~CVpnUiLoader()
     {
     LOG_("CVpnUiLoader::~CVpnUiLoader()");
     iVpnManagementUiView = NULL;
-    
-    if ( iLogViewVisited == EFalse )
-       delete iVpnManagementUiLogView;
-        
-    if ( iPolicyViewVisited == EFalse )
-       delete iVpnManagementUiPolicyView;
        
     delete iVpnManagementUiParametersView;
     delete iVpnManagementUiServerView;
@@ -139,12 +133,8 @@ void CVpnUiLoader::ConstructL( const TRect& aRect, TUid aViewId )
     
 	iPreviousAppViewId = aViewId;
 	CreateWindowL();
-
-    iVpnManagementUiPolicyView = CVpnManagementUiPolicyView::NewL( 
-        aRect, *this);
     iVpnManagementUiServerView = CVpnManagementUiServerView::NewL( 
         aRect, *this);
-    iVpnManagementUiLogView = CVpnManagementUiLogView::NewL( aRect, *this);
     iVpnManagementUiParametersView = CServerSettingsView::NewL( aRect, *this);
 
 	SetRect(aRect);
@@ -197,11 +187,12 @@ void CVpnUiLoader::ChangeViewL(TInt aNewTab, TInt aSelectionIndex)
             }
 		case KChangeViewBack:
       ((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiPolicyViewId);
+		    iPolicyViewVisited = EFalse;
 			((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiLogViewId);
+			iLogViewVisited = EFalse;
 			((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiParametersViewId);
 			((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiServerViewId);
 			((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL( iGsViewId.iViewUid );
-			ReleaseResource(ETrue);
             if(iObserver)
                 {
                 iObserver->UiComplete(KUirEventNone);
@@ -218,7 +209,12 @@ void CVpnUiLoader::ChangeViewL(TInt aNewTab, TInt aSelectionIndex)
 
 			iPreviousViewId = localCurrentViewId.iViewUid;
 			if ( iPolicyViewVisited == EFalse)
+			    {
+                TRect rect;
+                iVpnManagementUiPolicyView = CVpnManagementUiPolicyView::NewL( 
+		            rect, *this);
 			    ((CAknViewAppUi*)iAvkonAppUi)->AddViewL(iVpnManagementUiPolicyView);
+			    }
 			iPolicyViewVisited=ETrue;
 			((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL(
                   KVpnManagementUiPolicyViewId );
@@ -249,7 +245,11 @@ void CVpnUiLoader::ChangeViewL(TInt aNewTab, TInt aSelectionIndex)
 
 			iPreviousViewId = localCurrentViewId.iViewUid;
 			if ( iLogViewVisited == EFalse)
+			    {
+                TRect rect;
+                iVpnManagementUiLogView = CVpnManagementUiLogView::NewL( rect, *this);
 			    ((CAknViewAppUi*)iAvkonAppUi)->AddViewL(iVpnManagementUiLogView);
+			    }
 			iLogViewVisited=ETrue;
 			((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL(
                   KVpnManagementUiLogViewId );

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -250,8 +250,8 @@ TInt TAttrib_II::Compare(TAttrib_II& aAttr, TBool aRelaxed)
     if ( iTransformID != aAttr.iTransformID ) //Transform ID
         return KErrTransformID;
 
-    if ((iGroupDesc != aAttr.iGroupDesc) &&
-        (!(iGroupDesc == 0) && (aAttr.iGroupDesc == MODP_768))) //OAKLEY GROUP
+    if ((aAttr.iGroupDesc < iGroupDesc) &&
+        (!(iGroupDesc == 0)))    
         return KErrGroupDesc;
     if (iEncMode != aAttr.iEncMode) //Encapsulation Mode
         return KErrEncMode;
@@ -291,6 +291,10 @@ TInt TAttrib_II::Compare(TAttrib_II& aAttr, TBool aRelaxed)
             return KErrLifeTime;
         if (iLifeDurationKBytes.Compare(aAttr.iLifeDurationKBytes)!=0)
             return KErrLifeSize;
+        if (iResponderLifetimeSecs.Compare(aAttr.iResponderLifetimeSecs)!=0)
+            return KErrLifeTime;
+        if (iResponderLifetimeKBytes.Compare(aAttr.iResponderLifetimeKBytes)!=0)
+            return KErrLifeSize;        
     }
     return KErrNone;
 }
@@ -301,6 +305,8 @@ void TAttrib_II::Copy(TAttrib_II &aAttr)
     iTransformID = aAttr.iTransformID;  //Transform ID
     iLifeDurationSecs.Copy(aAttr.iLifeDurationSecs);
     iLifeDurationKBytes.Copy(aAttr.iLifeDurationKBytes);
+    iResponderLifetimeSecs.Copy(aAttr.iResponderLifetimeSecs);
+    iResponderLifetimeKBytes.Copy(aAttr.iResponderLifetimeKBytes);    
     iGroupDesc = aAttr.iGroupDesc;      //OAKLEY GROUP
     iEncMode = aAttr.iEncMode;      //Encapsulation Mode
     iAuthAlg = aAttr.iAuthAlg;      //HMAC
@@ -426,6 +432,8 @@ TInt CProposal_IIList::MultiMatchL(CProposal_IIList *aRemoteProp, TBool aRelaxed
                 tmodif->iReplayWindowLength = prop1->iReplayWindowLength;   //to update SAD correctly
                 tmodif->iReducedLifeSecs.Set(prop1->iAttrList->At(local_num)->iLifeDurationSecs);
                 tmodif->iReducedLifeKBytes.Set(prop1->iAttrList->At(local_num)->iLifeDurationKBytes);
+                tmodif->iResponderLifetimeSecs.Set(prop1->iAttrList->At(local_num)->iResponderLifetimeSecs);
+                tmodif->iResponderLifetimeKBytes.Set(prop1->iAttrList->At(local_num)->iResponderLifetimeKBytes);                
                 aTransArray->AppendL(tmodif);   //add to the array and go for the next
                 CleanupStack::Pop();      //tmodif safe
                 if ( (i1 + 1) < Count() ) //still proposals left in 'this' list

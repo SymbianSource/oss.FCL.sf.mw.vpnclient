@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -165,6 +165,8 @@ public:
     TInt   iTransNum;           //Remote transform number selected
     TPtrC8 iReducedLifeSecs;    //Own lifetime (in case is smaller then received)
     TPtrC8 iReducedLifeKBytes;  //Own lifesize (in case is smaller then received)
+    TPtrC8 iResponderLifetimeSecs;    //Responder lifetime
+    TPtrC8 iResponderLifetimeKBytes;  //Responder lifetime size    
     TUint8 iReplayWindowLength;
 };
 
@@ -188,9 +190,9 @@ public:
     TUint8 iTransformNum;   //Transform number
     TUint8 iTransformID;    //Transform ID
     TBuf8<MAX_LIFE_DURATION> iLifeDurationSecs;
-    //TBool iLifetimeReduced;
     TBuf8<MAX_LIFE_DURATION> iLifeDurationKBytes;
-    //TBool iLifesizeReduced;
+    TBuf8<MAX_LIFE_DURATION> iResponderLifetimeSecs;
+    TBuf8<MAX_LIFE_DURATION> iResponderLifetimeKBytes;        
     TUint16 iGroupDesc;     //OAKLEY GROUP
     TUint16 iEncMode;       //Encapsulation Mode
     TUint16 iAuthAlg;       //HMAC

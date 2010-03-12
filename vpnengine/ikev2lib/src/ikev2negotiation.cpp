@@ -2620,7 +2620,6 @@ TBool CIkev2Negotiation::ProcessChildSaL(CIkev2Payloads* aIkeMsg)
 				   DEBUG_LOG1(_L("IKE SA Rekey started by peer for SAID: %d"), iHdr.SaId());							   						   
 				   iState = KStateIkeSARekeyResponse;
 				   Status = ProcessIkeSARekeyL(aIkeMsg);
-				   iIkeV2PlugInSession.UpdateIkev2SAL(&iHdr, NULL);
 				}
 				return Status;
 			}

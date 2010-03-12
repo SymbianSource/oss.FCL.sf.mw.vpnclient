@@ -73,6 +73,7 @@ private:
 	TIkeV2IpsecSAData*  iIpsecSaQue;     // Ipsec SA information queue
 	CIkeV2KeepAlive* iIkeKeepAlive;   // Pointer to common IKE keepalive object	
 	TUint32        iRemainingTime;   // Current lifetime left
+	TUint32        iRekeyingThreshold;
 
     };
 
