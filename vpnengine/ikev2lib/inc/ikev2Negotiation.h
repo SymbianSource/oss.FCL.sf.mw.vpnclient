@@ -67,11 +67,9 @@ const TInt KStateIkeSARekeyRequest   = 23;
 const TInt KStateIkeSARekeyResponse  = 24;
 
 const TInt KStateIkeInfoRequest      = 31;
-const TInt KStateIkeInfoResponse     = 32;
 const TInt KStateIkeDeleteRequest    = 33;
 const TInt KStateIkeDeleteResponse   = 34;
 const TInt KStateChildDeleteRequest  = 35;
-const TInt KStateChildDeleteResponse = 36;
 
 class CIkev2PluginSession;
 class CPFKeySocketIf;

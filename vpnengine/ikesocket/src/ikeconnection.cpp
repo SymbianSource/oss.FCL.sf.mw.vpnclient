@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -161,22 +161,13 @@ void CIkeConnection::StartConnection( const TUint32 aIapId,
     if ( err == KErrNone )
         {
         // Start connection.
-        if ( iSnapId ) // SNAP
+        TRAP( err, CreatePreferencesL( iIapId,
+                                       iSnapId,
+                                       aForcedRoaming ) );
+        if ( err == KErrNone )
             {
-            TRAP( err, CreateSnapPreferencesL( iSnapId,
-                                               aForcedRoaming ) );
-            if ( err == KErrNone )
-                {
-                iConnection.Start( iConnPrefList, iStatus );
-                }
-            }    
-        else // IAP
-            {
-            // Create preference overrides.        
-            iPrefs.SetDialogPreference( ECommDbDialogPrefDoNotPrompt );
-            iPrefs.SetIapId( iIapId );        
-            iConnection.Start( iPrefs, iStatus );
-            }            
+            iConnection.Start( iConnPrefList, iStatus );
+            }
         }
     
     if ( err != KErrNone )
@@ -336,17 +327,26 @@ TInt CIkeConnection::GetLocalAddress( const TIpVersion aIpVersion,
     }
 
 // ---------------------------------------------------------------------------
-// Creates connection preferences for SNAP usage. Connection preferences
-// list is constructed.
+// Creates connection preferences. Connection preferences list is constructed.
 // ---------------------------------------------------------------------------
 //
-void CIkeConnection::CreateSnapPreferencesL( const TUint32 aSnapId,
-                                             const TBool aForcedRoaming )
+void CIkeConnection::CreatePreferencesL( const TUint32 aIapId,
+                                         const TUint32 aSnapId,
+                                         const TBool aForcedRoaming )
     {
-    CleanSnapPreferences();
+    CleanPreferences();
     
-    iExtendedPrefs.SetSnapId( aSnapId );
-    iExtendedPrefs.SetForcedRoaming( aForcedRoaming );
+    if ( aIapId != 0 )
+        {
+        iExtendedPrefs.SetIapId( aIapId );
+        }
+    else
+        {
+        iExtendedPrefs.SetSnapId( aSnapId );
+        iExtendedPrefs.SetForcedRoaming( aForcedRoaming );
+        }
+    
+    iExtendedPrefs.SetNoteBehaviour( TExtendedConnPref::ENoteBehaviourConnDisableNotes );
     
     iConnPrefList.AppendL( &iExtendedPrefs );  
     }
@@ -355,7 +355,7 @@ void CIkeConnection::CreateSnapPreferencesL( const TUint32 aSnapId,
 // Cleans connection preferences created for SNAP usage.
 // ---------------------------------------------------------------------------
 //
-void CIkeConnection::CleanSnapPreferences()
+void CIkeConnection::CleanPreferences()
     {
     while( iConnPrefList.Count() > 0 )
         {
@@ -388,7 +388,7 @@ void CIkeConnection::DoStateAfterConnecting()
     IKESOCKET_ASSERT( iLinkObserver );
     IKESOCKET_ASSERT( iState == EConnecting );
     
-    CleanSnapPreferences();
+    CleanPreferences();
 
     TInt err( iStatus.Int() );
 
@@ -443,7 +443,7 @@ void CIkeConnection::DoCancelStartConnection()
         iState = EIdle;
         iConnection.Close();
         
-        CleanSnapPreferences();
+        CleanPreferences();
 
         User::RequestComplete( iClientStatus, KErrCancel );
         iClientStatus = NULL;

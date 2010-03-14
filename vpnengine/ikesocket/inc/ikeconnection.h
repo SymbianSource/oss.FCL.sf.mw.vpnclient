@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -21,7 +21,6 @@
 
 #include <e32base.h>
 #include <in_sock.h>
-#include <commdbconnpref.h>
 #include <extendedconnpref.h>
 #include "connobserver.h"
 #include "datatransfer.h"
@@ -128,18 +127,20 @@ private:
     void ConstructL();
         
     /**
-     * Creates connection preferences for SNAP usage.
+     * Creates connection preferences.
+     * @param aIapId IAP id
      * @param aSnapId SNAP id
      * @param aForcedRoaming Indicates whether forced roaming is enabled or
      *                       disabled for SNAP 
      */
-    void CreateSnapPreferencesL( const TUint32 aSnapId,
-                                 const TBool aForcedRoaming );
+    void CreatePreferencesL( const TUint32 aIapId,
+                             const TUint32 aSnapId,
+                             const TBool aForcedRoaming );
     
     /**
-     * Cleans connection preferences created for SNAP usage.
+     * Cleans connection preferences.
      */
-    void CleanSnapPreferences();
+    void CleanPreferences();
     
     /**
      * Updates IAP id and NET id.
@@ -166,7 +167,7 @@ private:
      */
     void DoCancelResolveFQDNAddress();        
     
-    // from base class CActive
+// from base class CActive
         
     /**
      * From CActive.
@@ -230,12 +231,6 @@ private: // data
      */
     TUint32                 iSnapId;
 
-    /**
-     * Connection preferences.
-     * Own.
-     */
-    TCommDbConnPref         iPrefs;
-    
     /**
      * Extended connection preferences.
      * Own.
