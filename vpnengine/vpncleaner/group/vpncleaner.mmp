@@ -23,7 +23,7 @@ TARGET         vpncleaner.exe
 TARGETTYPE     exe
 UID            0x1000008d 0x101FAE02
 
-CAPABILITY	   ALL -TCB
+CAPABILITY	   ReadDeviceData WriteDeviceData NetworkControl AllFiles NetworkServices
 VENDORID       VID_DEFAULT
 
 SOURCEPATH     ../src

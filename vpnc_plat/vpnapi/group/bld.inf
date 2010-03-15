@@ -15,15 +15,12 @@
 *
 */
 
-
 #include <platform_paths.hrh>
 
 PRJ_PLATFORMS
 DEFAULT
 
 PRJ_EXPORTS
-  ../inc/vpnapidefs.h             /epoc32/include/vpnapidefs.h
   ../inc/vpnapidefs.h             MW_LAYER_PLATFORM_EXPORT_PATH(vpnapidefs.h)
-  ../inc/vpnnotifierdefs.h        MW_LAYER_PLATFORM_EXPORT_PATH(vpnnotifierdefs.h)
   ../inc/vpnapi.h                 MW_LAYER_PLATFORM_EXPORT_PATH(vpnapi.h)
   ../inc/vpnsipobserverpskeys.h   MW_LAYER_PLATFORM_EXPORT_PATH(vpnsipobserverpskeys.h)
