@@ -123,7 +123,7 @@ private:
 
     static CX509Certificate* ReadCertificateLC(RPKIServiceAPI& aPkiService,
                                                const TPKIKeyIdentifier& aKeyId);
-    static HBufC8* PkiUtil::To8BitL(const TDesC16& aDes);
+    static HBufC8* To8BitL(const TDesC16& aDes);
 
     };
 

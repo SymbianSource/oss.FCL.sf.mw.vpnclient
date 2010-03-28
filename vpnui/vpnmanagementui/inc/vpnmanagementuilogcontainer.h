@@ -216,7 +216,7 @@ class CVpnManagementUiLogContainer : public CCoeControl, MCoeControlObserver, ME
         * @return The full name and path of the MIF file
         * containing icons for VPN Log view
         */
-        TFileName CVpnManagementUiLogContainer::GetIconFilenameL();
+        TFileName GetIconFilenameL();
 
 
 

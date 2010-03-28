@@ -151,8 +151,8 @@ private:
     /**
      * Returns Issuer name of certificate
      */
-    HBufC8* CPolicyImporter::CertIssuerL(const TFileName& aCertFile);
-    TFileName CPolicyImporter::GetCAFromFileListL(const TDesC8& aCertSubjectName, CArrayFixFlat<TFileName>* aCertFileArray);
+    HBufC8* CertIssuerL(const TFileName& aCertFile);
+    TFileName GetCAFromFileListL(const TDesC8& aCertSubjectName, CArrayFixFlat<TFileName>* aCertFileArray);
 
 private:
     RMessage2 iMessage;
