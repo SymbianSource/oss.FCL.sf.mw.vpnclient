@@ -1,5 +1,5 @@
 ;
-; Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+; Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
 ; All rights reserved.
 ; This component and the accompanying materials are made available
 ; under the terms of "Eclipse Public License v1.0"
@@ -11,25 +11,8 @@
 ;
 ; Contributors:
 ;
-; Description: 
+; Description: vpnclient package file for stub SIS
 ;
-
-﻿; ============================================================================
-;  Name        : stub_nokia_vpn_client_armv5.pkg
-;  Part of     : VPN / VPN
-;  Description : Nokia VPN Client G1 S60 PACKAGE for Stub-SIS
-;  Version     : %version: %
-;
-;  Copyright © 2006 - 2008 Nokia.  All rights reserved.
-;  This material, including documentation and any related computer
-;  programs, is protected by copyright controlled by Nokia.  All
-;  rights are reserved.  Copying, including reproducing, storing,
-;  adapting or translating, any or all of this material requires the
-;  prior written consent of Nokia.  This material also contains
-;  confidential information which may not be disclosed to others
-;  without the prior written consent of Nokia.
-; ============================================================================
-;  Template version: 4.1
 
 ; LANGUAGES
 ; - None (English only by default)

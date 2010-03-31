@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -68,7 +68,7 @@ public:
  *  
  *  @lib ikesocket.lib
  */
-NONSHARABLE_CLASS( CReceiver ) : private CActive
+NONSHARABLE_CLASS( CReceiver ) : private CTimer
     {
 public:
     /**
@@ -113,9 +113,10 @@ private:
 
     enum TReceiverState
         {
-        EIdle,          // Idle
-        EWaitingData,   // Waiting data to become available for reading
-        EReceiving      // Receiving data
+        EIdle,                   // Idle
+        EWaitingData,            // Waiting data to become available for reading
+        EReceiving,              // Receiving data
+        EWaitingAfterSocketError // Waiting after socket error 
         };    
 
     CReceiver( RSocket& aSocket,
@@ -141,8 +142,11 @@ private:
     
     /**
      * Handles error in receiving.
+     * @param aStatus Error status
+     * @param aSocket Informs if delay needed
      */
-    void HandleError( const TInt aStatus );
+    void HandleError( const TInt aStatus,
+                      const TBool aDelayNeeded = EFalse );
     
     /**
      * Notifies client that data has been received.
@@ -180,7 +184,13 @@ private: // data
      * Own.
      */
     TReceiverState      iState;
-        
+       
+    /**
+     * Maximum error count.
+     * Own.
+     */
+    TInt                iErrorCount;
+    
     /**
      * Message data.
      * Own.
