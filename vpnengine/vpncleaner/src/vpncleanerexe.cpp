@@ -72,7 +72,7 @@ LOCAL_C TBool vpnOnRom()
 
     if ( KErrNone == err )
         {
-        _LIT( KRomPath, "z:\\sys\\bin\\kmdserver.exe" );
+        _LIT( KRomPath, "z:\\resource\\vpnlogmessages.rsc" );
 
         if ( KErrNone == fs.Att( KRomPath, fileAttr ) )
             {
