@@ -22,6 +22,9 @@
 #include "ikev2ipsecsadata.h"
 #include "ikev2pluginsession.h"
 
+static const TUint32 KMinRekeyingThreshold = 70;
+static const TUint32 KMaxRekeyingThreshold = 95;
+
 CIkev2SA* CIkev2SA::NewL(CIkev2PluginSession& aIkeV2PluginSession, TIkev2SAData& aIkev2SAdata, MIkeDebug& aDebug)
 {
 	CIkev2SA *sa = new (ELeave) CIkev2SA(aIkeV2PluginSession, aDebug);
@@ -45,9 +48,32 @@ void CIkev2SA::ConstructL(TIkev2SAData& aIkev2SAdata)
 	// Calculate lifetime value for the new IKE SA
 	// The jitter value is adjusted from SA internal ID (SAId mod 8) 
 	//
-    iRemainingTime = iIkeV2SaData.iLifetime + (iIkeV2SaData.SaId() % 8);
+	
+	if (iIkeV2SaData.iIkeData->iRekeyingThreshold != 0)
+	    {
+        if (iIkeV2SaData.iIkeData->iRekeyingThreshold < KMinRekeyingThreshold)
+            {
+            iRekeyingThreshold = KMinRekeyingThreshold;
+            }
+        else if (iIkeV2SaData.iIkeData->iRekeyingThreshold > KMaxRekeyingThreshold)
+            {
+            iRekeyingThreshold = KMaxRekeyingThreshold;
+            }
+        else
+            {
+            iRekeyingThreshold = iIkeV2SaData.iIkeData->iRekeyingThreshold;
+            }
+        TReal lifeTime = (TReal)iIkeV2SaData.iLifetime * ((TReal)iRekeyingThreshold / 100.0);
+        iRemainingTime = (TUint32)lifeTime + (iIkeV2SaData.SaId() % 8);
+	    }
+	else
+	    {
+        iRemainingTime = iIkeV2SaData.iLifetime + (iIkeV2SaData.SaId() % 8);
+	    }
+	    
 	iIkeV2SaData.iSAState  = KSaStateReady;
 
+	
 	TInt DPDHeartbeat = 0;
 	if ( iIkeV2SaData.iIkeData->iDPDHeartBeat )
 	   DPDHeartbeat = iIkeV2SaData.iIkeData->iDPDHeartBeat;      
@@ -236,7 +262,7 @@ void CIkev2SA::RunL()
             iIkeV2SaData.SaId(), iRemainingTime );
 	if (iRemainingTime == 0) 
 	{										 		
-		if ( iIpsecSaQue )
+		if ( iIpsecSaQue && iRekeyingThreshold != 0)
 		{
 		    iIkeV2PluginSession.RekeyIkeSAL(&iIkeV2SaData);
 		}

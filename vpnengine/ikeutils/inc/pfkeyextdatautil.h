@@ -44,7 +44,7 @@ public:
      * @param aDestinAddr Destination address
      * @param aOriginalAddr Peer original address
      */
-    EXPORT_C static void BuildUdpEncExtensionData( TDes8& aExtData,
+    IMPORT_C static void BuildUdpEncExtensionData( TDes8& aExtData,
                                                    TUint32 aNAT_D_Flags,
                                                    TBool aNATDetected,
                                                    TBool aNokiaNATProbeUsed,

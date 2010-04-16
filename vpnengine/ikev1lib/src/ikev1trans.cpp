@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -675,7 +675,6 @@ TInt CTransNegotiation::ProcessCfgModeAttrsL(TDataISAKMP* aAttr, TInt aLth)
 TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
 {
     TInt     status        = TRANSACTION_CONTINUE;
-    TUint16  xauth_type    = ATTR_XAUTH_GENERIC;
     TUint32  request_flags = 0;
     TPtr8    challenge(NULL, 0);
 	TUint16  attr_type;
@@ -821,18 +820,6 @@ TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
 			iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);			
 			iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
             iDialog->GetAsyncSecureNextPinDialogL(iDialogInfo, (MIkeDialogComplete*)this);
-            break;
-
-        case ( (1 << (ATTR_CHALLENGE - ATTR_XAUTH_TYPE)) ):
-            //
-            //  User Challenge response dialog
-            //
-            if ( xauth_type == ATTR_XAUTH_RADIUS_CHAP )
-			{
-				iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);			
-				iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
-                iDialog->GetAsyncRespDialog(challenge, iDialogInfo, (MIkeDialogComplete*)this);
-            }   
             break;
 
         default:

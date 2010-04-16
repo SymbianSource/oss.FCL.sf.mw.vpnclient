@@ -48,8 +48,7 @@ private:
                                                   const TUint32 aInternetDestinationId);
     
     
-    static HBufC* CreateConnectionMethodNameLC(RCmManagerExt& aCmManagerExt,
-                                               const TDesC& aPolicyName);
+    static HBufC* CreateConnectionMethodNameLC(const TDesC& aPolicyName);
 
     static HBufC* CreateIntranetDestinationNameLC(RCmManagerExt& aCmManagerExt);
     

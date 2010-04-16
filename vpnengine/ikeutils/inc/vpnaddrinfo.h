@@ -45,7 +45,7 @@ public:
      * @param aVPNAddress Internal address info (returned)
      * @param aDebug Debug trace interface
      */
-    EXPORT_C static void BuildVPNAddrInfo( const CInternalAddress* aInternalAddr,
+    IMPORT_C static void BuildVPNAddrInfo( const CInternalAddress* aInternalAddr,
                                            const TInetAddr& aDnsServerAddr,
                                            TVPNAddress& aVPNAddress,
                                            MIkeDebug& aDebug );        

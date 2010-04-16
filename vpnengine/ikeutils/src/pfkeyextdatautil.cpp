@@ -37,7 +37,7 @@
 // (common macros with IPSEC)
 // ---------------------------------------------------------------------------
 //
-void PFKeyExtDataUtil::BuildUdpEncExtensionData( TDes8& aExtData,
+EXPORT_C void PFKeyExtDataUtil::BuildUdpEncExtensionData( TDes8& aExtData,
                                                  TUint32 aNAT_D_Flags,
                                                  TBool aNATDetected,
                                                  TBool aNokiaNATProbeUsed,

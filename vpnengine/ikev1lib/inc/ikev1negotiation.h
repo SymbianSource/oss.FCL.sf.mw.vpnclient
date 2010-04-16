@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -362,6 +362,15 @@ private:
     TBool IsRetransmit(TLastIKEMsg& aRef);    
     void SaveRetransmitInfo(TLastIKEMsg& aRef);
     void SaveLastMsgL();
+    
+    HBufC8* GetPskFromPolicyL();
+    
+    void SetPhase2LifeDurations( const TInt64 aSoftAddTime,
+                                 const TInt64 aHardAddTime,
+                                 const TInt64 aSoftBytes,
+                                 const TInt64 aHardBytes,
+                                 TAttrib_II& aAttr_II,
+                                 TBool aResponder );    
 
 public:
 	TCookie iCookie_I;      // Initiator Cookie (Used with responder to create KEYID)

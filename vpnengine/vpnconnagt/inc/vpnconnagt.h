@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2000-2006 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2000-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -39,6 +39,11 @@ const TInt KMinorVerNumber=0;
 const TInt KBuildVerNumber=0;
 
 _LIT(KVPNConnAgtName,"vpnconnagt");
+
+
+// P&S key observer for communication between VPN client and SIP Profile server.
+class CVpnSipObserver;
+
 
 /**
  * A Factory for creating a VPNConnAgent.
@@ -197,6 +202,12 @@ class CVPNConnAgt : public CAgentBase, public MEventObserver
          * the status of the real interface.
          */
         void EventOccured(TInt aStatus, TEventType aType, TDesC8* aData);
+        
+        /**
+         * Is called when SIP deregistration is completed. In here a VPN session
+         * is actually started.
+         */
+        void ProceedServiceStart();
 
     protected:  // Methods
 
@@ -337,7 +348,7 @@ class CVPNConnAgt : public CAgentBase, public MEventObserver
             force it to shutdown without trying to send any packets anymore */
         TDeactivateType		iDisconnectType;
 
-        /* State of the agent object */
+        /** State of the agent object */
         TRequestState       iState;
 
         /** Boolean to define wether disconnecting operation is ongoing */
@@ -348,7 +359,13 @@ class CVPNConnAgt : public CAgentBase, public MEventObserver
         TPckgBuf<TStartVpnConnEventSpec>        iStartVpnConnDes;
         TPckgBuf<TCloseVpnConnEventSpec>        iCloseVpnConnDes;
         TPckgBuf<TObserveRealIapConnEventSpec>  iObserveRealIapConnDes;
+        
+        /** Own: P&S key observer */
+        CVpnSipObserver* iSipObserver;
+        
+        /** Feature Manager initialzation flag */
+        TBool iFeatureManagerInitialized;
     };
 
-#endif // VPN_CONN_AGT_H
 
+#endif // VPN_CONN_AGT_H

@@ -273,18 +273,14 @@ void CIkev2PluginSession::DeleteSession( const TBool aSilentClose,
 void CIkev2PluginSession::DoDeleteIkeSAExhangeL(TIkev2SAData& aIkev2SAdata)
     {
     DEBUG_LOG1(_L("Deleting IKE SA SAID =  %d"), aIkev2SAdata.SaId());
-                
-    __ASSERT_DEBUG(iFirstNegotiation == NULL, User::Invariant());
-    
-   CIkev2Negotiation* negotiation = CIkev2Negotiation::NewL(*this, iPfKeySocketIf, 
-                                                            iEventLogger, *iMessageSendQue, 
-                                                            iDebug, aIkev2SAdata);
-   CleanupStack::PushL(negotiation);
-   negotiation->StartIkeSADeleteL();
-   CleanupStack::Pop(negotiation);
-   
-   __ASSERT_DEBUG( !negotiation->Stopped(), User::Invariant() );
-
+                    
+    CIkev2Negotiation* negotiation = CIkev2Negotiation::NewL(*this, iPfKeySocketIf, 
+                                                             iEventLogger, *iMessageSendQue, 
+                                                             iDebug, aIkev2SAdata);
+    CleanupStack::PushL(negotiation);
+    negotiation->StartIkeSADeleteL();
+    CleanupStack::Pop(negotiation);
+    __ASSERT_DEBUG( !negotiation->Stopped(), User::Invariant() );    
     }
 
 

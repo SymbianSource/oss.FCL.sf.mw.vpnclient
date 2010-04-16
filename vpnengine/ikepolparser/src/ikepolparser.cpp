@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 1999-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 1999-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -451,8 +451,11 @@ EXPORT_C void TIkeParser::ParseL(CIkeData* aConf)
         else if (token.CompareF(_L("IKE_VERSION:"))==0) //CompareF ignores case
         {
             sub_num = NextToken();          
-            sub_num.Val(aConf->iIkeVersion, EDecimal);
-            if ( aConf->iIkeVersion != 2 )
+            if ( sub_num.Val(aConf->iIkeVersion, EDecimal) != KErrNone )
+            {
+            	err = KSecParserErrUnknown;
+            }
+            else if ( aConf->iIkeVersion != 2 )
                 aConf->iIkeVersion = 1; // IKE version 1 is currently the default
         }
         else if (token.CompareF(_L("SEND_NOTIFICATION:"))==0)   //CompareF ignores case

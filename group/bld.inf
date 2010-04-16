@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -50,11 +50,9 @@ PRJ_EXPORTS
 
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifier.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifier.iby)
 ../vpnui/vpndialogmanager/rom/vpndialogmanager.iby                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpndialogmanager.iby)
-../vpnui/vpnmanagementui/rom/vpnmanagementui.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnmanagementui.iby)
 ../vpnui/vpnpolins/rom/vpnpolins.iby                                   CORE_MW_LAYER_IBY_EXPORT_PATH(vpnpolins.iby)
 
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifierResources.iby              LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifierResources.iby)
-../vpnui/vpnmanagementui/rom/vpnmanagementuiResources.iby              LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(vpnmanagementuiResources.iby)
 
 #ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
 ../vpnui/vpnpolicyrecognizer/rom/vpnpolicyrecognizer.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnpolicyrecognizer.iby)
@@ -110,7 +108,6 @@ gnumakefile vpnclient_version_update.make
 #include "../vpnengine/pkiservice/group/bld.inf"
 #include "../vpnengine/vpnconnagt/group/bld.inf"
 #include "../vpnengine/vpnmanager/group/bld.inf"
-#include "../vpnui/vpnmanagementui/group/bld.inf"
 #include "../vpnui/vpnpolins/group/bld.inf"
 #include "../vpnui/vpnpolicyrecognizer/group/bld.inf"
 #include "../vpnengine/vpncleaner/group/bld.inf"

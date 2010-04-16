@@ -130,10 +130,8 @@ _LIT8(KDot, ".");
 class CPkcs10Req : public CBase
 {
     public:
-#ifdef __EABI__
         /** Cause vtable & typeinfo to be exported */
-        IMPORT_C CPkcs10Req() {};
-#endif
+        IMPORT_C CPkcs10Req();
         IMPORT_C ~CPkcs10Req();
         //////////////////////////////////////////////////////////////////////
         //  Visible interface

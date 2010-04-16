@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -1447,7 +1447,8 @@ void CIkev1PluginSession::IkeMsgReceivedL( const ThdrISAKMP& aIkeMsg,
                CleanupStack::Pop();    //negotiation safe
                return;
                }
-            CleanupStack::PopAndDestroy();
+            CleanupStack::Pop();
+            DeleteNegotiation(negotiation);
             }            
         return;
         }
@@ -1900,7 +1901,7 @@ void CIkev1PluginSession::DoCompleteInternalAddressChanged( TInt aStatus )
 //
 void CIkev1PluginSession::DoCancelDataTransfer()
     {
-    iReceiver->Cancel();
+    iReceiver->CancelReceive();
     iDataInterface.StopReceive();
     DoEmptySendQueue();
     iSender->Cancel();
