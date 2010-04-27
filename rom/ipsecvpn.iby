@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -20,15 +20,15 @@
 #ifndef __IPSECVPN_IBY__
 #define __IPSECVPN_IBY__
 
-#ifdef SYMBIAN_EXCLUDE_IPSEC
+#ifdef FF_VPN_CLIENT
 
-REM Feature VPNCLIENT STUB SISSES not included in this rom
-
-#else
+#ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
 
 data=ZSYSTEM\install\ipsecvpn.sis               system\install\ipsecvpn.sis
 data=ZSYSTEM\install\ipsecvpn_vpnpolins.sis     system\install\ipsecvpn_vpnpolins.sis
 
-#endif // SYMBIAN_EXCLUDE_IPSEC
+#endif
+
+#endif // FF_VPN_CLIENT
 
 #endif // __IPSECVPN_IBY__

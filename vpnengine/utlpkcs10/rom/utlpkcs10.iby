@@ -20,14 +20,10 @@
 #ifndef __UTLPKCS10_IBY__
 #define __UTLPKCS10_IBY__
 
-#ifdef SYMBIAN_EXCLUDE_IPSEC
-
-REM Feature UTLPKCS10 not included in this rom
-
-#else
+#ifdef FF_VPN_CLIENT
 
 file=ABI_DIR\BUILD_DIR\utlpkcs10.dll         SHARED_LIB_DIR\utlpkcs10.dll 
 
-#endif // SYMBIAN_EXCLUDE_IPSEC
+#endif // FF_VPN_CLIENT
 
 #endif // __UTLPKCS10_IBY__

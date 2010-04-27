@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -20,13 +20,9 @@
 #ifndef __IKESOCKET_IBY__
 #define __IKESOCKET_IBY__
 
-#ifdef SYMBIAN_EXCLUDE_IPSEC
-
-REM Feature IKESOCKET not included in this rom
-
-#else
+#ifdef FF_VPN_CLIENT
 
 file=ABI_DIR\BUILD_DIR\ikesocket.dll         SHARED_LIB_DIR\ikesocket.dll 
 
-#endif // SYMBIAN_EXCLUDE_IPSEC
+#endif // FF_VPN_CLIENT
 #endif     
