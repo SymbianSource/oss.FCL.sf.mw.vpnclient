@@ -15,8 +15,6 @@
 *
 */
 
-
-
 #include <cmmanager.h>
 #include <cmconnectionmethod.h>
 #include <cmpluginvpndef.h>
@@ -315,7 +313,9 @@ void CVPNConnAgt::ServiceStarted(TInt& aError)
         name.AppendFormat(_L("[0x%08x]"), this);
         Log::Printf(_L("%s Error %d in reading configuration\n"),name.PtrZ(), iLastErrorCode));
 
+        iNotify->AgentProgress(EVPNConnAgtDisconnected, iLastErrorCode);
         iNotify->ConnectComplete(iLastErrorCode);
+        
         aError = iLastErrorCode;
         return;
         }
@@ -769,7 +769,11 @@ void CVPNConnAgt::ReadConfigurationL()
     RCmConnectionMethod vpnConnection = 
         cmManager.ConnectionMethodL( iSettings.iIAPId );
     CleanupClosePushL(vpnConnection);
-    ASSERT( vpnConnection.GetBoolAttributeL(ECmVirtual) );
+
+    if ( EFalse == vpnConnection.GetBoolAttributeL(ECmVirtual) )
+        {
+        User::Leave( KErrNotSupported );
+        }
 
     // Read VPN Network Id
     const TUint32 vpnNetworkId(vpnConnection.GetIntAttributeL(ECmNetworkId));
@@ -805,7 +809,11 @@ void CVPNConnAgt::ReadConfigurationL()
         RCmConnectionMethod realConnection = 
             cmManager.ConnectionMethodL( realIap );
         CleanupClosePushL(realConnection);      
-        ASSERT( !realConnection.GetBoolAttributeL(ECmVirtual) );
+
+        if ( EFalse != realConnection.GetBoolAttributeL(ECmVirtual) )
+            {
+            User::Leave( KErrNotSupported );    
+            }
         
         // real iap id
         const TUint32 realIapId( realConnection.GetIntAttributeL(ECmIapId) );

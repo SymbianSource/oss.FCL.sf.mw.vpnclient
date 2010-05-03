@@ -19,8 +19,8 @@ use strict;
 use Cwd;
 use POSIX qw(strftime);
 
-my $PLATFORM_LONG = "4_2";
-my $PLATFORM_SHORT = "42";
+my $PLATFORM_LONG = "5_0";
+my $PLATFORM_SHORT = "50";
 
 sub update_version_h
 {

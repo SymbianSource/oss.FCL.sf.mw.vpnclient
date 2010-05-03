@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2007-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -20,16 +20,15 @@
 #ifndef __VPNPOLICYRECOGNIZER_IBY__
 #define __VPNPOLICYRECOGNIZER_IBY__
 
-#ifdef SYMBIAN_EXCLUDE_IPSEC
+#ifdef FF_VPN_CLIENT
 
-REM Feature VPNPOLINS not included in this rom
-
-#else
-
+#ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
 
 ECOM_PLUGIN(vpnpolicyrecognizer.dll,vpnpolicyrecognizer.rsc)
 data=ZRESOURCE\plugins\vpnpolicyrecognizer.rsc        RESOURCE_FILES_DIR\plugins\vpnpolicyrecognizer.rsc
 
-#endif // SYMBIAN_EXCLUDE_IPSEC
+#endif
+
+#endif // FF_VPN_CLIENT
 
 #endif // __VPNPOLICYRECOGNIZER_IBY__

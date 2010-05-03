@@ -20,11 +20,7 @@
 #ifndef __VPNTCWRAPPER_IBY__
 #define __VPNTCWRAPPER_IBY__
 
-#ifdef SYMBIAN_EXCLUDE_IPSEC
-
-REM Feature VPNTCWRAPPER not included in this rom
-
-#else
+#ifdef FF_VPN_CLIENT
 
 #ifdef __SAP_TERMINAL_CONTROL_FW
 #ifdef __SAP_POLICY_MANAGEMENT
@@ -34,6 +30,6 @@ file=ABI_DIR\BUILD_DIR\vpntcwrapper.dll         SHARED_LIB_DIR\vpntcwrapper.dll
 #endif //__SAP_POLICY_MANAGEMENT
 #endif //__SAP_TERMINAL_CONTROL_FW
 
-#endif // SYMBIAN_EXCLUDE_IPSEC
+#endif // FF_VPN_CLIENT
 
 #endif // __VPNTCWRAPPER_IBY__

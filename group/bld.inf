@@ -19,7 +19,6 @@
 
 PRJ_EXPORTS
 
-#ifdef FF_VPN_CLIENT
 ../vpnengine/dmadengine/rom/dmadengine.iby                             CORE_MW_LAYER_IBY_EXPORT_PATH(dmadengine.iby)
 ../vpnengine/dmadipsecvpn/rom/dmadipsecvpn.iby                         CORE_MW_LAYER_IBY_EXPORT_PATH(dmadipsecvpn.iby)
 ../vpnengine/dmadpki/rom/dmadpki.iby                                   CORE_MW_LAYER_IBY_EXPORT_PATH(dmadpki.iby)
@@ -47,6 +46,7 @@ PRJ_EXPORTS
 ../vpnengine/vpnmanager/rom/vpnmanager.iby                             CORE_MW_LAYER_IBY_EXPORT_PATH(vpnmanager.iby)
 ../vpnengine/vpnins/rom/vpnins.iby                                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpnins.iby)
 ../vpnengine/vpnipsecpolparser/rom/vpnipsecpolparser.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnipsecpolparser.iby)
+../vpnengine/vpntcwrapper/rom/vpntcwrapper.iby                         CORE_MW_LAYER_IBY_EXPORT_PATH(vpntcwrapper.iby)
 
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifier.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifier.iby)
 ../vpnui/vpndialogmanager/rom/vpndialogmanager.iby                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpndialogmanager.iby)
@@ -54,13 +54,8 @@ PRJ_EXPORTS
 
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifierResources.iby              LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifierResources.iby)
 
-#ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
 ../vpnui/vpnpolicyrecognizer/rom/vpnpolicyrecognizer.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnpolicyrecognizer.iby)
 ../rom/ipsecvpn.iby                                                    CORE_MW_LAYER_IBY_EXPORT_PATH(ipsecvpn.iby)
-#endif
-
-
-#endif // FF_VPN_CLIENT
 
 // vpnapi.dll should be in rom always
 ../vpnapiimpl/rom/vpnapi.iby                                           CORE_MW_LAYER_IBY_EXPORT_PATH(vpnapi.iby)

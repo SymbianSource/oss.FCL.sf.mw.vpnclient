@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -83,7 +83,7 @@ void CConnObserver::CancelNotify()
 CConnObserver::CConnObserver( RConnection& aConnection,
                               MConnObserverCallback& aCallback,
                               MIkeDebug& aDebug ) 
- :CActive(EPriorityStandard),
+ :CActive( EPriorityStandard ),
  iConnection( aConnection ),
  iCallback( aCallback ),
  iDebug( aDebug )
@@ -107,8 +107,15 @@ void CConnObserver::ConstructL()
 //
 void CConnObserver::RunL()
     {
-    DEBUG_LOG1( _L("CConnObserver::RunL(), iStatus=%d"), iStatus.Int() );    
-    iCallback.LinkDisconnected( iStatus.Int() );
+    DEBUG_LOG2( _L("CConnObserver::RunL(), iStatus=%d, error=%d"),
+            iStatus.Int(), iProgressBuf().iError );
+    TInt status = iStatus.Int();
+    if ( status == KErrNone )
+        {
+        status = iProgressBuf().iError;
+        }
+    
+    iCallback.LinkDisconnected( status );
     }
 
 // ---------------------------------------------------------------------------

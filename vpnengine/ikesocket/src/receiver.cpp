@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -65,7 +65,7 @@ CReceiver::~CReceiver()
 CReceiver::CReceiver( RSocket& aSocket,
                       MReceiverCallback& aCallback,
                       MIkeDebug& aDebug )
- : CActive( EPriorityStandard ),
+ : CTimer( EPriorityStandard ),
    iState( EIdle ),
    iMsgPtr( 0, 0, 0 ),
    iSocket( aSocket ),
@@ -82,6 +82,7 @@ CReceiver::CReceiver( RSocket& aSocket,
 void CReceiver::ConstructL()
     {
     DEBUG_LOG( _L("CReceiver::ConstructL") );
+    CTimer::ConstructL();
     }
 
 // ---------------------------------------------------------------------------
@@ -244,25 +245,38 @@ void CReceiver::HandleDataReceivedL()
 // Handles error in receiving.
 // ---------------------------------------------------------------------------
 //
-void CReceiver::HandleError( const TInt aStatus )
+void CReceiver::HandleError( const TInt aStatus,
+                             const TBool aDelayNeeded )
     {
-    DEBUG_LOG1( _L("CReceiver::HandleError, aStatus=%d"), aStatus );
+    DEBUG_LOG3( _L("CReceiver::HandleError, aStatus=%d, error count=%d, delay needed=%d"),
+            aStatus, iErrorCount, aDelayNeeded );    
     
     delete iMsg;
     iMsg = NULL;
     iMsgPtr.Set( 0, 0, 0 );
-    iState = EIdle;
+    
+    const TInt KMaxReceiverErrorCount( 20 );
     
     if ( aStatus == KErrDied ||
          aStatus == KErrServerTerminated ||
-         aStatus == KErrNoMemory )
+         aStatus == KErrNoMemory ||
+         iErrorCount >= KMaxReceiverErrorCount )
         {
-        // Fatal error. Notify client.
+        // Fatal error or maximum error count reached. Notify client.
+        iState = EIdle;
         iCallback.ReceiveError( aStatus );
+        }
+    else if ( aDelayNeeded )
+        {
+        // Restart receiving after delay.
+        iState = EWaitingAfterSocketError;
+        const TInt KDelayIntervalSocketError( 1000000 ); // 1s        
+        After( iErrorCount*KDelayIntervalSocketError );                
         }
     else
         {
-        // Error is not fatal. Restart receiving
+        // Receiving can be continued without delay.
+        iState = EIdle;
         Receive();
         }
     }
@@ -308,13 +322,15 @@ TInt CReceiver::RunError( TInt aError )
 void CReceiver::RunL()
     {
     IKESOCKET_ASSERT( iState == EWaitingData ||
-                      iState == EReceiving );
+                      iState == EReceiving  ||
+                      iState == EWaitingAfterSocketError );
     DEBUG_LOG2( _L("CReceiver::RunL, iState=%d, iStatus=%d"),
             iState, iStatus.Int() );    
     
     if ( iStatus.Int() )
         {
-        HandleError( iStatus.Int() );
+        HandleError( iStatus.Int(), ETrue );
+        iErrorCount++;
         return;
         }
     
@@ -327,7 +343,14 @@ void CReceiver::RunL()
             }
         case EReceiving:
             {
+            iErrorCount = 0;
             HandleDataReceivedL();
+            break;
+            }
+        case EWaitingAfterSocketError:
+            {
+            iState = EIdle;
+            Receive();
             break;
             }
         default:
@@ -343,10 +366,13 @@ void CReceiver::RunL()
 void CReceiver::DoCancel()
     {
     IKESOCKET_ASSERT( iState == EWaitingData ||
-            iState == EReceiving );
+                      iState == EReceiving ||
+                      iState == EWaitingAfterSocketError );
     DEBUG_LOG1( _L("CReceiver::DoCancel, iState=%d"),
             iState );
 
+    iErrorCount = 0;
+    
     switch ( iState )
         {
         case EWaitingData:
@@ -357,6 +383,11 @@ void CReceiver::DoCancel()
         case EReceiving:
             {
             iSocket.CancelRecv();
+            break;
+            }
+        case EWaitingAfterSocketError:
+            {
+            CTimer::DoCancel();
             break;
             }
         default:

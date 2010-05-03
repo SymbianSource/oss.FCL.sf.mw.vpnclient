@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2007 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -20,14 +20,10 @@
 #ifndef __EVENTMEDSIT_IBY__
 #define __EVENTMEDSIT_IBY__
 
-#ifdef SYMBIAN_EXCLUDE_IPSEC
-
-REM Feature EVENTMEDSIT not included in this rom
-
-#else
+#ifdef FF_VPN_CLIENT
 
 file=ABI_DIR\BUILD_DIR\eventmedsit.dll         SHARED_LIB_DIR\eventmedsit.dll 
 
-#endif // SYMBIAN_EXCLUDE_IPSEC
+#endif // FF_VPN_CLIENT
 
 #endif // __EVENTMEDSIT_IBY__

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -16,37 +16,15 @@
 *
 */
 
-
-
-
-
 #ifndef VPNECOMNOTIFIER_IBY
-
 #define VPNECOMNOTIFIER_IBY
 
-
-
-#ifdef SYMBIAN_EXCLUDE_IPSEC
-
-
-
-REM Feature ACUNOTIFIER not included in this rom
-
-
-
-#else
-
-
+#ifdef FF_VPN_CLIENT
 
 // ECOM_PLUGIN is defined in header.iby
-
 ECOM_PLUGIN(vpnecomnotifier.dll,vpnecomnotifier.rsc)
 
-
-
-#endif // SYMBIAN_EXCLUDE_IPSEC
-
-
+#endif // FF_VPN_CLIENT
 
 #endif // VPNECOMNOTIFIER_IBY
 

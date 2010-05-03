@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006 - 2008 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright (c) 2006 - 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved.
 # This component and the accompanying materials are made available
 # under the terms of "Eclipse Public License v1.0"
@@ -21,21 +21,13 @@ do_nothing :
 
 MAKMAKE : do_nothing
 
-BLD :
-	@echo Processing stub_vpnpolins_armv5.pkg
-	makesis -v -s stub_vpnpolins_armv5.pkg ipsecvpn_vpnpolins.SIS
-	
-	@echo Processing stub_nokia_vpn_client_armv5.pkg
-	makesis -v -s stub_nokia_vpn_client_armv5.pkg ipsecvpn.SIS
-	
-	@echo Export stub sis files to $(EPOCROOT)epoc32\data\z\system\install
-	copy ipsecvpn_vpnpolins.SIS $(EPOCROOT)epoc32\data\z\system\install
-	copy ipsecvpn.SIS $(EPOCROOT)epoc32\data\z\system\install
+BLD :	
+	perl create_vpnclient_sis.pl $(CFG)
 
 CLEAN : 
 	if exist ipsecvpn_vpnpolins.SIS erase ipsecvpn_vpnpolins.SIS
-	if exist $(EPOCROOT)epoc32/data/z/system/install/ipsecvpn_vpnpolins.SIS erase $(EPOCROOT)epoc32/data/z/system/install/ipsecvpn_vpnpolins.SIS
-	if exist $(EPOCROOT)epoc32/data/z/system/install/ipsecvpn.SIS erase $(EPOCROOT)epoc32/data/z/system/install/ipsecvpn.SIS
+	if exist $(EPOCROOT)epoc32\data\z\system\install\ipsecvpn_vpnpolins.SIS erase $(EPOCROOT)epoc32\data\z\system\install\ipsecvpn_vpnpolins.SIS
+	if exist $(EPOCROOT)epoc32\data\z\system\install\ipsecvpn.SIS erase $(EPOCROOT)epoc32\data\z\system\install\ipsecvpn.SIS
 	if exist ipsecvpn.SIS erase ipsecvpn.SIS
 	if exist *BACKUP erase *BACKUP
 
