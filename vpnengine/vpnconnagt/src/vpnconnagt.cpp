@@ -89,13 +89,7 @@ CVPNConnAgt::~CVPNConnAgt()
     LOG(TName name;
     name.AppendFormat(_L("[0x%08x]"), this);
     Log::Printf(_L("%s Destructing VPN Connection Agent\n"),name.PtrZ()));
-
-    if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
-        {
-        delete iSipObserver;
-        iSipObserver = NULL;
-        }
-        
+    
     if ( iFeatureManagerInitialized )
         {
         // We can safely call UnInitializeLib as we have really intialized it.
@@ -107,6 +101,11 @@ CVPNConnAgt::~CVPNConnAgt()
     iServiceStartedCallback.Cancel();
     iConnectCompleteCallback.Cancel();
     iDisconnectCallback.Cancel();
+    
+    delete iSipObserver;
+    iSipObserver = NULL;
+    
+    LOG_("CVPNConnAgt::~CVPNConnAgt end");
     }
 
 // ---------------------------------------------------------------------------
@@ -133,19 +132,22 @@ inline void CVPNConnAgt::ConstructL()
     CAgentBase::ConstructL();
     iConnected = EFalse;
     iDisconnecting = EFalse;
-    LOG_("CVPNConnAgt::ReadConfigurationL EventMediator");
-    User::LeaveIfError(iEventMediator.Connect());
-        
+
     // Initialize Feature Manager.
     FeatureManager::InitializeLibL();  // Successfull call increases reference count
     iFeatureManagerInitialized = ETrue;
-   
+
     // Create CVpnSipObserver for communicating with SIP profile server via 
     // P&S keys for SIP de/re-registration. this pointer is passed to have call back.
     if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
         {
+        LOG_("CVPNConnAgt::ConstructL FfImsDeregistrationInVpn");
         iSipObserver = CVpnSipObserver::NewL( *this );
         }
+
+    User::LeaveIfError(iEventMediator.Connect());
+
+    LOG_("CVPNConnAgt::ConstructL end");
     }
 
 // ---------------------------------------------------------------------------
