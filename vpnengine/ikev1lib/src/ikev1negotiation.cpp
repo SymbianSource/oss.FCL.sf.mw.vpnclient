@@ -217,6 +217,9 @@ CIkev1Negotiation::~CIkev1Negotiation()
     delete iNatDiscovery;
 	delete iSARekeyInfo;
 	delete iLastMsg;
+
+	delete iDialog;
+    delete iDialogInfo;
 }
 
 
@@ -1073,24 +1076,28 @@ void CIkev1Negotiation::AuthDialogCompletedL(CAuthDialogInfo *aUserInfo)
     else 
     {
        if ( iCRACKneg )
-            status = iCRACKneg->ProcessUserResponseL(aUserInfo);       
-       else status = CRACK_FAILED;
-
-       if ( status == CRACK_FAILED ) 
        {
-         /*--------------------------------------------------------
-          *
-          *  Crack negotiation failed. Negotiation shall be deleted
-          *
-          *--------------------------------------------------------*/
-		  LOG_KMD_EVENT( MKmdEventLoggerIf::KLogError,
-		                 R_VPN_MSG_VPN_GW_AUTH_FAIL,
-		                 status,
-		                 iPluginSession->VpnIapId(),
-		                 &iRemoteAddr );		   
-		  SetErrorStatus(KKmdIkeAuthFailedErr);		  
-          AcquireSAErrorResponse(KKmdIkeAuthFailedErr);
-       }      
+            status = iCRACKneg->ProcessUserResponseL(aUserInfo);       
+
+           if ( status == CRACK_FAILED ) 
+           {
+             /*--------------------------------------------------------
+              *
+              *  Crack negotiation failed. Negotiation shall be deleted
+              *
+              *--------------------------------------------------------*/
+              LOG_KMD_EVENT( MKmdEventLoggerIf::KLogError,
+                             R_VPN_MSG_VPN_GW_AUTH_FAIL,
+                             status,
+                             iPluginSession->VpnIapId(),
+                             &iRemoteAddr );		   
+              SetErrorStatus(KKmdIkeAuthFailedErr);		  
+              AcquireSAErrorResponse(KKmdIkeAuthFailedErr);
+           }
+       }
+       else 
+           status = ProcessUserResponseL(aUserInfo);;
+           
     }
 }
 
@@ -1266,6 +1273,19 @@ TBool CIkev1Negotiation::IsakmpPhase1CompletedL()
 //Sends the initial IKE packets to start the negotiation. PHASE I
 void CIkev1Negotiation::InitNegotiationL()   //Equiv. to stage 1
 {
+    
+    if (iProposal_I.iAttrList->iAuthMethod == IKE_A_CRACK &&
+        !iHostData->iCRACKLAMUserName && 
+        !iHostData->iCRACKLAMPassword &&
+        !iCRACKLAMUserName && 
+        !iCRACKLAMPassword)
+        {
+            
+            iDialog     = CIkev1Dialog::NewL( iPluginSession, iPluginSession->DialogAnchor(), iDebug );
+            iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, DIALOG_INFO_ID, SAId(), 0);
+            iDialog->GetAsyncUNPWDialogL(iDialogInfo, (MIkeDialogComplete*)this);
+            return;
+    }
     TIkev1IsakmpStream* msg = SaveIkeMsgBfr( new (ELeave) TIkev1IsakmpStream(iDebug) );
 	
     TInt  vendor_id_type;
@@ -1308,7 +1328,6 @@ void CIkev1Negotiation::InitNegotiationL()   //Equiv. to stage 1
 
     TBool cert_required = EFalse;   //If any proposal requires a cert to send a CR if needed
     TBool preshared_key = EFalse;   //Preshared key authentication        
-    TBool crack_used = EFalse;
     
     TAttrib *transf = iProposal_I.iAttrList;
     for (TInt i=0; (i < iProposal_I.iNumTransforms) && (!cert_required); i++)
@@ -1321,7 +1340,6 @@ void CIkev1Negotiation::InitNegotiationL()   //Equiv. to stage 1
             break;
         case IKE_A_CRACK:           
             cert_required = ETrue;
-            crack_used = ETrue;
             break;
         default:    // No cert involved
             preshared_key = ETrue;
@@ -1329,24 +1347,6 @@ void CIkev1Negotiation::InitNegotiationL()   //Equiv. to stage 1
         }
     }
     
-    if (crack_used &&
-        !iHostData->iCRACKLAMUserName && 
-        !iHostData->iCRACKLAMPassword)
-        {
-        TBuf<256> UserName;
-        TBuf<64> Password;
-        CIkev1Dialog* Dialog = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);                     
-        if (KErrNone != Dialog->GetSyncUNPWCacheDialog(UserName, Password))
-            {
-            DEBUG_LOG(_L("Failed to get credentials for crack auth!"));
-            SetFinished();
-            delete Dialog;
-            return;
-            }
-        iHostData->iCRACKLAMUserName = TStringData::NewL(UserName);
-        iHostData->iCRACKLAMPassword = TStringData::NewL(Password);
-        delete Dialog;
-    }
 
     if (iExchange == ISAKMP_EXCHANGE_AGGR) //Aggressive contains more payloads
     {
@@ -8391,6 +8391,57 @@ void CIkev1Negotiation::SetPhase2LifeDurations( const TInt64 aSoftAddTime,
             aAttr_II.iResponderLifetimeKBytes.Append((TUint8 *)&low, sizeof(low));
             }        
         }    
+}
+
+TInt CIkev1Negotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
+{
+    delete iDialog;  /* delete dialog object */
+    iDialog = NULL;
+    
+    iCRACKLAMUserName = aDialogInfo->iUsername->AllocL();
+    iCRACKLAMPassword = aDialogInfo->iSecret->AllocL();
+    
+    delete aDialogInfo;  /* release dialog info object */
+    iDialogInfo = NULL;  /* reset dialog info pointer  */
+    DEBUG_LOG(_L("Continue negotiation from begining"));
+    InitNegotiationL();
+    
+    return KErrNone;
+
+}
+//
+// The implementation for class MIkeDialogComplete virtual function
+//
+TInt CIkev1Negotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo,
+                                            HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)
+{
+/*---------------------------------------------------------------------------
+ *  
+ *  A response received from client user (through asynchronous dialog)
+ *  This method is introduced as a TUserCallback for CGetIKEPassword dialog
+ *  object is created. When the dialog is completed this callback function
+ *  is called 
+ *  
+ *-------------------------------------------------------------------------*/
+    TUint32 obj_id = 1;
+     CAuthDialogInfo* info = (CAuthDialogInfo*)aUserInfo;
+     DEBUG_LOG1(_L("CIkev1Negotiation::DialogCompleteL(), aUserInfo =  %x"), aUserInfo);
+             
+     if ( info )
+     {
+        obj_id = info->GetObjId();
+        DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
+        if ( obj_id == DIALOG_INFO_ID )
+        {
+           info->iUsername = aUsername;
+           info->iSecret   = aSecret;
+           info->iDomain   = aDomain;
+           obj_id = info->PluginSession()->AuthDialogCompletedL(info);
+        }   
+     }
+
+     return obj_id;
+    
 }
 
 
