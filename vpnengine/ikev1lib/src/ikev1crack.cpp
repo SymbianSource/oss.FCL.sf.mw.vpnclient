@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -223,6 +223,14 @@ TInt CIKECRACKNegotiation::GetDataL(HBufC8* aChallenge)
         {
         return GetUNPWDFromPolicyL();
         }
+    
+    else if ( iLAMType == CRACK_PASSWORD &&
+              iNegotiation->iCRACKLAMUserName &&
+              iNegotiation->iCRACKLAMPassword)
+        {
+        return GetUNPWDFromNegotiationL();
+        }
+    
     else
         {
         return GetDatafromUserL(aChallenge); 
@@ -294,6 +302,42 @@ TInt CIKECRACKNegotiation::GetUNPWDFromPolicyL()
     
 	CleanupStack::PopAndDestroy(2); // bfr1, bfr2
 	
+    return CRACK_CONTINUE;
+}
+
+
+TInt CIKECRACKNegotiation::GetUNPWDFromNegotiationL()
+{
+    ASSERT(iLAMType == CRACK_PASSWORD);
+    
+    iNegotiation->iTimer->Cancel();   //Cancel previous timer because reply received & processed
+    DEBUG_LOG(_L("Timer Cancelled!"));
+    iNegotiation->iRetryNum = 0;
+
+    /*--------------------------------------------------------
+    *
+    *  Store attributes: User name, Secret, Domain
+    *
+    *--------------------------------------------------------*/
+
+    TUint16 attr1 = CRACK_T_USERNAME;
+    HBufC8* bfr1  = iNegotiation->iCRACKLAMUserName;
+    TUint16 attr2 = CRACK_T_SECRET;
+    HBufC8* bfr2  = iNegotiation->iCRACKLAMPassword;
+    HBufC8* bfr3  = iDomain;
+    TUint16 attr3 = 0;
+    if ( bfr3 )
+        {
+        attr3 = CRACK_T_DOMAIN;                  
+        }
+
+    SendCredentialsL(attr1, attr2, attr3, bfr1, bfr2, bfr3);
+
+    delete iNegotiation->iCRACKLAMUserName;
+    iNegotiation->iCRACKLAMUserName = NULL;
+    delete iNegotiation->iCRACKLAMPassword;
+    iNegotiation->iCRACKLAMPassword = NULL;
+    
     return CRACK_CONTINUE;
 }
 

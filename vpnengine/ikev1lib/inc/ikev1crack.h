@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -100,6 +100,7 @@ private:
     TInt    GetDataL(HBufC8* aChallenge);
     TInt    GetDatafromUserL(HBufC8 *aChallenge);
     TInt    GetUNPWDFromPolicyL();
+    TInt    GetUNPWDFromNegotiationL();
     TInt    ProcessCHREAttibutesL(const TCHREISAKMP *aCHRE_PAYLOAD);
     void    SendCredentialsL(TUint16 aAttr1, TUint16 aAttr2, TUint16 aAttr3,
                              HBufC8* aBfr1, HBufC8* aBfr2, HBufC8* aBfr3);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -236,37 +236,6 @@ TIPSecDialogOutput output;
        aUserName = resp.iOutBuf;
        aPassword = resp.iOutBuf2;      
     }   
-
-    return status;
-}
-
-/*--------------------------------------------------------------------
- *
- *  Get user name and password data for Legacy authentication
- *  This is a synchronous dialog which does NOT convert user name and
- *  password data into the 8-bit ASCII text
- *  Uses username cache
- *
- *---------------------------------------------------------------------*/
-TInt CIkev1Dialog::GetSyncUNPWCacheDialog(TDes& aUserName, TDes& aPassword)
-{
-    TInt status = KErrGeneral;
-    TIPSecDialogOutput output;
-
-    TIPSecDialogInfo dialog_input(TKMDDialog::EUserPwd, 0);
-    
-    iInputData = CreateDialogInput(dialog_input, ETrue);// TRUE = Use user name cache       
-    
-    TPckgBuf<TIPSecDialogOutput> ResponseBuf(output);//create the buf to receive the response
-
-    if ( iInputData )
-        status = LauchSyncDialog((TPckgBuf<TIPSecDialogInfo>&)*iInputData, ResponseBuf);
-    
-    if ( status == KErrNone ) {
-        TIPSecDialogOutput& resp = ResponseBuf();
-        aUserName = resp.iOutBuf;
-        aPassword = resp.iOutBuf2;      
-    }
 
     return status;
 }
