@@ -127,6 +127,7 @@ CVPNConnAgt* CVPNConnAgt::NewL()
 //
 inline void CVPNConnAgt::ConstructL()
     {
+    
     LOG_1("[0x%08x] Constructing VPN Connection Agent\n", this);
     // construct the database and dialog processor
     CAgentBase::ConstructL();
@@ -332,8 +333,10 @@ void CVPNConnAgt::ServiceStarted(TInt& aError)
     if ( FeatureManager::FeatureSupported( KFeatureIdFfImsDeregistrationInVpn ) )
         {
         // For some reason, if the request fails, just proceeds.
-        if ( iSipObserver->RequestDeregister() != KErrNone )
+        TInt err = iSipObserver->RequestDeregister();
+        if ( err != KErrNone )
             {
+            LOG_1( "CVPNConnAgt::ServiceStarted:  iSipObserver->RequestDeregister failed with %d", err );
             ProceedServiceStart();
             }
         // Return for now. ProceedServiceStart() will be called later by iSipObserver when
@@ -473,7 +476,11 @@ void CVPNConnAgt::DisconnectionComplete()
         {
         // SIP is re-registered when a VPN session ends.
         // Note: return value ignored. Nothing to do here for error cases.
-        iSipObserver->RequestRegister();
+        TInt err = iSipObserver->RequestRegister();
+        if (err != KErrNone)
+            {
+            LOG(Log::Printf(_L("SipObserver->RequestRegister failed with %d\n"), err));
+            }
         }
 
     iNotify->AgentProgress(EVPNConnAgtDisconnected, KErrNone);
@@ -572,7 +579,11 @@ void CVPNConnAgt::EventOccured(TInt aStatus, TEventType aType, TDesC8* aData)
                 {
                 // SIP is re-registered when a VPN session ends.
                 // Note: return value ignored. Nothing to do here for error cases.
-                iSipObserver->RequestRegister();
+                TInt err = iSipObserver->RequestRegister();
+                if (err != KErrNone)
+                    {
+                    LOG(Log::Printf(_L("SipObserver->RequestRegister failed with %d\n"), err));
+                    }
                 }    
             
             closeData = (TCloseVpnConnEventData*)(aData->Ptr());

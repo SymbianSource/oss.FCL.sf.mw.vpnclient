@@ -108,23 +108,24 @@ TInt CVpnSipObserver::RequestRegister()
 //             
 void CVpnSipObserver::RunL()
     {
+    LOG_1( "CVpnSipObserver::RunL iStatus = %d", iStatus.Int());
     if ( iStatus == KErrNone ) 
         {
         TInt val = 0;
         // SIP Profile Server notified completion of SIP deregistration.
-        TInt err = iSIPProperty.Get( KPSVpnSipUid, KVpnSipState, val );
-        
-        if ( err == KErrNone )
+        TInt err = iSIPProperty.Get( KPSVpnSipUid, KVpnSipState, val );        
+        if ( err == KErrNone && val == ESipDeregisterCompleted )
             {
             // If SIP is deregistered, let the VPN Connection Agent to 
             // proceed VPN session start.
-            if ( val == ESipDeregisterCompleted )
-                {
-                iAgent.ProceedServiceStart();
-                }
+            LOG_( "CVpnSipObserver::RunL SIP is deregistered. VPN Connection Agent continue with VPN start." );
+            iAgent.ProceedServiceStart();            
             }
-        // Keep monitoring.
-        Subscribe();
+        else
+            {
+            // Keep monitoring.
+            Subscribe();
+            }
         }
     // Check if observer can be restarted.
     else if ( iStatus != KErrCancel 
