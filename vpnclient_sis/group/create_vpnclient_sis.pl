@@ -101,10 +101,7 @@ if ($config eq "UREL")
 
 	# remove temp files
 	unlink <temp_*_urel.pkg>;  
-		
-}
-elsif ($config eq "UDEB")  
-{
+
 	# nokia_vpn_client_localised_armv5_udeb.pkg
 		replace_line_and_create_temp(
 		    '^\(0x101F5147\),.*?,.*?,.*?, TYPE=SA, RU$',
@@ -121,6 +118,11 @@ elsif ($config eq "UDEB")
 			
 	# remove temp files
 	unlink <temp_*_udeb.pkg>;
+			
+}
+elsif ($config eq "UDEB")  
+{
+#empty
 }
 else
 {
