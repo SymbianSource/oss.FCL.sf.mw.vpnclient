@@ -24,6 +24,9 @@
 #include <badesca.h>
 #include <in_sock.h>
 
+#include "pkidefs.h"
+
+
 #define FIRST_SEC_PARSER_VERSION    1
 #define SEC_PARSER_VERSION          3
 
@@ -79,7 +82,6 @@ const TInt KSecParserErrCRACKLAMType        = -5294;
 const TInt KSecParserErrUseIntAddr          = -5295;
 const TInt KSecParserErrUseNATProbe         = -5296;
 const TInt KSecParserErrUnknown             = -5297;
-
 
 
 //Values for the choice lists used in the .RSS
@@ -156,11 +158,11 @@ enum TCertFormat
 };
 
 
-//RSA Encryption peer public keys
+// RSA Encryption peer public keys
 struct TCertInfo
 {
-    TCertFormat iFormat;
-    TFileName   iData;    
+    TCertFormat       iFormat;
+    TBuf<KMaxX500DN>  iData;    
 };
 
 
@@ -174,13 +176,13 @@ enum TIdentityAsRfc822Name
 //Own certificates
 struct TOwnCertInfo
 {
-    TCertFormat iFormat;
-    TFileName iData;    //File containing the peer RSA public key
-    TBuf<128> iRfc822NameFqdn;
-    TIdentityAsRfc822Name iIdentityAsRfc822Name;
-    TBuf<256> iSubjectDnSuffix;
-    TInt iPrivateKeyLength;
-    TInt iOwnCertExists;                     // 0 = no own cert   1 = own cert exists
+    TCertFormat            iFormat;
+    TFileName              iData;  // File containing the peer cert
+    TBuf<KMaxRfc822>       iRfc822NameFqdn;
+    TIdentityAsRfc822Name  iIdentityAsRfc822Name;
+    TBuf<KMaxX500DN>       iSubjectDnSuffix;
+    TInt                   iPrivateKeyLength;
+    TInt                   iOwnCertExists;  // 0=no own cert, 1=own cert exists
 };
 
 class TStringData

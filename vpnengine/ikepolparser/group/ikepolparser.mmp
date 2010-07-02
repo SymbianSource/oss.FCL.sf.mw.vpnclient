@@ -30,6 +30,7 @@ SOURCEPATH  ../src
 SOURCE      ikepolparser.cpp
 
 USERINCLUDE ../inc
+USERINCLUDE ../../pkiserviceapi/inc
 
 MW_LAYER_SYSTEMINCLUDE
 

@@ -168,7 +168,8 @@ class TSecurityObjectDescriptor
             };              // Optional if only certificate is needed
         void SetObjectName(const TDesC &aObjectName)
             {
-            if(aObjectName.Length() > 0)
+            TInt len = aObjectName.Length();
+            if(0 < len && SHORT_FILENAME_LENGTH >= len)
                 {
                 iObjectName.Copy(aObjectName);
                 iObjectNameUsed = ETrue;
@@ -180,44 +181,48 @@ class TSecurityObjectDescriptor
             };
         // Issuer and serial are not defined in the filter, these will be checked separately
         void SetTrustedAuthority(const TDesC8 &aTrustedAuthority)
+            {
+            TInt len = aTrustedAuthority.Length();
+            if(0 < len && KMaxX500DN >= len)
                 {
-                if(aTrustedAuthority.Length() > 0)
-                    {
-                    iTrustedAuthority.Copy(aTrustedAuthority);
-                    iTrustedAuthorityUsed = ETrue;
-                    }
-                else
-                    {
-                    iTrustedAuthorityUsed = EFalse;
-                    }
-                };
+                iTrustedAuthority.Copy(aTrustedAuthority);
+                iTrustedAuthorityUsed = ETrue;
+                }
+            else
+                {
+                iTrustedAuthorityUsed = EFalse;
+                }
+            };
         void SetIdentitySubjectName(const TDesC8 &aIdentitySubjectName)
+            {
+            TInt len = aIdentitySubjectName.Length();
+            if(0 < len && KMaxX500DN >= len)
                 {
-                    if(aIdentitySubjectName.Length() > 0)
-                        {
-                        iIdentitySubjectName.Copy(aIdentitySubjectName);
-                        iIdentitySubjectNameUsed = ETrue;
-                        }
-                    else
-                        {
-                        iIdentitySubjectNameUsed = EFalse;
-                        }
-                };
+                iIdentitySubjectName.Copy(aIdentitySubjectName);
+                iIdentitySubjectNameUsed = ETrue;
+                }
+            else
+                {
+                iIdentitySubjectNameUsed = EFalse;
+                }
+            };
         void SetIdentityRfc822Name(const TDesC8 &aIdentityRfc822Name)
+            {
+            TInt len = aIdentityRfc822Name.Length();
+            if(0 < len && KMaxRfc822 >= len)
                 {
-                    if(aIdentityRfc822Name.Length() > 0)
-                        {
-                        iIdentityRfc822Name.Copy(aIdentityRfc822Name);
-                        iIdentityRfc822NameUsed = ETrue;
-                        }
-                    else
-                        {
-                        iIdentityRfc822NameUsed = EFalse;
-                        }
-                };
+                iIdentityRfc822Name.Copy(aIdentityRfc822Name);
+                iIdentityRfc822NameUsed = ETrue;
+                }
+                else
+                {
+                iIdentityRfc822NameUsed = EFalse;
+                }
+            };
         void SetSerialNumber(const TDesC8 &aSerialNumber)
             {
-            if(aSerialNumber.Length() > 0)
+            TInt len = aSerialNumber.Length();
+            if(0 < len && KMaxSerial >= len)
                 {
                 iSerialNumber.Copy(aSerialNumber);
                 iSerialNumberUsed = ETrue;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -146,6 +146,8 @@ TInt CPKIMapper::GetCertDetailsL(TSecurityObjectDescriptor& aSecDesc,
                                  TBool aInfoOnly,
                                  TCertificateListEntry& aResultCertInfo)
     {
+    LOG(Log::Printf(_L("CPKIMapper::GetCertDetailsL\n")));
+    
     TInt index;
     TInt err = KErrNone;
     
@@ -159,23 +161,18 @@ TInt CPKIMapper::GetCertDetailsL(TSecurityObjectDescriptor& aSecDesc,
     
     if (err == KErrNone)
         {        
-        const CMapDescriptor* mapping = (*iMapping)[index];        
-        aResultCertInfo.iObjectName = mapping->Label();
-        aResultCertInfo.iOwnerType = mapping->OwnerType();
-        aResultCertInfo.iTrustedAuthority = mapping->TrustedAuthority();
-        aResultCertInfo.iIdentitySubjectName = mapping->IdentitySubjectName();
-        aResultCertInfo.iSerialNumber = mapping->SerialNumber();
-        aResultCertInfo.iSubjectKeyId = mapping->CertificateKeyId();
-        aResultCertInfo.iKeySize = mapping->KeySize();                 
-        aResultCertInfo.iKeyAlgorithm = mapping->KeyAlgorithm();       
-        aResultCertInfo.iIsDeletable = mapping->Deletable();           
+        const CMapDescriptor* mapping = (*iMapping)[index];
+        CopyCertDataL( *mapping, aResultCertInfo );  
         }
+
     return err;    
     }
 
 
 TInt CPKIMapper::GetCertListL(const RMessage2 &aMessage, TBool aInfoOnly)
 {
+    LOG(Log::Printf(_L("CPKIMapper::GetCertListL\n")));
+
     TInt pos = 0;
     TInt iLast = 0;
     TInt iFirst = 0;
@@ -184,25 +181,19 @@ TInt CPKIMapper::GetCertListL(const RMessage2 &aMessage, TBool aInfoOnly)
     CBufFlat* list = CBufFlat::NewL(sizeof(TCertificateListEntry));
     CleanupStack::PushL(list);
     list->ResizeL(iCount * sizeof(TCertificateListEntry));
-    TCertificateListEntry certInfo;
+    
+    TCertificateListEntry* certInfo = new (ELeave) TCertificateListEntry();
+    CleanupStack::PushL( certInfo );
     
     for(TInt i = iFirst; i < iLast; i++)
         {
         CMapDescriptor* mapping = (*iMapping)[i];
         if(aInfoOnly || mapping->CertValidity() != CMapDescriptor::EExpired)
             {
-            certInfo.iObjectName = mapping->Label();
-            certInfo.iOwnerType = mapping->OwnerType();
-            certInfo.iTrustedAuthority = mapping->TrustedAuthority();
-            certInfo.iIdentitySubjectName = mapping->IdentitySubjectName();
-            certInfo.iSerialNumber = mapping->SerialNumber();
-            certInfo.iSubjectKeyId = mapping->CertificateKeyId();
-            certInfo.iKeySize = mapping->KeySize();                   // Key size
-            certInfo.iKeyAlgorithm = mapping->KeyAlgorithm();         // RSA, DSA
-            certInfo.iIsDeletable = mapping->Deletable();           // IsDeletable
+            CopyCertDataL( *mapping, *certInfo );
 
             list->Write(pos * sizeof(TCertificateListEntry),
-                        (TAny*)&certInfo,
+                        (TAny*)certInfo,
                         sizeof(TCertificateListEntry));
             pos++;
             if(pos >= iCount)
@@ -214,19 +205,23 @@ TInt CPKIMapper::GetCertListL(const RMessage2 &aMessage, TBool aInfoOnly)
     TPtr8 ptrList = list->Ptr(0);
     aMessage.WriteL(0, ptrList);
 
-    CleanupStack::PopAndDestroy(1); // list
+    CleanupStack::PopAndDestroy(  2 );  // list, certInfo
     return KErrNone;
 }
 
 
 void CPKIMapper::GetApplicableCertListL(const RMessage2& aMessage, const RArray<TUid>& aUidArray)
 {
+    LOG(Log::Printf(_L("CPKIMapper::GetApplicableCertListL\n")));
+    
     TInt pos = 0;
     
     CBufFlat* list = CBufFlat::NewL(sizeof(TCertificateListEntry));
     CleanupStack::PushL(list);
     list->ResizeL(iCount * sizeof(TCertificateListEntry));
-    TCertificateListEntry certInfo;
+
+    TCertificateListEntry* certInfo = new (ELeave) TCertificateListEntry();
+    CleanupStack::PushL( certInfo );
 
     for(TInt i = 0; (i < iMapping->Count()) && (pos < iCount); i++)
         {
@@ -239,18 +234,10 @@ void CPKIMapper::GetApplicableCertListL(const RMessage2& aMessage, const RArray<
                     {
                     if(mapping->IsApplicable(aUidArray[j]))
                         {
-                        certInfo.iObjectName = mapping->Label();
-                        certInfo.iOwnerType = mapping->OwnerType();
-                        certInfo.iTrustedAuthority = mapping->TrustedAuthority();
-                        certInfo.iIdentitySubjectName = mapping->IdentitySubjectName();
-                        certInfo.iSerialNumber = mapping->SerialNumber();
-                        certInfo.iSubjectKeyId = mapping->CertificateKeyId();
-                        certInfo.iKeySize = mapping->KeySize();                   // Key size
-                        certInfo.iKeyAlgorithm = mapping->KeyAlgorithm();         // RSA, DSA
-                        certInfo.iIsDeletable = mapping->Deletable();           // IsDeletable
+                        CopyCertDataL( *mapping, *certInfo );
 
                         list->Write(pos * sizeof(TCertificateListEntry),
-                                    (TAny*)&certInfo,
+                                    (TAny*)certInfo,
                                     sizeof(TCertificateListEntry));
                         pos++;
                         break;
@@ -262,7 +249,7 @@ void CPKIMapper::GetApplicableCertListL(const RMessage2& aMessage, const RArray<
     TPtr8 ptrList = list->Ptr(0);
     aMessage.WriteL(0, ptrList);
 
-    CleanupStack::PopAndDestroy(1); // list
+    CleanupStack::PopAndDestroy( 2 );  // list, certInfo
 }
 
 
@@ -492,44 +479,20 @@ TInt CPKIMapper::ResolveCertMappingL(TSecurityObjectDescriptor &aDescriptor, TDe
 
 void CPKIMapper::LogSearchArguments(TSecurityObjectDescriptor &aDescriptor) const
     {
-    TBuf<256> temp;
     LOG(Log::Printf(_L("====Object Search arguments====\n")));
     if(aDescriptor.iTrustedAuthorityUsed)
         {
-        temp.Copy(aDescriptor.iTrustedAuthority);
-        if((aDescriptor.iTrustedAuthority[0] != 0x30)
-           || ((aDescriptor.iTrustedAuthority[1] != 0x81)
-               && (aDescriptor.iTrustedAuthority[1] != 0x82)
-               && ((aDescriptor.iTrustedAuthority[1] + 2) != aDescriptor.iTrustedAuthority.Length())))
-            {
-            LOG(Log::Printf(_L("Trusted authority: %S\n"), &temp));
-            }
-        else
-            {
-            LOG(Log::Printf(_L("Trusted authority:")));
-            LOG(Log::HexDump(NULL, NULL, aDescriptor.iTrustedAuthority.Ptr(), aDescriptor.iTrustedAuthority.Length()));
-            }
+        LOG(Log::Printf(_L("Trusted authority:")));
+        LOG(Log::HexDump(NULL, NULL, aDescriptor.iTrustedAuthority.Ptr(), aDescriptor.iTrustedAuthority.Length()));
         }
     if(aDescriptor.iIdentitySubjectNameUsed)
         {
-        temp.Copy(aDescriptor.iIdentitySubjectName);
-        if((aDescriptor.iIdentitySubjectName[0] != 0x30)
-           || ((aDescriptor.iIdentitySubjectName[1] != 0x81)
-               && (aDescriptor.iIdentitySubjectName[1] != 0x82)
-               && ((aDescriptor.iIdentitySubjectName[1] + 2) != aDescriptor.iIdentitySubjectName.Length())))
-            {
-            LOG(Log::Printf(_L("SubjectName: %S\n"), &temp));
-            }
-        else
-            {
-            LOG(Log::Printf(_L("SubjectName:")));
-            LOG(Log::HexDump(NULL, NULL, aDescriptor.iIdentitySubjectName.Ptr(), aDescriptor.iIdentitySubjectName.Length()));
-            }
+        LOG(Log::Printf(_L("SubjectName:")));
+        LOG(Log::HexDump(NULL, NULL, aDescriptor.iIdentitySubjectName.Ptr(), aDescriptor.iIdentitySubjectName.Length()));
         }
     if(aDescriptor.iIdentityRfc822NameUsed)
         {
-        temp.Copy(aDescriptor.iIdentityRfc822Name);
-        LOG(Log::Printf(_L("Rfc822Name: %S\n"), &temp));
+        LOG(Log::Printf(_L("Rfc822Name: %S\n"), &aDescriptor.iIdentityRfc822Name));
         }
     if(aDescriptor.iSerialNumberUsed)
         {
@@ -559,4 +522,59 @@ void CPKIMapper::LogSearchArguments(TSecurityObjectDescriptor &aDescriptor) cons
         LOG(Log::Printf(_L("KeyAlgorithm: %d\n"), aDescriptor.iKeyAlgorithm));
         }
     }   
+
+
+void CPKIMapper::CopyCertDataL(
+    const CMapDescriptor& aMapping, TCertificateListEntry& aCertInfo ) const
+    {
+    LOG(Log::Printf(_L("CPKIMapper::CopyCertDataL\n")));
+
+    TInt len = 0;
+
+    aCertInfo.iObjectName = aMapping.Label();
+    aCertInfo.iOwnerType  = aMapping.OwnerType();
+
+    TPtrC8 ta = aMapping.TrustedAuthority();
+    len = ta.Length();
+
+    if( KMaxX500DN >= len )
+        {
+        aCertInfo.iTrustedAuthority = ta;
+        }
+    else
+        {
+        LOG(Log::Printf(_L("Trusted authority length: %d\n"), len ));
+        User::Leave( KErrArgument );
+        }
+
+    TPtrC8 isn = aMapping.IdentitySubjectName();       
+    len = isn.Length();
+    
+    if( KMaxX500DN >= len )
+        {
+        aCertInfo.iIdentitySubjectName = isn;
+        }
+    else{
+        LOG(Log::Printf(_L("Subject name length: %d\n"), len ));
+        User::Leave( KErrArgument );
+        }    
+    
+    TPtrC8 sn = aMapping.SerialNumber();
+    len = sn.Length();
+            
+    if( KMaxSerial >= len )
+        {
+        aCertInfo.iSerialNumber = sn;
+        }
+    else
+        {
+        LOG(Log::Printf(_L("Serial number length: %d\n"), len ));
+        User::Leave( KErrArgument );
+        }
+
+    aCertInfo.iSubjectKeyId = aMapping.CertificateKeyId();
+    aCertInfo.iKeySize      = aMapping.KeySize();
+    aCertInfo.iKeyAlgorithm = aMapping.KeyAlgorithm();  // RSA, DSA
+    aCertInfo.iIsDeletable  = aMapping.Deletable();
+    }
 

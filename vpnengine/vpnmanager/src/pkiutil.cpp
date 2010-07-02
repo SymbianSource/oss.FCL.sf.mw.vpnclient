@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -251,7 +251,9 @@ TCertStatus PkiUtil::CertStatusL(RPKIServiceAPI& aPkiService, const TDesC8& aTru
 
     HBufC8* certData = HBufC8::NewL(KExpectedMaxCertSize);
     HBufC8* subjectNameString;
+    
     _LIT8(KEmptyString, "");
+    
     CleanupStack::PushL(certData);
 
     TPtr8 certDataPtr = certData->Des();
@@ -283,7 +285,6 @@ TCertStatus PkiUtil::CertStatusL(RPKIServiceAPI& aPkiService, const TDesC8& aTru
         aPkiService.Finalize(opContext);
         }
 
-
     // Make sure that the cert, if found, is valid
     if (status.Int() == KErrNone)
         {
@@ -292,6 +293,7 @@ TCertStatus PkiUtil::CertStatusL(RPKIServiceAPI& aPkiService, const TDesC8& aTru
     else //if not found, check wether certificate chain exists
         {
         certStatus = ECertNotFound;
+        
         //checking if certificate chain is found
         CleanupStack::PopAndDestroy(); //  certData
         
@@ -711,7 +713,7 @@ RPointerArray<CX509Certificate> PkiUtil::GetCaCertListL(RPKIServiceAPI& aPkiServ
 
             for (TInt i = 0; i < certListArray->Count(); ++i)
                 {
-                TCertificateListEntry entry = (*certListArray)[i];
+                TCertificateListEntry& entry = (*certListArray)[i];
                 if (entry.iOwnerType == EPKICACertificate)
                     {
                     CX509Certificate* cert = ReadCertificateLC(aPkiService,
@@ -847,6 +849,7 @@ TCertStatus PkiUtil::CheckUserCertValidityL(RPKIServiceAPI& aPkiService,
                     break;
                     }
                 }
+            
 
             CleanupStack::PopAndDestroy(rfc822Name);
             CleanupStack::PopAndDestroy(subjectName);

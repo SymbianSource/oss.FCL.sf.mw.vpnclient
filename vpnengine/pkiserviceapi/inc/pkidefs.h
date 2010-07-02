@@ -25,7 +25,7 @@
 const TInt MAX_FILENAME_LENGTH = 64;
 const TInt SHORT_FILENAME_LENGTH = 64;
 
-const TUint32 KMaxX500DN = 256;
+const TUint32 KMaxX500DN = 1024;
 const TUint32 KMaxRfc822 = 64;
 const TUint32 KMaxUsageDer = 16;
 const TUint32 KMaxSerial = 128;
@@ -92,7 +92,6 @@ enum TPKIKeyAlgorithm
 typedef TX509KeyUsage TPKIKeyUsage;
    
 
-
 class TCertificateRequestListEntry
 {
     public:
@@ -123,5 +122,6 @@ class TKeyListEntry
         TUint                       iKeySize;                   // Key size
         TPKIKeyAlgorithm            iKeyAlgorithm;              // RSA, DSA
 };
+
 
 #endif

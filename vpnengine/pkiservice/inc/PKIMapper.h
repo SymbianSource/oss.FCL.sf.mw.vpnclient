@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2008 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -15,7 +15,6 @@
 *				 to use the storage model which is not native for that API.
 *
 */
-
 
 
 #if !defined (__PKIMAPPER_H__)
@@ -80,7 +79,14 @@ class CPKIMapper : public CBase
         TBool LabelIsUnique(const TDesC& aLabel) const;
         void LogMap(CMapDescriptor& aDescriptor) const;
         void LogSearchArguments(TSecurityObjectDescriptor& aDescriptor) const;        
-                
+        
+        /**
+         * Copies applicable data from aMapping to aCertInfo
+         */
+        void CopyCertDataL(
+            const CMapDescriptor& aMapping, TCertificateListEntry& aCertInfo
+        ) const;
+
     private: // C'tor    
 
         CPKIMapper();
@@ -89,7 +95,6 @@ class CPKIMapper : public CBase
     private: // data    
         TBool   iCacheCreated;       
         TInt    iCount;
-        /// Used when generating uniqname
 
         RPointerArray<CMapDescriptor>*      iMapping;
         TPckgBuf<TSecurityObjectDescriptor> iCurrentDescriptor;
