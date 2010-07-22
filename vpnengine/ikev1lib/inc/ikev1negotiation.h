@@ -25,6 +25,8 @@
 #include "ikev1SAdata.h"
 #include "ikepolparser.h"
 #include "ipsecsaspiretriever.h"
+#include "ikev1dialog.h"
+
 
 #define INITIATOR   0
 #define RESPONDER   1
@@ -84,7 +86,8 @@ class CPFKeySocketIf;
 //  Class CIkev1Negotiation: Contains all the info for each negotiation in progress
 //
 NONSHARABLE_CLASS(CIkev1Negotiation) : public CBase,
-                                       public MIpsecSaSpiRetrieverCallback
+                                       public MIpsecSaSpiRetrieverCallback,
+                                       public MIkeDialogComplete
     {
     friend class CIkev1InfoNegotiation;
     friend class TIkev1IsakmpStream;
@@ -173,6 +176,10 @@ public:
     void IpsecSaSpiRetrieved(TUint32 aSpiRequestId, 
                              TInt aStatus, 
                              TUint32 aSpi);	
+    
+    TInt   ProcessUserResponseL(CAuthDialogInfo *aUserInfo);
+    TInt   DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain);
+
 	
 private:
 
@@ -536,6 +543,11 @@ private:
 	CIpsecSaSpiRetriever* iIpsecSaSpiRetriever;
 	CPFKeySocketIf& iPFKeySocketIf;	
 	MIkeDebug& iDebug;
+	
+	HBufC8* iCRACKLAMUserName;
+	HBufC8* iCRACKLAMPassword;
+    CIkev1Dialog*      iDialog;      // Pending dialog object
+    CAuthDialogInfo*   iDialogInfo;  // Dialog info object
     };
 
 #endif // C_IKEV1NEGOTIATION_H

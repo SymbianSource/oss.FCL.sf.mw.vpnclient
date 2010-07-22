@@ -57,9 +57,6 @@ PRJ_EXPORTS
 ../vpnui/vpnpolicyrecognizer/rom/vpnpolicyrecognizer.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnpolicyrecognizer.iby)
 ../rom/ipsecvpn.iby                                                    CORE_MW_LAYER_IBY_EXPORT_PATH(ipsecvpn.iby)
 
-// vpnapi.dll should be in rom always
-../vpnapiimpl/rom/vpnapi.iby                                           CORE_MW_LAYER_IBY_EXPORT_PATH(vpnapi.iby)
-
 // export localised loc file
 ../vpnui/vpnecomnotifier/loc/vpnnotifier.loc                           MW_LAYER_LOC_EXPORT_PATH(vpnnotifier.loc)
 
