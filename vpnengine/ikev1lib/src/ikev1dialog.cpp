@@ -189,12 +189,9 @@ void CIkev1Dialog::RunL()
     if ( iCallback )
 	{
 		TInt err;
-		TRAP(err, delete_obj = iCallback->DialogCompleteL(this, iUserInfo,
-								                          un_bfr,               //User name
-			                                              pw_bfr,               //Password
-			                                              NULL));               //domain
-	    delete un_bfr; 
-	    delete pw_bfr;
+		TRAP(err, delete_obj = iCallback->DialogCompleteL(
+		    iUserInfo, un_bfr, pw_bfr));
+	    
 	    if ( err != KErrNone )
 		  delete_obj = 1;
     }
@@ -607,11 +604,9 @@ void CDialogTimeout::RunL()
     {
 		TInt err;
 		DEBUG_LOG2(_L("Calling DialogCompleteL(), UserInfo = %x, Callback = %x"), (TUint32)iDialog->UserInfo(), (TUint32)Callback);					
-        TRAP(err, delete_dialog = Callback->DialogCompleteL(iDialog,
-                                                            iDialog->UserInfo(),
-                                                            NULL,               //User name
-                                                            NULL,               //Password
-                                                            NULL));             //domain
+        TRAP(err, delete_dialog = Callback->DialogCompleteL(
+            iDialog->UserInfo(), NULL, NULL));
+
 		DEBUG_LOG2(_L("DialogCompleteL() completed, err = %d, delete_dialog = %d"), err, delete_dialog);			
 		if ( err != KErrNone )
 			delete_dialog = 1;

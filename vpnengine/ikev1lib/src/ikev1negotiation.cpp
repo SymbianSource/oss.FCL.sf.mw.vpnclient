@@ -8409,11 +8409,12 @@ TInt CIkev1Negotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
     return KErrNone;
 
 }
+
 //
 // The implementation for class MIkeDialogComplete virtual function
 //
-TInt CIkev1Negotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo,
-                                            HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)
+TInt CIkev1Negotiation::DialogCompleteL(
+    TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret)
 {
 /*---------------------------------------------------------------------------
  *  
@@ -8424,24 +8425,20 @@ TInt CIkev1Negotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserIn
  *  
  *-------------------------------------------------------------------------*/
     TUint32 obj_id = 1;
-     CAuthDialogInfo* info = (CAuthDialogInfo*)aUserInfo;
-     DEBUG_LOG1(_L("CIkev1Negotiation::DialogCompleteL(), aUserInfo =  %x"), aUserInfo);
+    CAuthDialogInfo* info = (CAuthDialogInfo*)aUserInfo;
+    DEBUG_LOG1(_L("CIkev1Negotiation::DialogCompleteL(), aUserInfo =  %x"), aUserInfo);
              
-     if ( info )
-     {
+    if ( info )
+    {
         obj_id = info->GetObjId();
         DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
         if ( obj_id == DIALOG_INFO_ID )
         {
-           info->iUsername = aUsername;
-           info->iSecret   = aSecret;
-           info->iDomain   = aDomain;
-           obj_id = info->PluginSession()->AuthDialogCompletedL(info);
+            info->SetUserName(aUsername);
+            info->SetSecret(aSecret);
+            obj_id = info->PluginSession()->AuthDialogCompletedL(info);
         }   
-     }
+    }
 
-     return obj_id;
-    
+    return obj_id;
 }
-
-

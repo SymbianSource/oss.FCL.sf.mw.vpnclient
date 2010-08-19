@@ -46,8 +46,9 @@ PRJ_EXPORTS
 ../vpnengine/vpnmanager/rom/vpnmanager.iby                             CORE_MW_LAYER_IBY_EXPORT_PATH(vpnmanager.iby)
 ../vpnengine/vpnins/rom/vpnins.iby                                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpnins.iby)
 ../vpnengine/vpnipsecpolparser/rom/vpnipsecpolparser.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnipsecpolparser.iby)
+../vpnengine/agileprovisionws/rom/agileprovisionws.iby                 CORE_MW_LAYER_IBY_EXPORT_PATH(agileprovisionws.iby)
 ../vpnengine/vpntcwrapper/rom/vpntcwrapper.iby                         CORE_MW_LAYER_IBY_EXPORT_PATH(vpntcwrapper.iby)
-
+../vpnengine/vpnextapi/rom/vpnextapi.iby                               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnextapi.iby)
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifier.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifier.iby)
 ../vpnui/vpndialogmanager/rom/vpndialogmanager.iby                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpndialogmanager.iby)
 ../vpnui/vpnmanagementui/rom/vpnmanagementui.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnmanagementui.iby)
@@ -78,7 +79,8 @@ gnumakefile vpnclient_version_update.make
 
 #include "../vpnc_plat/vpnapi/group/bld.inf"
 #include "../vpnapiimpl/group/bld.inf"
-
+#include "../vpnengine/vpnextapi/group/bld.inf"
+#include "../vpnengine/agileprovisionws/group/bld.inf"
 #include "../vpnengine/eventmediatorapi/group/bld.inf"
 #include "../vpnengine/eventviewer/group/bld.inf"
 #include "../vpnengine/vpnins/group/bld.inf"

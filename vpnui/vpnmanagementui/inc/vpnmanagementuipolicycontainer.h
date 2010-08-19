@@ -88,16 +88,6 @@ class CVpnManagementUiPolicyContainer :
         void HandleListBoxEventL(
             CEikListBox* aListBox, TListBoxEvent aEventType);
 
-        void InstallPoliciesL();
-
-        void SynchroniseServerL();
-
-        void UpdatePolicyL(TVpnPolicyId aPolicyId);
-
-        // from MAcuApiWrapperCaller
-        void NotifyUpdatePolicyCompleteL(TInt aResult);
-        void NotifySynchroniseServerCompleteL(TInt aResult);
-        void NotifyStepChangedL(TInt aResult);
 
 
     public: // data
@@ -126,7 +116,7 @@ class CVpnManagementUiPolicyContainer :
         /**
         * If ETrue, Show Waitnote.
         */
-        TBool iShowWaitNote;
+
 
     private: // functions
 
@@ -182,7 +172,7 @@ class CVpnManagementUiPolicyContainer :
         */
         void ShowPoliciesL(); 
 
-        void PoliciesListEmptyL();
+
 
 
 
@@ -194,12 +184,6 @@ class CVpnManagementUiPolicyContainer :
         void GetHelpContext(TCoeHelpContext& aContext) const;
 #endif //__SERIES60_HELP
 
-    protected: //data
-
-        /**
-        * If ETrue, ConstructL calls PoliciesListEmptyL() method.
-        */
-        TBool iCallPoliciesListEmpty;
        
     private: //data
 

@@ -65,6 +65,7 @@ USERINCLUDE ../../../vpnengine/eventviewer/inc
 USERINCLUDE ../../../vpnapiimpl/inc
 USERINCLUDE ../../../vpnengine/vpncommon/inc //for logcommon.h
 USERINCLUDE ../../vpnecomnotifier/data
+USERINCLUDE ../../../vpnengine/vpnextapi/inc
 
 MW_LAYER_SYSTEMINCLUDE
 APP_LAYER_SYSTEMINCLUDE
@@ -88,6 +89,7 @@ LIBRARY     eventmedapi.lib
 LIBRARY     eventviewer.lib
 LIBRARY     centralrepository.lib
 LIBRARY     cmmanager.lib
+LIBRARY		vpnextapi.lib
 #ifdef __SCALABLE_ICONS
 LIBRARY     AknSkins.lib
 #endif //__SCALABLE_ICONS

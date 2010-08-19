@@ -45,6 +45,7 @@ _LIT( KFileIcons, "vpnmanagementui.mbm");
 enum TVpnUiCommands 
     {
     KVpnUiPolicyViewListItemId,
+    KVpnUiServerViewListItemId,
     KVpnUiLogViewListItemId
     };
 
@@ -294,13 +295,11 @@ void CVpnManagementUiView::HandleListBoxSelectionL()
             iLoader->ChangeViewL(KChangeViewPolicy);            
             break;
 
-        /*** NSSM support is discontinued. The code is left here in comments
-             because the server view might be used for another purpose in
-             future.
+        
         case KVpnUiServerViewListItemId:
             iLoader->ChangeViewL(KChangeViewServer);
             break;
-        ***/
+        
 
         case KVpnUiLogViewListItemId:
             iLoader->ChangeViewL(KChangeViewLog);
@@ -313,13 +312,11 @@ void CVpnManagementUiView::HandleListBoxSelectionL()
     }
 
 
-// ---------------------------------------------------------------------------
-// CVpnManagementUiView::NotifyPolicyImportComplete()
-// ---------------------------------------------------------------------------
-void CVpnManagementUiView::NotifyPolicyImportComplete(TInt aResult)
+
+void CVpnManagementUiView::NotifySynchroniseServerCompleteL(TInt aResult)
     {
     if ( aResult != KErrNone)
-        LOG_1("CVpnManagementUiView::NotifyPolicyImportComplete:%d", aResult);
+           LOG_1("CVpnManagementUiView::NotifySynchroniseServerCompleteL:%d", aResult);
     }
 
 // ---------------------------------------------------------------------------

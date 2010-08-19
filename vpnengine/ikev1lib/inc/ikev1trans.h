@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -63,6 +63,8 @@ class CInternalAddress;
 class TIkev1IsakmpStream;
 class MIkeDebug;
 class TInetAddr;
+class CCredentialCache;
+
 
 /**--------------------------------------------------------------------------
  *
@@ -100,8 +102,7 @@ public:
     static TUint16 GetAuthMethod(TUint16 aAuthMethod, TBool aXauthUsed, TInt aRole);
     static void BuildXauthVendorId(TIkev1IsakmpStream &aMsg);
 
-	TInt DialogCompleteL(CIkev1Dialog* aDialog, TAny* aUserInfo, HBufC8* aUsername,
-	                     HBufC8* aSecret, HBufC8* aDomain);	
+	TInt DialogCompleteL(TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret);
 	TInt BuildConfigRequestL();
     
 private:
@@ -128,7 +129,8 @@ private:
                        CIkev1PluginSession* aPluginSession,
                        CIkev1Negotiation* aNegotiation,
                        MIkeDebug& aDebug );
-    void ConstructL(); 
+    void ConstructL();
+    void GetCredentialsL();
 
 private:
     CIkev1PluginSession* iPluginSession;
@@ -145,9 +147,13 @@ private:
     TUint32 iRequestFlags;
     TBool   iXauthCompleted;
     TBool   iCfgModeCompleted;
-	TBool   iUseOlderPIXXauth;     // use draft-ietf-ipsec-isakmp-xauth-04.txt  
-                                   
-    TLastIKEMsg iLastTransMsgInfo;    
+	TBool   iUseOlderPIXXauth;     // use draft-ietf-ipsec-isakmp-xauth-04.txt
+	TInt    iCredentialType; 
+
+    TLastIKEMsg iLastTransMsgInfo;
+    
+    CCredentialCache* iCache;
+
     MIkeDebug& iDebug;
 };
 

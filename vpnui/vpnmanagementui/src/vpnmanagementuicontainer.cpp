@@ -247,12 +247,10 @@ void CVpnManagementUiContainer::ShowItemsL()
     CleanupStack::PopAndDestroy();  // resourceText
         
     //Create Policy servers setting listbox item
-    // Hide policy server from UI
-    // NSSM support is discontinued
-    // Policy server UI may be used for another purpose in future
-    // resourceText = StringLoader::LoadLC( R_VPN_POLICY_SERVERS );
-    // itemTextArray->AppendL(*resourceText);
-    // CleanupStack::PopAndDestroy();  // resourceText
+   
+    resourceText = StringLoader::LoadLC( R_VPN_POLICY_SERVERS );
+     itemTextArray->AppendL(*resourceText);
+     CleanupStack::PopAndDestroy();  // resourceText
 
     //Create Log setting listbox item
     resourceText = StringLoader::LoadLC( R_VPN_LOG );

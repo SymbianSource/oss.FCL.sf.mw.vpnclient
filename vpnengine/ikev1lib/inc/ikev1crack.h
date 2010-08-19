@@ -58,28 +58,39 @@ class ThdrISAKMP;
 class CIkev1PluginSession;
 class MIkeDebug;
 
-class CAuthDialogInfo : public CBase
+
+NONSHARABLE_CLASS(CAuthDialogInfo) : public CBase
     {
 public:
     CAuthDialogInfo(CIkev1PluginSession* aPluginSession, TUint32 aObjId, TUint32 aSAId, TUint32 aMsgId)
                     { iPluginSession = aPluginSession; iSAId = aSAId; iObjId  = aObjId; iMsgId  = aMsgId; }
-    ~CAuthDialogInfo() {iObjId = 0;}    
+    ~CAuthDialogInfo();  
     inline CIkev1PluginSession* PluginSession() { return iPluginSession;}
     inline TUint32     SAId() { return iSAId;}  
     inline TUint32     GetObjId() { return iObjId;}
     inline TUint32     GetMsgId() { return iMsgId;}     
     
+    void SetUserName( HBufC8* aUserName );
+    void SetSecret( HBufC8* aSecret );
+
 private:
-    TUint32    iObjId;      // Object identifier 
+    TUint32              iObjId;      // Object identifier 
     CIkev1PluginSession* iPluginSession;  // Plugin session pointer  
-    TUint32    iSAId;       // SA id of CIkev1Negotiation
-    TUint32    iMsgId;      // Transaction exchange message ID
+    TUint32              iSAId;       // SA id of CIkev1Negotiation
+    TUint32              iMsgId;      // Transaction exchange message ID
     
 public: 
-//  Credentials data get from user with asynchronous dialog 
-	HBufC8     *iUsername;     
-    HBufC8     *iSecret;
-    HBufC8     *iDomain;    
+    /**
+     * Username from UI dialog or cache.
+     * Own.
+     */
+	HBufC8* iUsername;
+	
+	/**
+     * Secret from UI dialog or cache.
+     * Own.
+     */    
+    HBufC8* iSecret;
     };
 
 
@@ -92,9 +103,8 @@ public:
     TInt   ExecuteCRACKMsgL(const ThdrISAKMP &aHdr);
     TInt   ProcessUserResponseL(CAuthDialogInfo *aUserInfo);
     TInt   CrackAuthenticationFailedL(const TNotificationISAKMP *aNotifPayload);
-	
-	TInt   DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain);
-	
+
+	TInt DialogCompleteL(TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret);
     
 private:
     TInt    GetDataL(HBufC8* aChallenge);
@@ -117,7 +127,7 @@ private:
 
 	HBufC8           *iUserName;    // Saved for User name caching 	
 	HBufC8           *iDomain;      // Fixed domain value for this CRACK negotiation
-	
+
 	MIkeDebug& iDebug;
 };
 

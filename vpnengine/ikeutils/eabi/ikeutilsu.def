@@ -46,4 +46,5 @@ EXPORTS
 	_ZTV19TPfkeySupportedAuth @ 45 NONAME
 	_ZTV20CIpsecSaSpiRetriever @ 46 NONAME
 	_ZTV22TPfkeySupportedEncrypt @ 47 NONAME
+	_ZN7CmUtils12GetPolicyIdLEmR4TBufILi50EE @ 48 NONAME
 

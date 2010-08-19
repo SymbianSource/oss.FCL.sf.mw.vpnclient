@@ -53,7 +53,16 @@ enum TVpnApiRequest
     // OMA DM based policy management)
     EVpnAddPolicy,
     EVpnUpdatePolicyDetails,
-    EVpnUpdatePolicyData
+    EVpnUpdatePolicyData,
+    
+    //Policy provision
+    EExtCreateProvisionServer,
+    EExtDeletePolicyServer,
+    EExtVPNPolicyServerList,
+    EExtVPNPolicyServerDetails,
+    EExtSynchronizePolicyServer,
+    EExtCancelSynchronize,
+    EExtGetPolicyName
     };
 
 // Panic codes

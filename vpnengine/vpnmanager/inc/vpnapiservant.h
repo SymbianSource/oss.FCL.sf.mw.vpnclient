@@ -22,7 +22,11 @@
 
 #include <e32base.h>
 #include "vpnapi.h"
+#include "vpnextapi.h"
+#include "vpnextapiservantdefs.h"
 #include "eventlogger.h"
+#include "fileutil.h"
+
 
 class RFs;
 class CPolicyStore;
@@ -68,12 +72,20 @@ private:
     void AddPolicyL(const RMessage2& aMessage);
     void UpdatePolicyDetailsL(const RMessage2& aMessage);
     void UpdatePolicyDataL(const RMessage2& aMessage);
+    void CreateProvisionServerL( const RMessage2& aMessage );
+    void ListProvisionServerL( const RMessage2& aMessage );
+    void GetProvisionServerDetailsL( const RMessage2& aMessage );
+    void DeleteVPNPolicyServerL( const RMessage2& aMessage );
+    void SynchronizeVPNPolicyServerL( const RMessage2& aMessage );
+    void CancelSynchronize( const RMessage2& aMessage );
+    void GetVPNPolicyNameL( const RMessage2& aMessage );
 
 private:
     CPolicyStore* iPolicyStore;
     CPwdChanger* iPwdChanger;
     CPolicyImporter* iPolicyImporter;
     RFs& iFs;
+    TFileUtil iFileUtil;
     };
 
 #endif // __VPNAPISERVANT_H__

@@ -108,22 +108,13 @@ void CVpnManagementUiPolicyView::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane
         {
         TInt currentItem = iPolicyContainer->iListBox->CurrentItemIndex();
 
-        // the policy list is empty  all except Install and Exit is dimmed
         if ( currentItem == -1 )
             {
             aMenuPane->SetItemDimmed( EVpnUiCmdPolicyDetails, ETrue );
             aMenuPane->SetItemDimmed( EVpnUiCmdDeletePolicy, ETrue );
-            aMenuPane->SetItemDimmed( EVpnUiCmdUpdatePolicy, ETrue );
-            // NSSM support is discontinued
-            aMenuPane->SetItemDimmed( EVpnUiCmdInstallPolicies, ETrue );
+          
             }
-        // at least one policy is installed, 
-        else 
-            {
-            aMenuPane->SetItemDimmed( EVpnUiCmdInstallPolicies, ETrue );
-            // NSSM support is discontinued
-            aMenuPane->SetItemDimmed( EVpnUiCmdUpdatePolicy, ETrue );
-            }
+         
         }
     }
 
@@ -144,8 +135,7 @@ TUid CVpnManagementUiPolicyView::Id() const
 //
 void CVpnManagementUiPolicyView::HandleCommandL( TInt aCommand )
     {
-    TBool ffsLow;
-    switch ( aCommand )
+     switch ( aCommand )
         {
         case EAknSoftkeyBack:
             {
@@ -165,34 +155,7 @@ void CVpnManagementUiPolicyView::HandleCommandL( TInt aCommand )
             break;
             }
 
-        case EVpnUiCmdInstallPolicies:
-            {
-            ffsLow = iLoader.FFSSpaceBelowCriticalLevelL( ETrue, 0 );
-    		if(!ffsLow)
-    			{
-            	iPolicyContainer->InstallPoliciesL();
-    			}
-            break;
-            }
-        case EVpnUiCmdUpdatePolicy:
-            {
-            ffsLow = iLoader.FFSSpaceBelowCriticalLevelL( ETrue, 0 );
-    		if(!ffsLow)
-    			{
-            	iCurrentPosition = iPolicyContainer->iListBox->CurrentItemIndex();
-            	//Save policy index for Connecting via note
-            	iLoader.iCurrentPolicyIndex = iCurrentPosition;
-            	//Save update operation for Connecting via note
-            	iLoader.iPolicyUpdate = ETrue;
-
-            	TVpnPolicyInfo policyInfo;
-            	policyInfo.iId = iLoader.VpnApiWrapperL().PolicyListL()->At(
-            	    iCurrentPosition).iId;
-            	iPolicyContainer->UpdatePolicyL(policyInfo.iId);
-    			}
-            break;
-            }
-
+     
         case EVpnUiCmdDeletePolicy:
             {
             //confirmation query
@@ -312,8 +275,6 @@ void CVpnManagementUiPolicyView::SetMiddleSoftKeyLabelL(
 		ReadResourceL(*text, aResourceId);
 		cbaGroup->RemoveCommandFromStack(
 		    KVpnMSKControlId, EVpnUiCmdPolicyDetails);
-		cbaGroup->RemoveCommandFromStack(
-		    KVpnMSKControlId, EVpnUiCmdInstallPolicies);
 		cbaGroup->AddCommandToStackL(
 		    KVpnMSKControlId, aCommandId, text->Des());
 		CleanupStack::PopAndDestroy(text);

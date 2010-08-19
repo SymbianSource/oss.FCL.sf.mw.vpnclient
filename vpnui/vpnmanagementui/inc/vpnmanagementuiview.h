@@ -96,9 +96,8 @@ class CVpnManagementUiView : public CGSPluginInterface, public MEikListBoxObserv
         */
         void HandleCommandL(TInt aCommand);
 
-        // from MAcuApiWrapperCaller
-        void NotifyPolicyImportComplete(TInt aResult);
         
+        void NotifySynchroniseServerCompleteL(TInt aResult);
     public:
     
         /**

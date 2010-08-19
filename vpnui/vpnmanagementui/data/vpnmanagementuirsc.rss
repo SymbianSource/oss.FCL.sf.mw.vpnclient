@@ -233,16 +233,11 @@ RESOURCE MENU_PANE r_vpnui_policies_view_menu
     items=
         {
         MENU_ITEM { 
-            command=EVpnUiCmdInstallPolicies; 
-            txt = qtn_vpn_options_install_policies; },
-        MENU_ITEM { 
             command=EVpnUiCmdPolicyDetails;
             txt = qtn_vpn_options_policy_details;
             flags=EEikMenuItemSpecific;
              },
-        MENU_ITEM { 
-            command=EVpnUiCmdUpdatePolicy; 
-            txt = qtn_vpn_options_update_policy; },
+
         MENU_ITEM { 
             command=EVpnUiCmdDeletePolicy; 
             txt = qtn_vpn_options_delete_policy;
@@ -1184,6 +1179,18 @@ RESOURCE TBUF r_vpn_connecting_via_ap
 RESOURCE TBUF r_vpn_wait_policy_dl_processing
     {
     buf = qtn_vpn_wait_policy_dl_processing;
+    }
+
+//----------------------------------------------------
+//    
+//     r_vpn_wait_importing_policy
+//     wait note for synchronizing and importing policy
+//
+//----------------------------------------------------
+//
+RESOURCE TBUF r_vpn_wait_importing_policy
+    {
+    buf = qtn_vpn_wait_importing_policy;
     }
 
 //----------------------------------------------------

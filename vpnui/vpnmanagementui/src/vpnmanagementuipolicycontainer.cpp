@@ -25,7 +25,7 @@
 #include "vpnuiloader.h"
 #include "vpnmanagementuipolicycontainer.h"
 #include "vpnmanagementui.hrh"
-
+#include "vpnextapi.h"
 
 #ifdef __SERIES60_HELP
 #include <csxhelp/vpn.hlp.hrh> // for help context of VPN Management UI
@@ -68,7 +68,7 @@ void CVpnManagementUiPolicyContainer::ConstructL(
     CreateListBoxL();
     
     //Initialization
-    iShowWaitNote = EFalse;
+
     
     ShowPoliciesL();
 	SetRect( aRect );
@@ -83,152 +83,10 @@ void CVpnManagementUiPolicyContainer::ConstructL(
 void CVpnManagementUiPolicyContainer::ActivateL()
     {
     CCoeControl::ActivateL();
-    // put empty list checking & required actions here.
-    /*** NSSM support is discontinued.
-         Code is kept in comments temporarily because similar UI functionality
-         might be needed for another purpose.
-    if (!iLoader.iBackFromServerDefinition)
-        {
-        PoliciesListEmptyL();
-        }
-    if (iLoader.iNewServerDefinition)
-        {//Synchronise server query
-            HBufC* temp;
-            temp = StringLoader::LoadLC( R_VPN_QUEST_SYNCHRONISE_SERVER );
-            CAknQueryDialog* query = CAknQueryDialog::NewL( CAknQueryDialog::EConfirmationTone );
-            TInt retval = query->ExecuteLD( R_CONFIRMATION_QUERY, *temp );
-            CleanupStack::PopAndDestroy();  // temp
-            if ( retval )
-                {
-                //Show wait dialog
-                //ShowWaitNoteL(); called now from NotifyStepChangedL
-                iShowWaitNote = ETrue;
-                // Get selection neme for connecting via note
-                // and save it to the member variable of iLoader
-                iLoader.GetSelectionNameL( iLoader.iSelectionName );
-                
-                //Save server index for Connecting via note
-                iLoader.iCurrentServerIndex = 0;
-                //Synchronise server
-                iLoader.AcuApiWrapperL().SynchroniseServerL(0,this);
-   
-                //Set iNewServerDefinition to false, because 
-                //we are now synchronised server
-                iLoader.iNewServerDefinition = EFalse;
-                }
-        } ***/
+
     }
 
-void CVpnManagementUiPolicyContainer::PoliciesListEmptyL()
-    {
-    if (iListItemCount == 0)
-        {
-        //Set iNewServerDefinition to false, because
-        //we don't want to show note
-        //"new server defined synchronise now"
-        iLoader.iNewServerDefinition = EFalse;
-        // no policies installed, confirmation query
-        HBufC* temp;
-        temp = StringLoader::LoadLC( R_VPN_QUEST_DL_POLICIES_NOW );
-        CAknQueryDialog* query = CAknQueryDialog::NewL( CAknQueryDialog::EConfirmationTone );
-        TInt retval = query->ExecuteLD( R_CONFIRMATION_QUERY, *temp );
-        CleanupStack::PopAndDestroy();  // temp
-        if ( retval )
-            { // start policy install procedure
-            InstallPoliciesL();
-            }
-        }
-    }
 
-void CVpnManagementUiPolicyContainer::InstallPoliciesL()
-    {
-    /*** NSSM support is discontinued.
-         Code is kept in comments temporarily because similar UI functionality
-         might be needed for another purpose.
-    CArrayFix<TAcuApiServerListElem>* serverList = iLoader.AcuApiWrapperL().ServerListL();
-    TInt serverCount = serverList->Count();
-
-    //if policy servers defined show policy server list query
-    if (serverCount > 0 )
-        {
-        TInt index = 0;
-	    CDesCArrayFlat *array = new(ELeave) CDesCArrayFlat(1);
-	    CleanupStack::PushL(array);
-   
-        for (TInt i = 0; i < serverCount; ++i)
-            {
-            TBuf<KAcuMaxServerNameLocalLth+2> serverName;
-            serverName.Append(serverList->At(i).iServerNameLocal);
-            array->AppendL(serverName);
-            }
-	    CAknListQueryDialog* dlg = new (ELeave) CAknListQueryDialog(&index);
-	    dlg->PrepareLC( R_LIST_QUERY );
-	    dlg->SetItemTextArray(array);
-	    dlg->SetOwnershipType(ELbmDoesNotOwnItemArray);
-
-	    TInt queryOk = dlg->RunLD();
-        if(queryOk == EAknSoftkeyOk || queryOk == EAknSoftkeySelect)
-            {
-            TBool selectionExists = iLoader.SelectionExistsL( index );
-            
-            if( selectionExists )
-                {
-                //Save server index for Connecting via note
-                iLoader.iCurrentServerIndex = index;
-                //Show wait dialog 
-                iShowWaitNote = ETrue;
-                // Get selection neme for connecting via note
-                // and save it to the member variable of iLoader
-                iLoader.GetSelectionNameL( iLoader.iSelectionName );
-               
-                iLoader.AcuApiWrapperL().SynchroniseServerL( index, this );
-                }
-            }
-        CleanupStack::PopAndDestroy(); // array
-
-        }
-    else
-        { ***/
-        //No policy servers defined show define new policy
-        //server conrirmation query
-        HBufC* temp;
-        temp = StringLoader::LoadLC( R_VPN_QUEST_DEFINE_NEW_SERVER );
-        CAknQueryDialog* query = CAknQueryDialog::NewL( CAknQueryDialog::EConfirmationTone );
-        TInt retval = query->ExecuteLD( R_CONFIRMATION_QUERY, *temp );
-        CleanupStack::PopAndDestroy();  // temp
-        if ( retval )
-            {
-            if (!SysUtil::FFSSpaceBelowCriticalLevelL(0, 0))
-    	        {
-	            iLoader.iBackFromServerDefinition = ETrue;
-	            iLoader.ChangeViewL(KChangeViewSettings);
-	            }
-	        else
-		        {
-		    	CErrorUI* errorUi = CErrorUI::NewLC( *(CCoeEnv::Static()) );
-		        errorUi->ShowGlobalErrorNoteL( KErrDiskFull );
-		        CleanupStack::PopAndDestroy();  // errorUi
-		        }
-            }
-        // }
-    }
-
-void CVpnManagementUiPolicyContainer::SynchroniseServerL()
-    {
-/*NOT USED ANYMORE
-    //Conrirmation query
-    HBufC* temp;
-    temp = StringLoader::LoadLC( R_VPN_QUEST_SYNCHRONISE_SERVER );
-    CAknQueryDialog* query = CAknQueryDialog::NewL( CAknQueryDialog::EConfirmationTone );
-    TInt retval = query->ExecuteLD( R_CONFIRMATION_QUERY, *temp );
-    CleanupStack::PopAndDestroy();  // temp
-    if ( retval )
-        {
-        TInt currentPosition = iListBox->CurrentItemIndex();
-        iLoader.iAcuApiWrapper->SynchroniseServer(currentPosition, this);
-        }
-*/    
-    }
 // ---------------------------------------------------------
 // CVpnManagementUiPolicyContainer::SizeChanged()
 // Called by framework when the view size is changed
@@ -480,150 +338,7 @@ void CVpnManagementUiPolicyContainer::ShowPoliciesL()
 	iListBox->HandleItemAdditionL();
     }
 
-// ---------------------------------------------------------
-// CVpnManagementUiPolicyContainer:::UpdatePolicy
-// ---------------------------------------------------------
-//
-void CVpnManagementUiPolicyContainer::UpdatePolicyL(TVpnPolicyId /* aPolicyId */)
-    {
-    /*** NSSM support is discontinued.
-             Code is kept in comments temporarily because similar UI functionality
-             might be needed for another purpose.
-    TBool selectionExists = iLoader.SelectionExistsL( 0 );
-            
-    if( selectionExists )
-        {
-        // Get selection name for connecting via note
-        // and save it to the member variable of iLoader
-        iLoader.GetSelectionNameL( iLoader.iSelectionName );
-               
-        iLoader.ShowWaitNoteL();
-        TAcuContentId contentId;
-        contentId.iContentId = aPolicyId;
-        iLoader.AcuApiWrapperL().UpdatePolicyL( contentId, this );
-        } ***/
-    }
 
-
-void CVpnManagementUiPolicyContainer::NotifyUpdatePolicyCompleteL(
-    TInt aResult)
-    {
-    if ( iLoader.iWaitDialog ) 
-        {
-        iLoader.DeleteWaitNoteL();//iWaitDialog->ProcessFinishedL(); // deletes the wait dialog
-        }
-
-    if (aResult == KErrNone)
-        {
-        //Confirmation note
-        HBufC* string = StringLoader::LoadLC( R_VPN_CONF_POLICY_UPDATE_COMPLETE );
-        CAknConfirmationNote* note = new ( ELeave ) CAknConfirmationNote( ETrue );
-        note->ExecuteLD( *string );
-        CleanupStack::PopAndDestroy( string );
-        }
-    /*** NSSM support is discontinued.
-         Code is kept in comments temporarily because similar UI functionality
-         might be needed for another purpose.
-    else if (aResult == KAcuErrServerCertExpiredByPkiService)
-        {
-        //Show an information note
-        HBufC* noteText;
-        noteText = StringLoader::LoadLC( R_VPN_INFO_SERVER_CERT_EXPIRED );
-        CAknInformationNote* note = new(ELeave)CAknInformationNote(ETrue);
-        note->SetTimeout(CAknNoteDialog::ELongTimeout); //3sec
-        note->ExecuteLD(noteText->Des());
-        CleanupStack::PopAndDestroy();  // noteText
-        } ***/
-    else if (aResult == KErrDiskFull)
-    	{
-    	CErrorUI* errorUi = CErrorUI::NewLC( *(CCoeEnv::Static()) );
-        errorUi->ShowGlobalErrorNoteL( KErrDiskFull );
-        CleanupStack::PopAndDestroy();  // errorUi
-    	}    
-    else if (aResult == KErrCancel)
-        {
-        // No operation, i.e. don't show anything
-        }
-    else
-        {
-        //Show an information note
-        HBufC* noteText;
-        noteText = StringLoader::LoadLC( R_VPN_INFO_POLICY_DL_ERROR );
-        CAknInformationNote* note = new(ELeave)CAknInformationNote(ETrue);
-        note->SetTimeout(CAknNoteDialog::ELongTimeout); //3sec
-        note->ExecuteLD(noteText->Des());
-        CleanupStack::PopAndDestroy();  // noteText
-        }
-    }
-
-void CVpnManagementUiPolicyContainer::NotifySynchroniseServerCompleteL(TInt aResult)
-    {
-    //CloseWaitDialog();
-
-    if ( iLoader.iWaitDialog ) 
-        {
-        iLoader.DeleteWaitNoteL();//iWaitDialog->ProcessFinishedL(); // deletes the wait dialog
-        }
-
-    if (aResult == KErrNone)
-        {
-        //Confirmation note
-        HBufC* string = StringLoader::LoadLC( R_VPN_CONF_POLICY_SERVER_SYNC_OK );
-        CAknConfirmationNote* note = new ( ELeave ) CAknConfirmationNote( ETrue );
-        note->ExecuteLD( *string );
-        CleanupStack::PopAndDestroy( string );
-        }
-    /*** NSSM support is discontinued.
-         Code is kept in comments temporarily because similar UI functionality
-         might be needed for another purpose.
-    else if (aResult == KAcuErrServerCertExpiredByPkiService)
-        {
-        //Show an information note
-        HBufC* noteText;
-        noteText = StringLoader::LoadLC( R_VPN_INFO_SERVER_CERT_EXPIRED );
-        CAknInformationNote* note = new(ELeave)CAknInformationNote(ETrue);
-        note->SetTimeout(CAknNoteDialog::ELongTimeout); //3sec
-        note->ExecuteLD(noteText->Des());
-        CleanupStack::PopAndDestroy();  // noteText
-        } ***/
-    else if (aResult == KErrDiskFull)
-    	{
-    	CErrorUI* errorUi = CErrorUI::NewLC( *(CCoeEnv::Static()) );
-        errorUi->ShowGlobalErrorNoteL( KErrDiskFull );
-        CleanupStack::PopAndDestroy();  // errorUi
-    	}
-    else if (aResult == KErrCancel)
-        {
-        // No operation, i.e. don't show anything
-        }
-    else
-        {
-        //Show an information note
-        HBufC* noteText;
-        noteText = StringLoader::LoadLC( R_VPN_INFO_POLICY_SERVER_SYNC_ERROR );
-        CAknInformationNote* note = new(ELeave)CAknInformationNote(ETrue);
-        note->SetTimeout(CAknNoteDialog::ELongTimeout); //3sec
-        note->ExecuteLD(noteText->Des());
-        CleanupStack::PopAndDestroy();  // noteText
-        }
-
-    ShowPoliciesL();
-    iParent.SetMiddleSoftKeyL(ETrue);
-    }
-
-
-void CVpnManagementUiPolicyContainer::NotifyStepChangedL(TInt /*aResult*/)
-    {
-    if (iShowWaitNote)
-        {
-        iLoader.ShowWaitNoteL();
-        iShowWaitNote = EFalse;
-        }
-    if ( iLoader.iWaitDialog ) 
-        {
-        iLoader.SetTextL();
-        }
-    }
 
 // ---------------------------------------------------------
 // CVpnManagementUiPolicyContainer::GetHelpContext

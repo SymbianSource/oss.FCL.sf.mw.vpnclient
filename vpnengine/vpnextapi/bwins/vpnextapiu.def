@@ -1,0 +1,10 @@
+EXPORTS
+	?GetPolicyName@RVpnExtApi@@QAEHAAVTAgileProvisionPolicy@@@Z @ 1 NONAME ; int RVpnExtApi::GetPolicyName(class TAgileProvisionPolicy &)
+	?DeleteServer@RVpnExtApi@@QAEHXZ @ 2 NONAME ; int RVpnExtApi::DeleteServer(void)
+	?ServerListL@RVpnExtApi@@QAEHAAVTAgileProvisionApiServerListElem@@@Z @ 3 NONAME ; int RVpnExtApi::ServerListL(class TAgileProvisionApiServerListElem &)
+	?ServerDetails@RVpnExtApi@@QAEHAAVTAgileProvisionApiServerSettings@@@Z @ 4 NONAME ; int RVpnExtApi::ServerDetails(class TAgileProvisionApiServerSettings &)
+	?SynchronizePolicyServer@RVpnExtApi@@QAEXAAVTRequestStatus@@@Z @ 5 NONAME ; void RVpnExtApi::SynchronizePolicyServer(class TRequestStatus &)
+	??0RVpnExtApi@@QAE@XZ @ 6 NONAME ; RVpnExtApi::RVpnExtApi(void)
+	?CreateServer@RVpnExtApi@@QAEHABVTAgileProvisionApiServerSettings@@@Z @ 7 NONAME ; int RVpnExtApi::CreateServer(class TAgileProvisionApiServerSettings const &)
+	?CancelPolicyProvision@RVpnExtApi@@QAEHXZ @ 8 NONAME ; int RVpnExtApi::CancelPolicyProvision(void)
+

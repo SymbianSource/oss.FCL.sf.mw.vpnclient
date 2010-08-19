@@ -123,6 +123,8 @@ void CVpnManagementUiServerView::DynInitMenuPaneL(TInt aResourceId, CEikMenuPane
             aMenuPane->SetItemDimmed( EVpnUiCmdSynchronise, ETrue );
             aMenuPane->SetItemDimmed( EVpnUiCmdDeleteServer, ETrue );
             }
+        else
+            aMenuPane->SetItemDimmed( EVpnUiCmdAddServer, ETrue );
         }
     }
 
@@ -183,8 +185,7 @@ void CVpnManagementUiServerView::HandleCommandL( TInt aCommand )
             ffsLow = iLoader.FFSSpaceBelowCriticalLevelL( ETrue, 0 );
     		if(!ffsLow)
     			{
-    			iCurrentPosition = iServerContainer->iListBox->CurrentItemIndex();
-            	iServerContainer->SynchroniseServerL(iCurrentPosition);
+                iServerContainer->SynchroniseServerL();
     			}
     		break;
             }

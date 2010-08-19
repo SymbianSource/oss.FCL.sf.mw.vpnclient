@@ -52,8 +52,11 @@ USERINCLUDE     ../../utlxml/inc
 USERINCLUDE     ../../utlbase64/inc
 USERINCLUDE     ../../utlpkcs10/inc
 USERINCLUDE     ../../../vpnui/vpnecomnotifier/inc
+USERINCLUDE	../../../vpnui/vpnpolins/inc
 USERINCLUDE     ../../eventmediatorapi/inc
 USERINCLUDE     ../../eventviewer/inc
+USERINCLUDE	../../agileprovisionws/inc
+USERINCLUDE     ../../vpnextapi/inc
 
 MW_LAYER_SYSTEMINCLUDE
 
@@ -75,8 +78,9 @@ LIBRARY         random.lib
 LIBRARY         charconv.lib 
 LIBRARY         cmmanager.lib
 LIBRARY         cryptography.lib
+LIBRARY         agileprovisionws.lib
 LIBRARY         centralrepository.lib
 
 DEBUGLIBRARY    flogger.lib
 
-EPOCSTACKSIZE     0x4000
+EPOCSTACKSIZE     0x5000
