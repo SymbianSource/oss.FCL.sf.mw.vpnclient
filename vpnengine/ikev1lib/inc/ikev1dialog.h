@@ -28,7 +28,6 @@ class CIkev1PluginSession;
 class RFs;
 class MIkeDebug;
 
-
 /** 
 * IKE dialog complete
 * @internalComponent
@@ -39,10 +38,11 @@ class MIkeDialogComplete
 		/** 
          * IKE dialog completed 
          * @internalComponent
+         * 
          */
-		virtual TInt DialogCompleteL(
-		    TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret) = 0;
+		virtual TInt DialogCompleteL(CIkev1Dialog* aDialog, TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)=0; 
 };
+
 
 
 NONSHARABLE_CLASS(CDialogTimeout) : public CTimer

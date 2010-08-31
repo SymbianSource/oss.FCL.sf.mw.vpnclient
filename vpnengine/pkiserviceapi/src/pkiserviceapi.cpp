@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003-2006 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -1041,7 +1041,7 @@ EXPORT_C void RPKIServiceAPI::ApplicationsL(const TDesC8& aTrustedAuthority,
     for (TInt i = 0; i < count; i++)
         {
         applList->Read(i * sizeof(TUid), (TAny*)&temp, sizeof(TUid));
-        aApplications.AppendL(temp);
+        aApplications.Append(temp);
         }
 	CleanupStack::PopAndDestroy(1);  // applList
     CleanupStack::PopAndDestroy(); //certDesc

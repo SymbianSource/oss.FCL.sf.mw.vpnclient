@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006-2009 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -410,12 +410,12 @@ void CMapDescriptor::SetMapDeletable(TBool aDeletable)
     iIsDeletable = aDeletable;
     }
 
-void CMapDescriptor::SetMapApplicationsL(const RArray<TUid> &aApplications) 
+void CMapDescriptor::SetMapApplications(const RArray<TUid> &aApplications) 
     {
     iApplUids.Close();
     for(TInt i=0; i<aApplications.Count();i++)
         { 
-        User::LeaveIfError(iApplUids.Append(aApplications[i]));
+        iApplUids.Append(aApplications[i]);
         }
     }
 

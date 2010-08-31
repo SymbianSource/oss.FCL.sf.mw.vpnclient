@@ -22,7 +22,7 @@ use File::Copy;
 
 
 #Subroutines to update version information
-my $PLATFORM = "42";
+my $PLATFORM = "50";
 
 #
 # Creates a temp file and replaces line

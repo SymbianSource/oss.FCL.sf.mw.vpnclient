@@ -19,7 +19,6 @@
 
 #include <f32file.h>
 #include "fileutil.h"
-#include "log_r6.h"
 
 TFileUtil::TFileUtil(RFs& aFs) : iFs(aFs)
     {

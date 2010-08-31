@@ -35,7 +35,6 @@ SOURCE          pfkeyextdatautil.cpp
 SOURCE          pfkeymsg.cpp
 SOURCE          pfkeysocketif.cpp
 SOURCE          vpnaddrinfo.cpp
-SOURCE          cmutils.cpp
 
 USERINCLUDE     .
 USERINCLUDE     ../inc
@@ -50,6 +49,5 @@ LIBRARY         insock.lib
 LIBRARY         ipsecpolapi.lib
 LIBRARY         lib_pfkey.lib
 LIBRARY         random.lib
-LIBRARY         cmmanager.lib
 
 CAPABILITY ALL -Tcb

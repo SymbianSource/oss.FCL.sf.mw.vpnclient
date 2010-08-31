@@ -177,9 +177,10 @@ public:
                              TInt aStatus, 
                              TUint32 aSpi);	
     
-    TInt ProcessUserResponseL(CAuthDialogInfo *aUserInfo);
-    TInt DialogCompleteL(TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret);
+    TInt   ProcessUserResponseL(CAuthDialogInfo *aUserInfo);
+    TInt   DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain);
 
+	
 private:
 
     CIkev1Negotiation( CIkev1PluginSession* aPluginSession,

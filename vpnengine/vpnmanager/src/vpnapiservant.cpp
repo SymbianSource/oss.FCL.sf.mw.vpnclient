@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -16,22 +16,15 @@
 */
 
 
-#include <e32std.h>
-#include <f32file.h>
 
-#include "fileutil.h"
 #include "vpnapiservant.h"
 #include "policystore.h"
 #include "policyimporter.h"
 #include "pwdchanger.h"
 #include "vpnapidefs.h"
 #include "vpnmanagerserverdefs.h"
-#include "vpnextapiservantdefs.h"
 #include "vpnmaninternal.h"
 #include "log_r6.h"
-#include "agileprovisionws.h"
-#include "agileprovisiondefs.h"
-#include "cmmanagerutils.h"
 
 
 CVpnApiServant* CVpnApiServant::NewL(RFs& aFs)
@@ -43,7 +36,7 @@ CVpnApiServant* CVpnApiServant::NewL(RFs& aFs)
     return self;
     }
 
-CVpnApiServant::CVpnApiServant(RFs& aFs) : iFs(aFs), iFileUtil(aFs)
+CVpnApiServant::CVpnApiServant(RFs& aFs) : iFs(aFs)
     {
     }
 
@@ -120,36 +113,6 @@ TBool CVpnApiServant::ServiceL(const RMessage2& aMessage)
             UpdatePolicyDataL(aMessage);
             break;
             
-        
-        //Policy Provision Methods
-        case EExtCreateProvisionServer:
-            CreateProvisionServerL(aMessage);
-            break;
-         
-        case EExtVPNPolicyServerList:
-            ListProvisionServerL(aMessage);
-            break;
-            
-        case EExtVPNPolicyServerDetails:
-            GetProvisionServerDetailsL(aMessage);
-            break;
-            
-        case EExtSynchronizePolicyServer:
-            SynchronizeVPNPolicyServerL(aMessage);
-            break;
-            
-        case EExtDeletePolicyServer:
-             DeleteVPNPolicyServerL(aMessage);
-             break;
-        
-        case EExtCancelSynchronize:
-             CancelSynchronize(aMessage);
-             break;
-        
-        case EExtGetPolicyName:
-             GetVPNPolicyNameL(aMessage);
-             break;
-             
         default:
             requestHandled = EFalse;
             break;
@@ -281,7 +244,7 @@ void CVpnApiServant::GetPolicyDetailsL(const RMessage2& aMessage)
             
     aMessage.Complete(ret);
     
-    LOG(Log::Printf(_L("CVpnApiServant::GetPolicyDetailsL: aMessage completed withd %d"), ret));    
+    LOG(Log::Printf(_L("CVpnApiServant::GetPolicyDetailsL: aMesage completed withd %d"), ret));    
     }
 
 void CVpnApiServant::DeletePolicyL(const RMessage2& aMessage)
@@ -553,310 +516,5 @@ void CVpnApiServant::UpdatePolicyDataL(const RMessage2& aMessage)
     }
     CleanupStack::PopAndDestroy(); // policyData
 
-    aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::CreateProvisionServerL( const RMessage2& aMessage )
-    {
-      TAgileProvisionApiServerSettings* serverCreate = new (ELeave) TAgileProvisionApiServerSettings();
-      CleanupStack::PushL(serverCreate);
-      TPckg<TAgileProvisionApiServerSettings> pckgServerCreate(*serverCreate);
-      aMessage.ReadL(0, pckgServerCreate);
-      TAgileProvisionServerLocals* serverAccountLocalData = new (ELeave) TAgileProvisionServerLocals();
-      CleanupStack::PushL(serverAccountLocalData);
-      serverAccountLocalData->iSelection = serverCreate->iSelection;
-      serverAccountLocalData->iServerAddress.Copy(serverCreate->iServerUrl);
-      serverAccountLocalData->iServerNameLocal.Copy(serverCreate->iServerNameLocal);
-  
-      TFileName serverFilePath;
-      User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-      serverFilePath.Append(KProvisionServerSettings);   
-         
-      /* Check if file allready exists and copy policy and vpn iap id to a new file */
-      TFileName policyFileName;
-      TUint32 agileProvisionAPId=0;
-            
-      if ( iFileUtil.FileExists(serverFilePath) )
-         {
-          HBufC8* fileData=iFileUtil.LoadFileDataL(serverFilePath);
-          CleanupStack::PushL(fileData);
-             
-          TPtrC8 restOfData = fileData->Des();
-                
-          TInt bofInt;
-          TInt line=1;             
-          while ( (bofInt=restOfData.Find(KCRLF)) != KErrNotFound && line < KPolicyFileLine )
-                {
-                restOfData.Set(restOfData.Mid(bofInt + KCRLF().Length()));
-                line++;                                  
-                }
-          TInt iapIdStart=restOfData.Find(KCRLF);
-          HBufC16* iapIdBuf;
-                 
-          if ( iapIdStart!=KErrNotFound )
-              {
-              TPtrC8 iapIdPtr=restOfData.Mid(iapIdStart + KCRLF().Length(),restOfData.Length()-KCRLF().Length()-iapIdStart);
-              iapIdBuf=iFileUtil.To16BitL(iapIdPtr);
-              CleanupStack::PushL(iapIdBuf);
-              TLex iapIdConverter(*iapIdBuf);
-              iapIdConverter.Val(agileProvisionAPId,EDecimal);     
-              CleanupStack::PopAndDestroy(iapIdBuf);           
-              }
-                 
-          if ( agileProvisionAPId >0)
-              {
-               restOfData.Set(restOfData.Mid(0,iapIdStart));
-               HBufC16* policyFileNameBuf = iFileUtil.To16BitL(restOfData);
-               policyFileName = *policyFileNameBuf;
-               delete policyFileNameBuf;
-              }
-          CleanupStack::PopAndDestroy(fileData);
-          }
-      /* end of saving old values */
-      
-      //IAP data Max value 255 
-      TBuf<10> iapIdStr;
-      TBuf<10> iapModeStr;
-      TBuf<10> iapAgileIdStr;
-      
-      iapIdStr.Num(serverAccountLocalData->iSelection.iId);
-      iapModeStr.Num(serverAccountLocalData->iSelection.iResult);
-      HBufC* serverSettingsDataBuf;
-      if ( agileProvisionAPId >0 )
-          {
-          iapAgileIdStr.Num(agileProvisionAPId);
-                                                                                                                          
-          serverSettingsDataBuf = HBufC::NewL(serverAccountLocalData->iServerNameLocal.Length() + serverAccountLocalData->iServerAddress.Length() + 
-                                              iapIdStr.Length() + iapModeStr.Length() + policyFileName.Length() + iapAgileIdStr.Length() + 5*(KCRLF().Length()) );
-          }
-      else
-          {                                                                                                         
-          serverSettingsDataBuf = HBufC::NewL(serverAccountLocalData->iServerNameLocal.Length() + serverAccountLocalData->iServerAddress.Length() +
-                                              iapIdStr.Length() + iapModeStr.Length() + 3*(KCRLF().Length()) );
-          }
-      CleanupStack::PushL(serverSettingsDataBuf);
-      TPtr tPtr(serverSettingsDataBuf->Des());
-      tPtr.Copy(serverAccountLocalData->iServerAddress);
-      _LIT(KCRLF, "\r\n"); 
-      tPtr.Append(KCRLF);
-      tPtr.Append(serverAccountLocalData->iServerNameLocal);
-      tPtr.Append(KCRLF);
-      tPtr.Append(iapIdStr);
-      tPtr.Append(KCRLF);
-      tPtr.Append(iapModeStr);
-      if ( agileProvisionAPId >0 )
-          {
-          tPtr.Append(KCRLF);
-          tPtr.Append(policyFileName);
-          tPtr.Append(KCRLF);
-          tPtr.Append(iapAgileIdStr);
-          }
-     
-      iFileUtil.SaveFileDataL(serverFilePath,tPtr);
-      CleanupStack::PopAndDestroy(3);
-      aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::ListProvisionServerL( const RMessage2& aMessage )
-    {
-      _LIT8(KCRLF, "\r\n");
-      
-      const TInt KEolLen = 2;
-      
-      TAgileProvisionApiServerListElem* serverList = new (ELeave) TAgileProvisionApiServerListElem();
-      CleanupStack::PushL(serverList);
-      TPckg<TAgileProvisionApiServerListElem> serverPckg(*serverList);
-          
-      TFileName serverFilePath;
-      User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-      serverFilePath.Append(KProvisionServerSettings);   
-      
-      HBufC8* fileData(NULL);
-     
-      if ( iFileUtil.FileExists(serverFilePath) )
-          {
-          fileData=iFileUtil.LoadFileDataL(serverFilePath);
-          CleanupStack::PushL(fileData);
-          TInt endOfLine=fileData->Find(KCRLF);
-          serverList->iServerUrl=fileData->Mid(0,endOfLine);
-          
-          TInt startOfLine(endOfLine+KEolLen);
-          TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-          endOfLine=nameData.Find(KCRLF);
-          HBufC16* serverName=iFileUtil.To16BitL(nameData.Left(endOfLine));
-          serverList->iServerNameLocal=*serverName;
-          delete serverName;
-          serverName = NULL;
-          }
-      
-      aMessage.WriteL(0, serverPckg);
-      if ( iFileUtil.FileExists(serverFilePath) )
-          CleanupStack::PopAndDestroy(fileData);
-      
-      CleanupStack::PopAndDestroy(serverList);
-      aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::GetProvisionServerDetailsL( const RMessage2& aMessage )
-    {
-     
-      TAgileProvisionApiServerSettings* serverList = new (ELeave) TAgileProvisionApiServerSettings();
-      CleanupStack::PushL(serverList);
-      TPckg<TAgileProvisionApiServerSettings> serverPckg(*serverList);
-      
-      _LIT8(KCRLF, "\r\n");     
-      
-      TFileName serverFilePath;
-      User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-      serverFilePath.Append(KProvisionServerSettings);  
-      
-      HBufC8* fileData(NULL);
-      const TInt KEolLen = 2;
-      TBool serverFileExist = EFalse;
-      
-      if ( iFileUtil.FileExists(serverFilePath) )
-         {
-          fileData=iFileUtil.LoadFileDataL(serverFilePath);
-          CleanupStack::PushL(fileData);  
-          TInt endOfLine=fileData->Find(KCRLF);
-          serverList->iServerUrl=fileData->Mid(0,endOfLine);
-                
-          TInt startOfLine(endOfLine+2);
-          TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-          endOfLine=nameData.Find(KCRLF);      
-             
-          HBufC16* serverName=iFileUtil.To16BitL(nameData.Left(endOfLine));
-          serverList->iServerNameLocal=*serverName;
-          delete serverName;
-          serverName = NULL;
-          
-          startOfLine = endOfLine + KEolLen;
-          TPtrC8 iapIdData=nameData.Right(nameData.Length()-startOfLine);
-          endOfLine=iapIdData.Find(KCRLF);
-          TLex8 iapIdConverter(iapIdData.Left(endOfLine));
-          TUint idInt;
-          iapIdConverter.Val(idInt);
-          serverList->iSelection.iId = idInt;
-        
-          startOfLine = endOfLine + KEolLen;
-          TPtrC8 iapModeData=iapIdData.Right(iapIdData.Length()-startOfLine);
-          TLex8 iapModeConverter;
-          endOfLine=iapModeData.Find(KCRLF);
-          if ( endOfLine==KErrNotFound )
-              iapModeConverter = iapModeData;
-          else
-              iapModeConverter = iapModeData.Left(endOfLine);
-              
-          iapModeConverter.Val(idInt);
-          CMManager::TCmSettingSelectionMode selectionMode = (CMManager::TCmSettingSelectionMode) idInt;
-          serverList->iSelection.iResult = selectionMode; 
-          serverFileExist = ETrue;   
-          }
-      aMessage.WriteL(0, serverPckg);
-      
-      if ( serverFileExist )
-          CleanupStack::PopAndDestroy(fileData);
-      
-      CleanupStack::PopAndDestroy(serverList);
-      
-      aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::SynchronizeVPNPolicyServerL( const RMessage2& aMessage )
-    {
-    iPolicyImporter = CPolicyImporter::NewL(aMessage, *this, *iPolicyStore, iFs);
-    
-    //Asynchronous call
-    iPolicyImporter->SynchronizeVpnPolicyServerL();
-    }
-
-void CVpnApiServant::DeleteVPNPolicyServerL( const RMessage2& aMessage )
-    {
-    TFileName serverFilePath;
-    User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-    serverFilePath.Append(KProvisionServerSettings);  
-    iFileUtil.DeleteFileL(serverFilePath);
-    aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::CancelSynchronize( const RMessage2& aMessage )
-    {
-    if (iPolicyImporter)
-        {
-        if ( iPolicyImporter->iAgileProvisionWs != NULL )
-            {
-            CAgileProvisionWs* ws = iPolicyImporter->iAgileProvisionWs;
-            ws->CancelGetPolicy();
-            }
-        iPolicyImporter->Cancel();
-        delete iPolicyImporter;
-        iPolicyImporter = NULL;
-        }
-    aMessage.Complete(KErrCancel);
-    }
-
-void CVpnApiServant::GetVPNPolicyNameL( const RMessage2& aMessage )
-    {
-    TAgileProvisionPolicy* policy = new (ELeave) TAgileProvisionPolicy();
-    CleanupStack::PushL(policy);
-    TPckg<TAgileProvisionPolicy> serverPckg(*policy);
-    
-    _LIT8(KCRLF, "\r\n");
-    
-    TFileName serverFilePath;
-    User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-    serverFilePath.Append(KProvisionServerSettings);  
-    
-    HBufC8* fileData(NULL);
-         
-    const TInt KEolLen = 2;
-    TBool serverFileExist = EFalse;
-    
-    if ( iFileUtil.FileExists(serverFilePath) )
-       {
-        fileData=iFileUtil.LoadFileDataL(serverFilePath);
-        CleanupStack::PushL(fileData);   
-        TInt endOfLine=fileData->Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);
-                        
-        TInt startOfLine(endOfLine + KEolLen);
-        TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-        endOfLine=nameData.Find(KCRLF);      
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-                
-        startOfLine = endOfLine + KEolLen;
-        TPtrC8 iapIdData=nameData.Right(nameData.Length()-startOfLine);
-        endOfLine=iapIdData.Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-           
-        startOfLine = endOfLine + KEolLen;
-        TPtrC8 iapModeData=iapIdData.Right(iapIdData.Length()-startOfLine);
-        endOfLine=iapModeData.Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-        
-        startOfLine = endOfLine + KEolLen;
-        TPtrC8 policyData=iapModeData.Right(iapModeData.Length()-startOfLine);
-        endOfLine=policyData.Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-        
-        HBufC16* policyName = iFileUtil.To16BitL(policyData.Left(endOfLine));
-        policy->iPolicyName = *policyName;
-        delete policyName;
-        policyName=NULL;
-        serverFileExist = ETrue;
-        }
-
-    aMessage.WriteL(0, serverPckg);
-    
-    if ( serverFileExist )
-        CleanupStack::PopAndDestroy(fileData);
-    
-    CleanupStack::PopAndDestroy(policy);
-    
     aMessage.Complete(KErrNone);
     }

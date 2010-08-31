@@ -15,11 +15,7 @@
 *
 */
 
-#include <f32file.h>
-#include <x509cert.h>
-#include <f32file.h>
-#include <x509cert.h>
-#include <e32const.h>
+
 
 #include "policyimporter.h"
 #include "vpnapiservant.h"
@@ -32,15 +28,11 @@
 #include "pkiutil.h"
 #include "cmmanagerutils.h"
 #include "log_r6.h"
-#include "agileprovisionws.h"
-#include "agileprovisiondefs.h"
-#include "policyinstaller_constants.h"
 
-
+#include <f32file.h>
+#include <x509cert.h>
 
 const TInt KDefaultKeySize(1024);
-
-_LIT8 (KPinFileNameTitle, "[POLICYNAME]");
 
 enum TImportState
     {
@@ -55,9 +47,7 @@ enum TImportState
     EStateAfterAttachCertificate,
     EStateImportPinAndPol,
     EStateCreateVpnDestination,
-    EStateEndPolicyImport,
-    EStateGetPolicyProvisionService,
-    EStateAfterGetPolicyProvisionService
+    EStateEndPolicyImport
     };
 
 CPolicyImporter* CPolicyImporter::NewL(const RMessage2& aMessage, CVpnApiServant& aVpnApiServant,
@@ -126,10 +116,6 @@ CPolicyImporter::~CPolicyImporter()
 
     delete iCertFileData;
     delete iKeyFileData;
-    
-    delete iAgileProvisionWSAddr;
-    delete iAgileProvisionWs;
-    
     LOG_("<- CPolicyImporter::~CPolicyImporter()");
     }
 
@@ -242,14 +228,7 @@ void CPolicyImporter::ChangeStateL()
         case EStateEndPolicyImport:
             StateEndPolicyImportL();
             break;
-            
-        case EStateGetPolicyProvisionService:
-            StateGetPolicyProvisionServiceL();
-            break;
 
-        case EStateAfterGetPolicyProvisionService:
-            StateAfterGetPolicyProvisionServiceL();
-            break;
         default:
             User::Panic(KVpnManagerServer, EInvalidImportState);
             break;
@@ -618,41 +597,9 @@ void CPolicyImporter::StateImportPinAndPolL()
     {
     LOG_("-> CPolicyImporter::StateImportPinAndPolL()");
     SetCurrState(EStateImportPinAndPol);
-    HBufC* pinFile;
-    HBufC* polFile;
-    if ( !iAgileProvision )
-        {
-        pinFile = iFileUtil.MakeFileNameLC(iImportDir, iCurrPolicyId, KPinFileExt);
-        polFile = iFileUtil.MakeFileNameLC(iImportDir, iCurrPolicyId, KPolFileExt);
-        }
-    else
-        {
-        pinFile = iFileUtil.MakeFileNameLC(KTempDirectory(), KAgileProvisionPinFileName(), KNullDesc());
-        polFile = iFileUtil.MakeFileNameLC(KTempDirectory(), KAgileProvisionPolicyFileName(), KNullDesc());
-        
-        HBufC8* infoData=NULL;
-       
-        if ( iFileUtil.FileExists(*polFile) )
-           {
-           infoData=GetPolicyNameL(polFile);
-           CleanupStack::PushL(infoData);
-           }          
-        else
-           User::Leave(KErrNotFound);
-        
-        
-        HBufC8* pinFileData = HBufC8::NewLC(KNullDesc().Length() + KPinFileNameTitle().Length() + KCRLF().Length() + infoData->Length());
-        TPtr8 pinFilePtr (pinFileData->Des()) ;
-        pinFilePtr.Append(KPinFileNameTitle);
-        pinFilePtr.Append(KCRLF);
-        pinFilePtr.Append(*infoData);
-              
-        iFileUtil.SaveFileDataL(*pinFile, *pinFileData);
-        
-        CleanupStack::PopAndDestroy(pinFileData);
-        CleanupStack::PopAndDestroy(infoData);
-        }
-     
+
+    HBufC* pinFile = iFileUtil.MakeFileNameLC(iImportDir, iCurrPolicyId, KPinFileExt);
+    HBufC* polFile = iFileUtil.MakeFileNameLC(iImportDir, iCurrPolicyId, KPolFileExt);
 
     if (!iFileUtil.FileExists(*pinFile))
         {
@@ -669,14 +616,9 @@ void CPolicyImporter::StateImportPinAndPolL()
         PatchPolicyCaCertInfoL(*polFile);
 
         iPolicyStore.ImportPolicyL(*pinFile, *polFile, iNewPolicyId);
-       
-        // if policy imported from Agile VPN provisioning web service
-        if ( iAgileProvision )
-            {
-            PatchPolicyProvisionL();
-            }
+
         //iImportSinglePolicy is used when policy is installed via
-        //OMA DM. If the policy is installed from .vpn file
+        //OMA DM or ACU. If the policy is installed from .vpn file
         //the iImportSinglePolicy is not used.
         //The VPN destination is only created in .vpn case.
         if (iImportSinglePolicy)
@@ -697,51 +639,16 @@ void CPolicyImporter::StateCreateVpnDestinationL()
     LOG_("-> CPolicyImporter::StateCreateVpnDestinationL()");
     SetCurrState(EStateCreateVpnDestination);
 
-    //Gets the IAP name from policy name
+        //Gets the IAP name from policy name
     TVpnPolicyInfo* policyInfo = new (ELeave) TVpnPolicyInfo;
     CleanupDeletePushL(policyInfo);
 
     User::LeaveIfError(iPolicyStore.GetPolicyInfo(*iNewPolicyId, *policyInfo));
-    TBool iapExist(EFalse);
-    if ( !iAgileProvision )
-        TUint32 provisionIapId = CmManagerUtils::CreateVPNConnectionMethodToIntranetL(*policyInfo,
-                                                                             *(iVpnApiServant.iEventLogger));
-    else
-        {
-        
-        if ( iAgileProvisionAPId > 0 )
-            {
-            iapExist=CmManagerUtils::ProvisionIAPNameExistL(iAgileProvisionAPId);
-            }
-        
-        if ( !iapExist || iAgileProvisionAPId == 0)
-            {
-            TUint32 provisionIapId = CmManagerUtils::CreateVPNConnectionMethodToIntranetL(*policyInfo,
-                                                                     *(iVpnApiServant.iEventLogger));
-            
-            TFileName serverSettingsFile;
-            User::LeaveIfError(iFs.PrivatePath(serverSettingsFile));
-                  
-            serverSettingsFile.Append(KProvisionServerSettings);
-                   
-            if ( iFileUtil.FileExists(serverSettingsFile) )
-               {
-               HBufC8* fileData=iFileUtil.LoadFileDataL(serverSettingsFile);
-               CleanupStack::PushL(fileData);
-               HBufC8* newFileData =HBufC8::New(fileData->Length() + KCRLF().Length() + 4);
-               CleanupStack::PushL(newFileData);
-               TPtr8 fileDataPtr = newFileData->Des();
-               fileDataPtr.Copy(*fileData);
-               fileDataPtr.Append(KCRLF);
-               fileDataPtr.AppendNum(provisionIapId);
-               iFileUtil.SaveFileDataL(serverSettingsFile,fileDataPtr);
-               CleanupStack::PopAndDestroy(newFileData);
-               CleanupStack::PopAndDestroy(fileData);
-               }
-            }
-        }
 
-    CleanupStack::PopAndDestroy(policyInfo);
+    CmManagerUtils::CreateVPNConnectionMethodToIntranetL(*policyInfo,
+                                                         *(iVpnApiServant.iEventLogger));
+
+    CleanupStack::PopAndDestroy(); //policyInfo
     GotoState(EStateEndPolicyImport);
 
     LOG_("<- CPolicyImporter::StateCreateVpnDestinationL()");
@@ -761,57 +668,12 @@ void CPolicyImporter::StateEndPolicyImportL()
     iFileUtil.DeleteFilesL(*fileFilter);
 
     CleanupStack::PopAndDestroy(); // fileFilter
-    if ( !iAgileProvision )
-        {
-        LOG_EVENT_2B(R_VPN_MSG_INSTALLED_POLICY_FILE, iNewPolicyId, NULL, 0, iImportSinglePolicy);
-        }
-    else
-        {
-        _LIT8(KPolicySever, "Policy server");
-        LOG_EVENT_2B(R_VPN_MSG_INSTALLED_POLICY_SERVER, iNewPolicyId, &KPolicySever(), KErrNone, EFalse);
-        }
+
+    LOG_EVENT_2B(R_VPN_MSG_INSTALLED_POLICY_FILE, iNewPolicyId, NULL, 0, iImportSinglePolicy);
+
     GotoState(EStateBeginPolicyImport);
     LOG_("<- CPolicyImporter::StateEndPolicyImportL()");
     }
-
-void CPolicyImporter::SynchronizeVpnPolicyServerL()
-    {
-    
-    GotoState(EStateGetPolicyProvisionService);
-    }
-
-void CPolicyImporter::StateGetPolicyProvisionServiceL()
-    {
-    GetPolicyWsL();
-    SetNextState(EStateAfterGetPolicyProvisionService);
-    
-    }
-
-void CPolicyImporter::StateAfterGetPolicyProvisionServiceL()
-    {
-    
-    if (iStatus != KErrNone)
-        {
-        User::Leave(iStatus.Int());
-        }
-    delete iCurrCaCertList;
-    iCurrCaCertList = NULL;
-    iCurrCaCertList = new (ELeave) CArrayFixFlat<TFileName>(2);
-    
-    delete iCurrUserCertList;
-    iCurrUserCertList = NULL;
-    iCurrUserCertList = new (ELeave) CArrayFixFlat<TFileName>(2);
-    
-    iNewPolicyId = &iPolicyId;
-    
-    BuildPolicyIdListL();
-    iCurrPolicyId.Copy(iPolicyIdList->At(iCurrPolicyIdIndex));
-    iImportSinglePolicy = EFalse;
-    iAgileProvision = ETrue;
-    GotoState(EStateImportPinAndPol);
-    
-    }
-
 
 void CPolicyImporter::BuildPolicyIdListL()
     {
@@ -1291,191 +1153,6 @@ TFileName CPolicyImporter::GetCAFromFileListL(const TDesC8& aCertSubjectName, CA
         }       
     
     return aCertFileArray->At(currCaIndex);
-    }
     
-    
-    void CPolicyImporter::GetPolicyWsL()
-        {
-        const TInt KEolLen = 2;
-        
-        delete iAgileProvisionWs;
-        iImportDir=KTempDirectory();
-        iFileUtil.CreateDirIfNeededL(iImportDir);
-        iAgileProvisionWs = CAgileProvisionWs::NewL();
-             
-        TFileName serverSettingsFile;
-        User::LeaveIfError(iFs.PrivatePath(serverSettingsFile));
-              
-        serverSettingsFile.Append(KProvisionServerSettings);
-                    
-               
-        HBufC8* fileData;
-        TInt endOfLine;
-        HBufC8* serviceEndPoint;
-        TUint iapIdInt;
-        
-        if ( iFileUtil.FileExists(serverSettingsFile) )
-            {
-            fileData=iFileUtil.LoadFileDataL(serverSettingsFile);
-            CleanupStack::PushL(fileData);
-            endOfLine=fileData->Find(KCRLF);
-                    
-            serviceEndPoint=HBufC8::NewL( KHTTPprefix().Length() + KServiceSuffix().Length() +  fileData->Mid(0,endOfLine).Length());
-            CleanupStack::PushL(serviceEndPoint);
-            TPtr8 endPointPtr(serviceEndPoint->Des());
-            endPointPtr=KHTTPprefix;
-            HBufC8* serviceAddrBuf=(fileData->Mid(0,endOfLine)).AllocL();
-            CleanupStack::PushL(serviceAddrBuf);
-            
-            //serviceAddrBuf ownership transfer
-            iAgileProvisionWs->SetServiceAddr(serviceAddrBuf);
-            endPointPtr.Append(fileData->Mid(0,endOfLine));
-            endPointPtr.Append(KServiceSuffix);
-            CleanupStack::Pop(serviceAddrBuf);
-            
-            TInt startOfLine(endOfLine+KEolLen);
-            TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-            endOfLine=nameData.Find(KCRLF);      
-                                        
-            startOfLine = endOfLine + KEolLen;
-            TPtrC8 iapIdData=nameData.Right(nameData.Length()-startOfLine);
-            endOfLine=iapIdData.Find(KCRLF);
-            TLex8 iapIdConverter(iapIdData.Left(endOfLine));
-            
-            iapIdConverter.Val(iapIdInt);
-            iAgileProvisionWs->GetPolicy( *serviceEndPoint, iapIdInt, iStatus );
-            CleanupStack::PopAndDestroy(serviceEndPoint);
-            CleanupStack::PopAndDestroy(fileData); 
-            }
-                
-       
-        SetActive();
- 
-        }
-    
-    HBufC8* CPolicyImporter::GetPolicyNameL(HBufC* aPolicyFileName)
-        {
-        HBufC8* infoData=NULL;
-        HBufC8* infoSection=NULL;
-        HBufC8* fileData=NULL;
-        if ( iFileUtil.FileExists(*aPolicyFileName) )
-           {
-            fileData=iFileUtil.LoadFileDataL(*aPolicyFileName);
-            CleanupStack::PushL(fileData);
-            _LIT8(KInfo, "[INFO]");
-            TInt i=(fileData->Find(KInfo)) + KInfo().Length() + KCRLF().Length();
-                   
-            infoSection=fileData->Right((fileData->Length())-i).AllocL();
-            CleanupStack::PushL(infoSection);
-            TInt j=infoSection->Find(KCRLF);
-                  
-            infoData=infoSection->Mid(0,j).AllocL();
-            
-            CleanupStack::Pop(infoSection);
-            CleanupStack::Pop(fileData);
-            
-            delete infoSection;
-            delete fileData;
-            infoSection=NULL;
-            fileData=NULL;
-            
-            }          
-         else
-            User::Leave(KErrNotFound);
-         
-        return infoData;
-        }
-    
-               
-    void CPolicyImporter::PatchPolicyProvisionL()
-        {
-        TPath privateDir;
-        User::LeaveIfError(iFs.PrivatePath(privateDir));
-                
-        HBufC* policyServerSettingsFileName = HBufC::NewL(KProvisionServerSettings().Length() + privateDir.Length());
-        CleanupStack::PushL(policyServerSettingsFileName);
-        TPtr fileNamePtr=policyServerSettingsFileName->Des();
-        fileNamePtr.Append(privateDir);
-        fileNamePtr.Append(KProvisionServerSettings);
-            
-                
-        if ( iFileUtil.FileExists(fileNamePtr) )
-           {
-           HBufC8* fileData=iFileUtil.LoadFileDataL(fileNamePtr);
-           CleanupStack::PushL(fileData);
-        
-           TPtrC8 restOfData = *fileData;
-           
-           TInt bofInt;
-           TInt line=1;             
-           while ( (bofInt=restOfData.Find(KCRLF)) != KErrNotFound && line < KPolicyFileLine )
-                 {
-                 restOfData.Set(restOfData.Mid(bofInt + KCRLF().Length()));
-                 line++;                                  
-                 }
-           TInt iapIdStart=restOfData.Find(KCRLF);
-           HBufC16* iapIdBuf;
-           if ( iapIdStart!=KErrNotFound )
-              {
-              TPtrC8 iapIdPtr=restOfData.Mid(iapIdStart + KCRLF().Length(),restOfData.Length()-KCRLF().Length()-iapIdStart);
-              iapIdBuf=iFileUtil.To16BitL(iapIdPtr);
-              CleanupStack::PushL(iapIdBuf);
-              TLex iapIdConverter(*iapIdBuf);
-              iapIdConverter.Val(iAgileProvisionAPId,EDecimal);     
-              CleanupStack::PopAndDestroy(iapIdBuf);           
-              }
-           
-           if ( iAgileProvisionAPId >0)
-               restOfData.Set(restOfData.Mid(0,iapIdStart));
-               HBufC16* policyFileNameBuf = iFileUtil.To16BitL(restOfData);
-               CleanupStack::PushL(policyFileNameBuf);
-               HBufC* policyFilePath = iFileUtil.MakeFileNameLC(privateDir, *policyFileNameBuf, KPolFileExt);
-               
-               //server configuration file includes installed policy file name and policy exists.
-               if ( line == KPolicyFileLine && iFileUtil.FileExists(*policyFilePath) )
-                   { 
-                   HBufC16* restOfDataBuf=iFileUtil.To16BitL(restOfData);
-                   CleanupStack::PushL(restOfDataBuf);
-                   iPolicyIdBuf.Append(*restOfDataBuf);
-                   iNewPolicyIdBuf=iPolicyIdBuf;
-                   iPolicyStore.ReplacePolicyL(iPolicyIdBuf,*iNewPolicyId);
-                   iNewPolicyId= &iNewPolicyIdBuf;
-                   CleanupStack::PopAndDestroy(restOfDataBuf);
-                   }
-               //either first configuration or policy removed
-               else
-                   {
-                   HBufC* serverFile = HBufC::NewL(fileData->Length() + KCRLF().Length() + iNewPolicyId->Length());
-                   CleanupStack::PushL(serverFile);
-                   TPtr tPtr(serverFile->Des());
-                   HBufC16* fileData16=iFileUtil.To16BitL(*fileData);
-                   CleanupStack::PushL(fileData16);
-                   tPtr.Copy(*fileData16);
-                   _LIT(KCRLF, "\r\n");
-              
-                   //policy removed
-                   if ( line == KPolicyFileLine )
-                       {
-                       TInt lengthOfPolicyId=restOfData.Length();
-                       tPtr.Replace(fileData->Length()-lengthOfPolicyId,lengthOfPolicyId,*iNewPolicyId);
-                       }
-                   //first configuration
-                   else
-                       {
-                       tPtr.Append(KCRLF);
-                       tPtr.Append(*iNewPolicyId);
-                       }
-                   iFileUtil.SaveFileDataL(fileNamePtr,tPtr);
-                   
-                   CleanupStack::PopAndDestroy(fileData16);
-                   CleanupStack::PopAndDestroy(serverFile);
-                   }
-             
-               CleanupStack::PopAndDestroy(policyFilePath);
-               CleanupStack::PopAndDestroy(policyFileNameBuf); 
-               CleanupStack::PopAndDestroy(fileData);
-               CleanupStack::PopAndDestroy(policyServerSettingsFileName);
-           }
-
     }
 /***/

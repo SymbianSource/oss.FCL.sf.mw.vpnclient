@@ -1536,7 +1536,7 @@ void CIkev1PluginSession::DoSendUdpDataL( HBufC8* aUdpData,
                                                     aDestAddr,
                                                     aLocalPort,
                                                     aDscp );
-        iSendQueue.AppendL( item );  
+        iSendQueue.Append( item );                
         }        
     }
 

@@ -36,17 +36,11 @@
 #include "ikev1crack.h"
 #include "ikev1isakmpstream.h"
 #include "ikev1crypto.h"
-#include "credentialcache.h"
-
 
 const TUint8  XAUTH_VID_DATA[8] = {0x09, 0x00, 0x26, 0x89, 0xdf, 0xd6, 0xb7, 0x12};
 const TUint8  CISCO_UNITY_VID_DATA[16] = {0x12, 0xf5, 0xf2, 0x8c, 0x45, 0x71, 0x68, 0xa9,
                                           0x70, 0x2d, 0x9f, 0xe2, 0x74, 0xcc, 0x01, 0x00};
                                           
-const TInt KCredentialTypeUnknown = 0;
-const TInt KCredentialTypeNew     = 1;
-const TInt KCredentialTypeCached  = 2;
-
                                           
 CTransNegotiation::CTransNegotiation( TInt aGranularity,
                                       TBool aUseXauth,
@@ -99,9 +93,8 @@ CTransNegotiation::~CTransNegotiation()
     delete iInternalAddr;
     delete iDialog;
     delete iDialogInfo;
-	delete iUserName;
-	delete iCache;
-
+	delete iUserName; 	
+            
     for ( TInt i = 0; i < Count(); i++ )
     {
         delete At(i);
@@ -121,7 +114,8 @@ void CTransNegotiation::ConstructL()
     {
         User::Leave(KErrArgument);   
     }
-    
+       
+    DEBUG_LOG(_L("Transaction exchange object constructed"));  
     if ( !iUseXauth ) 
     {
        iXauthCompleted = ETrue;
@@ -132,14 +126,7 @@ void CTransNegotiation::ConstructL()
        if ( !iUseCfgMode ) 
            iCfgModeCompleted = ETrue;
        DEBUG_LOG(_L("Starting to Wait XAUTH request"));  
-    }
-
-    if( EFalse != iPluginSession->IkeData().iUseCache )
-    {
-        iCache = CCredentialCache::NewL( iDebug );
-    }
-
-    DEBUG_LOG(_L("Transaction exchange object constructed"));  
+    }    
 }
 
 /**-------------------------------------------------------------------
@@ -296,12 +283,7 @@ TInt CTransNegotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
   	      iUserName = HBufC8::New(aDialogInfo->iUsername->Length() + 16); // 16 bytes space for padding
 		  if ( iUserName ) {
 		     iUserName->Des().Copy(aDialogInfo->iUsername->Des()); 
-		  }
-		  
-		  if( iCache && KCredentialTypeNew == iCredentialType )
-		  {
-		      iCache->SetUserName( *aDialogInfo->iUsername );
-		  }
+		  } 	   
        }
 
        if ( aDialogInfo->iSecret ) {
@@ -326,12 +308,9 @@ TInt CTransNegotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
                   break;
 
               default:
-                  if( iCache && KCredentialTypeNew == iCredentialType )
-                  {
-                      iCache->SetSecret( *aDialogInfo->iSecret );
-                  }
                   break;
-          }
+                   
+          }   
           AddAttributeData(attr_ptr, AttrType, aDialogInfo->iSecret->Length(),
                           (TUint8*)aDialogInfo->iSecret->Ptr());           
        }
@@ -696,7 +675,6 @@ TInt CTransNegotiation::ProcessCfgModeAttrsL(TDataISAKMP* aAttr, TInt aLth)
 TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
 {
     TInt     status        = TRANSACTION_CONTINUE;
-    TUint16  xauth_type    = ATTR_XAUTH_GENERIC;
     TUint32  request_flags = 0;
     TPtr8    challenge(NULL, 0);
 	TUint16  attr_type;
@@ -821,7 +799,9 @@ TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
             //
             //  User name/Password authentication required
             //
-			GetCredentialsL();
+			iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);			
+            iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
+            iDialog->GetAsyncUNPWDialogL(iDialogInfo, (MIkeDialogComplete*)this);          
             break;
 
         case ( (1 << (ATTR_USER_NAME - ATTR_XAUTH_TYPE)) | (1 << (ATTR_PASSCODE - ATTR_XAUTH_TYPE))):
@@ -842,24 +822,13 @@ TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
             iDialog->GetAsyncSecureNextPinDialogL(iDialogInfo, (MIkeDialogComplete*)this);
             break;
 
-        case ( (1 << (ATTR_CHALLENGE - ATTR_XAUTH_TYPE)) ):
-            //
-            //  User Challenge response dialog
-            //
-            if ( xauth_type == ATTR_XAUTH_RADIUS_CHAP )
-			{
-				iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);			
-				iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
-                iDialog->GetAsyncRespDialog(challenge, iDialogInfo, (MIkeDialogComplete*)this);
-            }   
-            break;
-
         default:
             break;
 
     }   
     
     return status;
+
 }
 
 /**-------------------------------------------------------------------
@@ -874,13 +843,12 @@ TInt CTransNegotiation::ProcessXauthStatusL(TDataISAKMP* aAttr, TInt aLth)
     TBuf8<16> attributes;    
     TInt      status = TRANSACTION_CONTINUE;
     TInt16    attr_status;
-
+    
     while ( aLth > 0 ) {
         
         aLth = aLth - aAttr->Size();
         if ( aLth < 0 ) {
            DEBUG_LOG(_L("XAUTH SET ERROR (Length mismatch in the attibutes)"));
-           iCredentialType = KCredentialTypeUnknown;
            return TRANSACTION_FAILED;
         }
 
@@ -920,19 +888,14 @@ TInt CTransNegotiation::ProcessXauthStatusL(TDataISAKMP* aAttr, TInt aLth)
        if ( status == TRANSACTION_SUCCESS ) {
           DEBUG_LOG(_L("XAUTH authentication succeeded!"));
           iXauthCompleted = ETrue;
-
-          if( iCache && KCredentialTypeNew == iCredentialType )
-          {
-              iCache->Store( iPluginSession->VpnIapId() );
-          }
-
 		  if ( iUserName ) {
+		     //
     		 // Cache user name into user name file
+			 //
 		     CIkev1Dialog* Dialog = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);
              CleanupStack::PushL(Dialog);
 			 TInt err(KErrNone);
 			 TRAP(err, Dialog->StoreUserNameL(iUserName->Des()));
-			 
 #ifdef _DEBUG			 
 			 if (err == KErrNone)
 			     DEBUG_LOG(_L("User Name caching succeeded"));
@@ -942,16 +905,13 @@ TInt CTransNegotiation::ProcessXauthStatusL(TDataISAKMP* aAttr, TInt aLth)
 		  }	   
        }            
        else {
-          if( iCache )
-          {
-              iCache->Clear(); 
-          }
           DEBUG_LOG(_L("XAUTH authentication failed!"));
+	   // Dialog object shall be delete in Dialog->RunL when dialog completed				  
+          CIkev1Dialog* Dialog  = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);		  
+          Dialog->ShowErrorDialogL(TVpnNoteDialog::EKmdAuthenticationFailed, NULL, NULL);
        }
     }
-
-    iCredentialType = KCredentialTypeUnknown;
-
+    
     return status;
 }
 
@@ -1007,6 +967,7 @@ TInt CTransNegotiation::CheckTransactionStatusL(TInt aStatus)
  *--------------------------------------------------------------------*/
 TInt CTransNegotiation::BuildConfigRequestL()
 {
+
     TBuf8<16> attributes;
     
     TUint32  message_id = iNegotiation->RandomMessageId();
@@ -1024,6 +985,8 @@ TInt CTransNegotiation::BuildConfigRequestL()
     DEBUG_LOG(_L("CONFIG-MODE started, request xmitted!")); 
 
     return TRANSACTION_CONTINUE;
+
+    
 }
 
 /**-------------------------------------------------------------------
@@ -1138,8 +1101,8 @@ TTransExchange* CTransNegotiation::AddExchangeL(TUint32 aMsgId, TUint8 aRole )
 //
 // The implementation for class MIkeDialogComplete virtual function
 //
-TInt CTransNegotiation::DialogCompleteL(
-    TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret)
+TInt CTransNegotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo,
+								        HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)
 {
 /*---------------------------------------------------------------------------
  *  
@@ -1153,7 +1116,7 @@ TInt CTransNegotiation::DialogCompleteL(
  *-------------------------------------------------------------------------*/
 	TUint32 obj_id = 1;
 	CAuthDialogInfo* info = (CAuthDialogInfo*)aUserInfo;
-	DEBUG_LOG1(_L("CTransNegotiation::DialogCompleteL(), aUserInfo=%x"), aUserInfo);
+	DEBUG_LOG1(_L("CIKECRACKNegotiation::DialogCompleteL(), aUserInfo =  %x"), aUserInfo);
 
 	if ( info )
 	{
@@ -1161,56 +1124,12 @@ TInt CTransNegotiation::DialogCompleteL(
 		DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
 		if ( obj_id == XAUTH_DIALOG_ID )
 		{
-			info->SetUserName( aUsername );
-			info->SetSecret( aSecret );
+			info->iUsername = aUsername;
+			info->iSecret   = aSecret;
+			info->iDomain   = aDomain;
 			obj_id = info->PluginSession()->AuthDialogCompletedL(info);
-		}
+		}   
 	}
 
 	return obj_id;
 }
-
-
-void CTransNegotiation::GetCredentialsL()
-{
-    DEBUG_LOG( _L( "CTransNegotiation::GetCredentialsL" ) );
-
-    TInt ret = KErrNotFound;
-
-    delete iDialogInfo;  iDialogInfo = NULL;
-
-    iDialogInfo = new (ELeave) CAuthDialogInfo(
-        iPluginSession,
-        XAUTH_DIALOG_ID,
-        iNegotiation->SAId(),
-        iCurrExchange->iMessageId );
-
-    if( iCache && KCredentialTypeUnknown == iCredentialType )
-    {
-        ret = iCache->GetCredentials(
-            iPluginSession->VpnIapId(),
-            iDialogInfo->iUsername,
-            iDialogInfo->iSecret
-        );
-    }
-
-    if( KErrNone == ret )
-    {
-        iCredentialType = KCredentialTypeCached;
-        TUint32 id = iPluginSession->AuthDialogCompletedL( iDialogInfo );
-    }
-    else
-    {
-        iCredentialType = KCredentialTypeNew;
-
-        delete iDialog;  iDialog = NULL;
-
-        iDialog = CIkev1Dialog::NewL(
-            iPluginSession, iPluginSession->DialogAnchor(), iDebug );
-
-        iDialog->GetAsyncUNPWDialogL( iDialogInfo, (MIkeDialogComplete*)this );
-    }
-}
-
-
-/***/

@@ -17,13 +17,10 @@
 
 #include <e32base.h>
 #include <f32file.h>
-#include <centralrepository.h> // link against centralrepository.lib
-#include <settingsinternalcrkeys.h>
 
 #include "vpncleaner.h"
 
 
-LOCAL_C void  setKeysL();
 LOCAL_C TBool vpnOnRom();
 
 
@@ -38,27 +35,12 @@ GLDEF_C TInt E32Main()
         {
         TVpnCleaner vpnc;
         vpnc.Clean();
-
-        TRAP_IGNORE( setKeysL() );
         }
 
     delete cleanup;
 
     __UHEAP_MARKEND;
     return KErrNone;
-    }
-
-
-LOCAL_C void setKeysL()
-    {
-    // Connecting and initialization:
-    CRepository* repository = CRepository::NewL(
-        KCRUidCommunicationSettings );
-
-    repository->Set( KSettingsVPNSupported, 0 );
-    repository->Delete( KSettingsVPNImplementation );
-
-    delete repository;
     }
 
 

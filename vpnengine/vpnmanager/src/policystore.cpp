@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2000-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2000-2007 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -15,11 +15,11 @@
 *
 */
 
+
+
 #include <e32math.h>
 #include <cmconnectionmethod.h>
 #include <cmpluginvpndef.h> // vpn plugin
-#include <centralrepository.h>
-#include <browseruisdkcrkeys.h>
 #include "policystore.h"
 #include "pinparser.h"
 #include "ikepolparser.h"
@@ -188,39 +188,6 @@ TInt CPolicyStore::DeletePolicyL(const TVpnPolicyId& aPolicyId)
         iFileUtil.DeleteFileL(*polFile);
         }
     CleanupStack::PopAndDestroy(2); // polFile, pinFile
-    	
-    // Policy was deleted successfully.
-    TUint policyCount = PolicyCount();
-                
-    if ( policyCount == 0 )
-        {
-        CRepository* repository = CRepository::NewLC( KCRUidBrowser );
-        TInt tempMode;
-        TBrowserCenRepApSelectionModeValues mode;   
-                    
-        TUint err = repository->Get( KBrowserOccAccessPointSelectionMode, tempMode );
-        mode = static_cast<TBrowserCenRepApSelectionModeValues> ( tempMode );
-    
-        // This was the last policy. Now restore old value, if appropriate.                                 
-        if (mode != EBrowserCenRepApSelModeAlwaysAsk)
-            {
-            // Nothing to change because user has edited the setting in meanwhile and this code will not
-            // mess up user's choice.
-            LOG(Log::Printf(_L("Browser user has changed mode from EBrowserCenRepApSelModeAlwaysAsk - no change"))); 
-            }
-        else
-            {               
-            // Reset to original value	
-            TInt err = repository->Reset( KBrowserOccAccessPointSelectionMode );
-            LOG(Log::Printf(_L("Set KBrowserOccAccessPointSelectionMode -> Original value")));	
-            }
-        CleanupStack::PopAndDestroy( repository );
-        }
-    else
-        {
-        LOG(Log::Printf(_L("Browser settings not changed because policy count > 0")));
-        }	            	
-    	
     LOG(Log::Printf(_L("<- CPolicyStore::DeletePolicyL()")));            
     return KErrNone;
     }
@@ -331,40 +298,6 @@ void CPolicyStore::AddPolicyL(const TVpnPolicyId& aPolicyId)
         }
 
     CleanupStack::PopAndDestroy(policyInfo);
-    
-    // Policy was installed successfully.
-    // Now change Browser's settings so that it must ask always for SNAP/IAP.
-    // This is done because otherwise the VPN usage is seen difficult for Browser users.
-    TUint policyCount = PolicyCount();
-                
-    if ( policyCount == 1 )
-        {
-        CRepository* repository = CRepository::NewLC( KCRUidBrowser );
-        TInt tempMode;
-        TBrowserCenRepApSelectionModeValues mode;   
-                    
-        TInt err = repository->Get( KBrowserOccAccessPointSelectionMode, tempMode );
-        mode = static_cast<TBrowserCenRepApSelectionModeValues> ( tempMode );            
-    
-        // This is the first policy. Now do the changes and save old value.                
-        if (mode == EBrowserCenRepApSelModeAlwaysAsk)
-            {
-            // Nothing to change
-            LOG(Log::Printf(_L("Browser already uses mode EBrowserCenRepApSelModeAlwaysAsk"))); 
-            }
-        else
-            {               
-            TInt err = repository->Set( KBrowserOccAccessPointSelectionMode, EBrowserCenRepApSelModeAlwaysAsk );
-            LOG_1("Set KBrowserOccAccessPointSelectionMode -> EBrowserCenRepApSelModeAlwaysAsk, error code: %d", err);
-            }
-        
-        CleanupStack::PopAndDestroy( repository );                      
-        }
-    else
-        {
-        LOG(Log::Printf(_L("Browser settings not changed because policy count > 1")));
-        }
-    
     LOG(Log::Printf(_L("<- CPolicyStore::AddPolicyL")));            
     }
 

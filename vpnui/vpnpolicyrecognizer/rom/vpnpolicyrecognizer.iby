@@ -22,9 +22,13 @@
 
 #ifdef FF_VPN_CLIENT
 
+#ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
+
 ECOM_PLUGIN(vpnpolicyrecognizer.dll,vpnpolicyrecognizer.rsc)
 data=ZRESOURCE\plugins\vpnpolicyrecognizer.rsc        RESOURCE_FILES_DIR\plugins\vpnpolicyrecognizer.rsc
 
 #endif
+
+#endif // FF_VPN_CLIENT
 
 #endif // __VPNPOLICYRECOGNIZER_IBY__
