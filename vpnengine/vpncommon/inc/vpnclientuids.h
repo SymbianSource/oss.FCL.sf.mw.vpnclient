@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2007 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -34,6 +34,11 @@
 * UID of the generic notifier
 */
 #define KUidGenericNotifier 0x10009D8D
+
+/**
+* UID of the generic GS plugin
+*/
+#define KUidGenericGsPlugin 0x10207236
 
 /// VPN specific UIDs
 
@@ -247,6 +252,16 @@
 * Not used anymore
 */
 //#define KUidPkiNotifier 0x101FAE08
+
+/**
+* UID of the VpnManagementUi
+*/
+#define KUidVpnManagementUi 0x101F6D31
+
+/**
+* UID of the KUidVpnManagementImplementation
+*/
+#define KUidVpnManagementImplementation 0x101F6D32
 
 /**
 * UID of the VpnPolIns

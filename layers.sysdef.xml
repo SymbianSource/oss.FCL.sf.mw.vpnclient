@@ -7,8 +7,8 @@
   <systemModel>
     <layer name="mw_layer">
       <module name="vpnclient"> 
-     	<unit unitID="netdo.vpnapiimpl" mrp="" bldFile="&layer_real_source_path;/vpnapiimpl/group" name="vpnapiimpl" />
-      <unit unitID="netdo.vpnapi" mrp="" bldFile="&layer_real_source_path;/vpnc_plat/vpnapi/group" name="vpnapi" />
+     	<unit unitID="netdo.vpnclient"
+       mrp="" bldFile="&layer_real_source_path;/group" name="vpnclient" />
      </module>
     </layer>
   </systemModel>

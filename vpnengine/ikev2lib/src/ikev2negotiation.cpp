@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -1532,7 +1532,7 @@ void CIkev2Negotiation::DoRetransmitL(TBool aResponse)
 void CIkev2Negotiation::IkeV2PkiInitCompleteL(TInt aStatus)
     {
 
-    DEBUG_LOG(_L("CIkev2Negotiation::IkeV2PkiInitCompleteL"));
+    DEBUG_LOG(_L("-> CIkev2Negotiation::IkeV2PkiInitCompleteL"));
 	//
 	// The implementation for class MPkiServiceComplete virtual function
 	// This method is called when a PKI service operation is
@@ -1578,6 +1578,7 @@ void CIkev2Negotiation::IkeV2PkiInitCompleteL(TInt aStatus)
             break;
         }
         
+    DEBUG_LOG(_L("<- CIkev2Negotiation::IkeV2PkiInitCompleteL"));        
     }
     
 

@@ -46,16 +46,22 @@ PRJ_EXPORTS
 ../vpnengine/vpnmanager/rom/vpnmanager.iby                             CORE_MW_LAYER_IBY_EXPORT_PATH(vpnmanager.iby)
 ../vpnengine/vpnins/rom/vpnins.iby                                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpnins.iby)
 ../vpnengine/vpnipsecpolparser/rom/vpnipsecpolparser.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnipsecpolparser.iby)
+../vpnengine/agileprovisionws/rom/agileprovisionws.iby                 CORE_MW_LAYER_IBY_EXPORT_PATH(agileprovisionws.iby)
 ../vpnengine/vpntcwrapper/rom/vpntcwrapper.iby                         CORE_MW_LAYER_IBY_EXPORT_PATH(vpntcwrapper.iby)
-
+../vpnengine/vpnextapi/rom/vpnextapi.iby                               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnextapi.iby)
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifier.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifier.iby)
 ../vpnui/vpndialogmanager/rom/vpndialogmanager.iby                     CORE_MW_LAYER_IBY_EXPORT_PATH(vpndialogmanager.iby)
+../vpnui/vpnmanagementui/rom/vpnmanagementui.iby                       CORE_MW_LAYER_IBY_EXPORT_PATH(vpnmanagementui.iby)
 ../vpnui/vpnpolins/rom/vpnpolins.iby                                   CORE_MW_LAYER_IBY_EXPORT_PATH(vpnpolins.iby)
 
 ../vpnui/vpnecomnotifier/rom/vpnecomnotifierResources.iby              LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(vpnecomnotifierResources.iby)
+../vpnui/vpnmanagementui/rom/vpnmanagementuiResources.iby              LANGUAGE_MW_LAYER_IBY_EXPORT_PATH(vpnmanagementuiResources.iby)
 
 ../vpnui/vpnpolicyrecognizer/rom/vpnpolicyrecognizer.iby               CORE_MW_LAYER_IBY_EXPORT_PATH(vpnpolicyrecognizer.iby)
 ../rom/ipsecvpn.iby                                                    CORE_MW_LAYER_IBY_EXPORT_PATH(ipsecvpn.iby)
+
+// vpnapi.dll should be in rom always
+../vpnapiimpl/rom/vpnapi.iby                                           CORE_MW_LAYER_IBY_EXPORT_PATH(vpnapi.iby)
 
 // export localised loc file
 ../vpnui/vpnecomnotifier/loc/vpnnotifier.loc                           MW_LAYER_LOC_EXPORT_PATH(vpnnotifier.loc)
@@ -73,7 +79,8 @@ gnumakefile vpnclient_version_update.make
 
 #include "../vpnc_plat/vpnapi/group/bld.inf"
 #include "../vpnapiimpl/group/bld.inf"
-
+#include "../vpnengine/vpnextapi/group/bld.inf"
+#include "../vpnengine/agileprovisionws/group/bld.inf"
 #include "../vpnengine/eventmediatorapi/group/bld.inf"
 #include "../vpnengine/eventviewer/group/bld.inf"
 #include "../vpnengine/vpnins/group/bld.inf"
@@ -100,6 +107,7 @@ gnumakefile vpnclient_version_update.make
 #include "../vpnengine/pkiservice/group/bld.inf"
 #include "../vpnengine/vpnconnagt/group/bld.inf"
 #include "../vpnengine/vpnmanager/group/bld.inf"
+#include "../vpnui/vpnmanagementui/group/bld.inf"
 #include "../vpnui/vpnpolins/group/bld.inf"
 #include "../vpnui/vpnpolicyrecognizer/group/bld.inf"
 #include "../vpnengine/vpncleaner/group/bld.inf"

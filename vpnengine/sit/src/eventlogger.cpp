@@ -22,6 +22,7 @@
 #include "log.h"
 #include "eventmediatorapi.h"
 #include "vpnconnstarter.h"
+#include "extender.h"
 
 
 /**
@@ -47,6 +48,8 @@ void CEventLogger::ConstructL()
     {
     // Set default access point names just
     // in case the real name fetching fails
+    iExtender=CExtender::NewL();
+    
     iVpnApName.Copy(KUnknownVpnAp);
     iRealApName.Copy(KUnknownIap);
 
@@ -56,6 +59,7 @@ void CEventLogger::ConstructL()
 CEventLogger::~CEventLogger()
     {
     LOG(Log::Printf(_L("CEventLogger::~CEventLogger\n")));
+    delete iExtender;
     }
 
 void CEventLogger::LogEvent(TUint aMsgId, TAny* aAnyPtr, TInt aStatusCode, TInt aReasonCode)
@@ -141,13 +145,15 @@ TInt CEventLogger::DoLogEvent(TUint aMsgId, TAny* aAnyPtr, TInt aStatusCode, TIn
             break;
 
         case R_VPN_MSG_VPN_IAP_ACT_START:
-            // NSSM removal
+            iExtender->OnVpnApActStart(static_cast<CVpnConnStarter*>(aAnyPtr));
             break;
             
         case R_VPN_MSG_VPN_IAP_ACT_CANCEL:
+            iExtender->OnVpnApActCancel();
             break;
 
         case R_VPN_MSG_VPN_IAP_ACT_END:
+            iExtender->OnVpnApActEnd(static_cast<TVpnPolicyId*>(aAnyPtr), aStatusCode, iRealIapId);
             break;
             
         default:

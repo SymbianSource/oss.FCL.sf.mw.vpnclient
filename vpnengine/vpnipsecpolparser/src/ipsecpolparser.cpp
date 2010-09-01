@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2002-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2002-2005 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -2054,8 +2054,15 @@ EXPORT_C CSecPolBundleList* CIpSecurityPiece::FQDNAddressListL()
 
         LOG_("Querying DNS tasks\n");
 
-        iPolicies->GetFQDNAddressListL(*iPolicyList);
+        if (iPolicies != NULL) 
+            {
+            iPolicies->GetFQDNAddressListL(*iPolicyList);
+            }
+        else 
+            {
+            LOG_("No ipsec policies!\n");
+            }
+        LOG_("CIpSecurityPiece::GetFQDNAddressListL() exit\n");
         }
-    LOG_("CIpSecurityPiece::GetFQDNAddressListL() exit\n");
     return iPolicyList;
     }

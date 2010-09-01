@@ -40,6 +40,7 @@ void CDmAdStore::ConstructL(MDmAdCallBack* aDmAdCallBack)
     TRACE("CDmAdStore::ConstructL");
             
     TInt status = iPkiServiceApi.Connect();
+    iPkiServiceApi.SetInformational(ETrue);
     DEBUG_LOG1(_L("Connect status: %d"), status);
     User::LeaveIfError(status);    
     iCert = CDmAdCert::NewL(iPkiServiceApi);

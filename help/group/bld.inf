@@ -24,6 +24,4 @@ PRJ_EXPORTS
 
 ../inc/vpn.hlp.hrh	MW_LAYER_PLATFORM_EXPORT_PATH(csxhelp/vpn.hlp.hrh)
 
-#ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
 ../rom/vpnclienthelps_variant.iby		CUSTOMER_APP_LAYER_IBY_EXPORT_PATH(vpnclienthelps_variant.iby)
-#endif

@@ -30,7 +30,7 @@ const TInt CVpnManagerServer::iVpnManRanges[iVpnManRangeCount] =
 	{
 	0,
     EVpnImportPolicy,
-    EVpnUpdatePolicyData+1
+    EExtGetPolicyName+1
 	};
 
 const TUint8 CVpnManagerServer::iVpnManElementIndex[iVpnManRangeCount] = 

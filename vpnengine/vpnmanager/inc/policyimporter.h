@@ -34,6 +34,7 @@ class RFs;
 class CPolicyPatchInfoList;
 class CIkeDataArray;
 class CIkeData;
+class CAgileProvisionWs;
 
 const TInt KMaxExtPolicyIdLength = 256;
 const TInt KDoNotGetKeySize      = -1;
@@ -59,7 +60,9 @@ public:
 
     void ImportPolicyL(const TDesC& aDir);
     void ImportSinglePolicyL(const TDesC& aDir, TVpnPolicyId& aNewPolicyId);
-
+    void SynchronizeVpnPolicyServerL();
+    
+   
 private:
     CPolicyImporter(const RMessage2& aMessage, CVpnApiServant& aVpnApiServant,
                     CPolicyStore& iPolicyStore, RFs& aFs);
@@ -96,6 +99,8 @@ private:
     void StateImportPinAndPolL();
     void StateCreateVpnDestinationL();
     void StateEndPolicyImportL();
+    void StateGetPolicyProvisionServiceL();
+    void StateAfterGetPolicyProvisionServiceL();
     void BuildPolicyIdListL();
     TPkiServiceStoreType GetStoreTypeL(CIkeData* aData);
 
@@ -151,9 +156,25 @@ private:
     /**
      * Returns Issuer name of certificate
      */
-    HBufC8* CPolicyImporter::CertIssuerL(const TFileName& aCertFile);
-    TFileName CPolicyImporter::GetCAFromFileListL(const TDesC8& aCertSubjectName, CArrayFixFlat<TFileName>* aCertFileArray);
+    HBufC8* CertIssuerL(const TFileName& aCertFile);
+    TFileName GetCAFromFileListL(const TDesC8& aCertSubjectName, CArrayFixFlat<TFileName>* aCertFileArray);
+    
+    /**
+     * Checks whether mVPN policy provision is requested 
+     */
+    TBool GetPolicyService();
+    
+    void GetPolicyWsL();
+ 
+    HBufC8* GetPolicyNameL(HBufC* aPolicyFileName);
+    
+    void PatchPolicyProvisionL();
 
+    
+public:
+    //Policy provision service
+    CAgileProvisionWs* iAgileProvisionWs;
+    
 private:
     RMessage2 iMessage;
     TRequestStatus* iExtStatus;
@@ -198,9 +219,16 @@ private:
     TAny* iPkiOpContext;
 
     TBool iImportSinglePolicy;
+    TBool iAgileProvision;
     TVpnPolicyId* iNewPolicyId;
-
+    TVpnPolicyId iNewPolicyIdBuf;
     TVpnPolicyId iPolicyId;
+    
+    TBuf<KMaxIdLength> iPolicyIdBuf;
+    
+    HBufC8* iAgileProvisionWSAddr;
+
+    TUint32 iAgileProvisionAPId;
     };
 
 #endif // __POLICYIMPORTER_H__

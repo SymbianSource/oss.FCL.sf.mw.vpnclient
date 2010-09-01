@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003 - 2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003 - 2007 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -1042,20 +1042,31 @@ HBufC8* CPkcs10Req::ASNEncodeCertificationRequestInfoLC()
         CRInfoPtr += DERSetInteger(CRInfoPtr, 0);       // version
 
         // Copy component ders
-        if(commonAttributes->Length() > 0)
+        if(commonAttributes != NULL && commonAttributes->Length() > 0)
             CRInfoPtr += CPkcs10Req::ASNCopy(CRInfoPtr, CONST_CAST(TUint8 *, commonAttributes->Ptr()), commonAttributes->Length());
 
-        if(pkiInfo->Length() > 0)
+        if(pkiInfo != NULL && pkiInfo->Length() > 0)
             CRInfoPtr += CPkcs10Req::ASNCopy(CRInfoPtr, CONST_CAST(TUint8 *, pkiInfo->Ptr()), pkiInfo->Length());
 
-        if(extendedAttributes->Length() > 0)
+        if(extendedAttributes != NULL && extendedAttributes->Length() > 0)
             CRInfoPtr += CPkcs10Req::ASNCopy(CRInfoPtr, CONST_CAST(TUint8 *, extendedAttributes->Ptr()), extendedAttributes->Length());
     }
     
-    CleanupStack::PopAndDestroy(extendedAttributes);
-    CleanupStack::PopAndDestroy(pkiInfo);
-    CleanupStack::PopAndDestroy(commonAttributes);
-   
+    if(extendedAttributes != NULL)
+    {
+        delete extendedAttributes;
+        CleanupStack::Pop(1);
+    }
+    if(pkiInfo != NULL)
+    {
+        delete pkiInfo;
+        CleanupStack::Pop(1);
+    }
+    if(commonAttributes != NULL)
+    {
+        delete commonAttributes;
+        CleanupStack::Pop(1);
+    }
     if(CRInfoBuffer != NULL)
         CleanupStack::PushL(CRInfoBuffer);      // to be destroyed by the caller
     

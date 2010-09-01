@@ -28,4 +28,5 @@ EXPORTS
 	?NewL@CIpsecSaSpiRetriever@@SAPAV1@AAVMIpsecSaSpiRetrieverCallback@@AAVCPFKeySocketIf@@@Z @ 27 NONAME ; class CIpsecSaSpiRetriever * CIpsecSaSpiRetriever::NewL(class MIpsecSaSpiRetrieverCallback &, class CPFKeySocketIf &)
 	?GetIpseSaSpecListLC@CIpsecPolicyUtil@@QAEPAVCIpsecSaSpecList@@VTInetAddr@@000HK@Z @ 28 NONAME ; class CIpsecSaSpecList * CIpsecPolicyUtil::GetIpseSaSpecListLC(class TInetAddr, class TInetAddr, class TInetAddr, class TInetAddr, int, unsigned long)
 	?DestAddr@TIkeSendQueueItem@@QAEABVTInetAddr@@XZ @ 29 NONAME ; class TInetAddr const & TIkeSendQueueItem::DestAddr(void)
+	?GetPolicyIdL@CmUtils@@SAXKAAV?$TBuf@$0DC@@@@Z @ 30 NONAME ; void CmUtils::GetPolicyIdL(unsigned long, class TBuf<50> &)
 

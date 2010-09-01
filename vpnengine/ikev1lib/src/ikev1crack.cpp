@@ -26,6 +26,27 @@
 #include "ikepolparser.h"
 
 
+CAuthDialogInfo::~CAuthDialogInfo()
+{
+    delete iUsername;
+    delete iSecret;
+}
+
+
+void CAuthDialogInfo::SetUserName( HBufC8* aUserName )
+{
+    delete iUsername;
+    iUsername = aUserName;
+}
+
+
+void CAuthDialogInfo::SetSecret( HBufC8* aSecret )
+{
+    delete iSecret;
+    iSecret = aSecret;
+}
+
+
 //
 // Class that implements IKE CRACK authentication method
 //
@@ -518,8 +539,8 @@ TInt CIKECRACKNegotiation::CrackAuthenticationFailedL(const TNotificationISAKMP 
 //
 // The implementation for class MIkeDialogComplete virtual function
 //
-TInt CIKECRACKNegotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo,
-                                            HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)
+TInt CIKECRACKNegotiation::DialogCompleteL(
+    TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret)
 {
 /*---------------------------------------------------------------------------
  *  
@@ -541,14 +562,11 @@ TInt CIKECRACKNegotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUse
 	   DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
        if ( obj_id == DIALOG_INFO_ID )
 	   {
-          info->iUsername = aUsername;
-          info->iSecret   = aSecret;
-          info->iDomain   = aDomain;
+          info->SetUserName( aUsername );
+          info->SetSecret( aSecret );
           obj_id = info->PluginSession()->AuthDialogCompletedL(info);
-       }   
+       }
     }
 
     return obj_id;
 }
-
-

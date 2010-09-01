@@ -169,6 +169,8 @@ EXPORT_C void CIkeData::CopyL(const CIkeData* aData)
             CleanupStack::Pop(ca_copy);
             }
         }
+        
+    iUseCache = aData->iUseCache;
     }
 
 void CIkeData::Empty()
@@ -451,11 +453,8 @@ EXPORT_C void TIkeParser::ParseL(CIkeData* aConf)
         else if (token.CompareF(_L("IKE_VERSION:"))==0) //CompareF ignores case
         {
             sub_num = NextToken();          
-            if ( sub_num.Val(aConf->iIkeVersion, EDecimal) != KErrNone )
-            {
-            	err = KSecParserErrUnknown;
-            }
-            else if ( aConf->iIkeVersion != 2 )
+            sub_num.Val(aConf->iIkeVersion, EDecimal);
+            if ( aConf->iIkeVersion != 2 )
                 aConf->iIkeVersion = 1; // IKE version 1 is currently the default
         }
         else if (token.CompareF(_L("SEND_NOTIFICATION:"))==0)   //CompareF ignores case
@@ -728,6 +727,13 @@ EXPORT_C void TIkeParser::ParseL(CIkeData* aConf)
         //PeerCerts List
         else if (token.CompareF(_L("PEER_CERTS:"))==0)  //CompareF ignores case
             err = ParsePeerCerts(aConf);
+        else if (token.CompareF(_L("USE_CACHE:"))==0) //CompareF ignores case
+        {
+            aConf->iUseCache = EFalse;          
+            token.Set(NextToken());
+            if (token.CompareF(_L("True"))==0)
+                aConf->iUseCache = ETrue;
+        }
     }
 	if ( err == KErrNone )
 		errCA=CheckPolicy(aConf);
@@ -1108,6 +1114,16 @@ EXPORT_C TInt TIkeParser::Write(CIkeData* aConf, HBufC8*& aPolBfr)
     err = BufferAppend(aPolBfr, line);
     if (err != KErrNone)
         return err;
+        
+    line.Copy(_L8("USE_CACHE: "));
+    if (aConf->iUseCache)
+        line.Append(_L("TRUE\n"));
+    else
+        line.Append(_L("FALSE\n"));
+    err = BufferAppend(aPolBfr, line);
+    if (err != KErrNone)
+        return err;
+
     if ( aConf->iCRACKLAMUserName )
 	{
 		line.Copy(_L8("CRACK_LAM_USERNAME: "));

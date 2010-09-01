@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -21,7 +21,7 @@ TARGET          vpnmanager.exe
 TARGETTYPE      exe
 UID             0x1000008d 0x101F7993
 
-CAPABILITY      NetworkControl NetworkServices ProtServ WriteDeviceData
+CAPABILITY      NetworkControl NetworkServices ProtServ WriteDeviceData ReadDeviceData
 VENDORID        VID_DEFAULT
 
 SOURCEPATH      ../src
@@ -52,8 +52,11 @@ USERINCLUDE     ../../utlxml/inc
 USERINCLUDE     ../../utlbase64/inc
 USERINCLUDE     ../../utlpkcs10/inc
 USERINCLUDE     ../../../vpnui/vpnecomnotifier/inc
+USERINCLUDE	../../../vpnui/vpnpolins/inc
 USERINCLUDE     ../../eventmediatorapi/inc
 USERINCLUDE     ../../eventviewer/inc
+USERINCLUDE	../../agileprovisionws/inc
+USERINCLUDE     ../../vpnextapi/inc
 
 MW_LAYER_SYSTEMINCLUDE
 
@@ -75,7 +78,9 @@ LIBRARY         random.lib
 LIBRARY         charconv.lib 
 LIBRARY         cmmanager.lib
 LIBRARY         cryptography.lib
+LIBRARY         agileprovisionws.lib
+LIBRARY         centralrepository.lib
 
 DEBUGLIBRARY    flogger.lib
 
-EPOCSTACKSIZE     0x4000
+EPOCSTACKSIZE     0x5000
