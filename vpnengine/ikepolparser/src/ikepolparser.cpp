@@ -19,6 +19,7 @@
 
 #include <e32std.h>
 #include <coeutils.h>
+
 #include "ikepolparser.h"
 
 //
@@ -1690,7 +1691,14 @@ TInt TIkeParser::ParseCAItem(CIkeData* /*aConf*/, TCertInfo* aCA, TPtrC& aToken)
             case CA_NAME: //falls through
             case APPL_UID:
                 {
-                aCA->iData = GetRestOfLine();   //ASCII format CA name or Appl uid list
+                TPtrC data = GetRestOfLine();
+
+                if( KMaxX500DN < data.Length() )
+                    {
+                    return KSecParserErrCA;
+                    }
+
+                aCA->iData = data;   //ASCII format CA name or Appl uid list
                 // Check if data contains empty attributes
                 if( KErrNotFound != aCA->iData.FindF(_L("=,")) || KErrNotFound != aCA->iData.FindF(_L("=\"\"")))
                     {
@@ -1698,11 +1706,19 @@ TInt TIkeParser::ParseCAItem(CIkeData* /*aConf*/, TCertInfo* aCA, TPtrC& aToken)
                     }
                 }
                 break;
-            case BIN_CERT:                
-                return ParseFileName(aCA->iData);                               
-                //No break needed
+            case BIN_CERT:
+                {           
+                return ParseFileName(aCA->iData);
+                }                               
             default:
-                aCA->iData = NextToken();       //PEM cert or  Key identifier      
+                TPtrC next = NextToken();
+
+                if( KMaxX500DN < next.Length() )
+                    {
+                    return KSecParserErrCA;
+                    }
+
+                aCA->iData = next;  // PEM cert or  Key identifier      
                 break;
             }
 
@@ -1833,7 +1849,16 @@ TInt TIkeParser::ParseOwnCerts(CIkeData* aConf)
         else if (token.CompareF(_L("SUBJECT_DN_SUFFIX:"))==0) //CompareF ignores case
         {
             nMandatoryFields++;
-            own_cert->iSubjectDnSuffix = GetRestOfLine();                          
+            
+            TPtrC data = GetRestOfLine();
+
+            if( KMaxX500DN < data.Length() )
+                {
+                return KSecParserErrOwnCerts;
+                }
+
+            own_cert->iSubjectDnSuffix = data;
+            
             // Check if data contains empty attributes
         	if( KErrNotFound != own_cert->iSubjectDnSuffix.FindF(_L("=,")) || 
         	    KErrNotFound != own_cert->iSubjectDnSuffix.FindF(_L("=\"\"")))
@@ -1856,10 +1881,19 @@ TInt TIkeParser::ParseOwnCerts(CIkeData* aConf)
         else if (token.CompareF(_L("RFC822NAME_FQDN:"))==0) //CompareF ignores case
         {
             nMandatoryFields++;
-            own_cert->iRfc822NameFqdn = NextToken();  
+            
+            TPtrC next = NextToken();
+            
+            if( KMaxRfc822 < next.Length() )
+                {
+                return KSecParserErrOwnCerts;
+                }
+            
+            own_cert->iRfc822NameFqdn = next;  
         }
 
-        else if (token.CompareF(_L("PRIVATE_KEY_LENGTH:"))==0) //CompareF ignores case
+        // CompareF ignores case
+        else if (token.CompareF(_L("PRIVATE_KEY_LENGTH:"))==0) 
         {
             nMandatoryFields++;
             TLex sub_num = NextToken();
@@ -1868,18 +1902,19 @@ TInt TIkeParser::ParseOwnCerts(CIkeData* aConf)
         }
         else
         {
-            UnGetToMark(); // current token didn't belong to this section
+            UnGetToMark();  // current token didn't belong to this section
             endOfSection=ETrue;
         }
     }
-    if (nMandatoryFields<1) // Some mandatory fields are missing
+    if (nMandatoryFields<1)  // Some mandatory fields are missing
         {
         err= KSecParserErrOwnCerts;
         }
     else
         {
-        own_cert->iOwnCertExists = 1;                             // Write Own Certs 
+        own_cert->iOwnCertExists = 1;  // Write Own Certs 
         }
+
     return err;
 }
 

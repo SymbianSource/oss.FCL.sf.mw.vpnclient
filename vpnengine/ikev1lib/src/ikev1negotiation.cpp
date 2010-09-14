@@ -551,7 +551,7 @@ TBool CIkev1Negotiation::ReadOwnCertL()
     if ( iPkiService && iHostData->iCAList )
 		{
        TCertInfo* CertInfo;
-	   HBufC8* CAName = HBufC8::NewLC(256);  	   
+	   HBufC8* CAName = HBufC8::NewLC( KMaxX500DN );  	   
        TInt i = 0;
        if ( iHostData->iCAList->At(0)->iData!=KVpnApplUid )
           {

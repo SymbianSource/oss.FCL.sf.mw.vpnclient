@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -11,14 +11,13 @@
 *
 * Contributors:
 *
-* Description:   Policy importer
+* Description:  Policy importer
 *
 */
 
-
-
 #include "policypatcher.h"
 #include "vpnapidefs.h"
+#include "pkidefs.h"
 
 
 TAny* TPatchKeyArrayPtr::At(TInt aIndex) const
@@ -314,7 +313,7 @@ TInt CPolicyPatchInfo::UserCertKeyLen() const
     {
     return iUserCertKeyLen;
     }
-    
+
 HBufC8* CPolicyPatchInfo::CheckSubjectNameSyntaxL(const TDesC8& aSubj)
     {
     const TInt KMaxSubjectItems = 20;
@@ -408,41 +407,41 @@ HBufC8* CPolicyPatchInfo::CheckSubjectNameSyntaxL(const TDesC8& aSubj)
             updateArrCount++;
             updateArrCount++;
             }
-       
-       TBuf8<256> resultBuf;
-       resultBuf.Copy(aSubj);
-       
-       i=0;       
-       
+
+       HBufC8* buf  = HBufC8::NewLC( KMaxX500DN );
+       TPtr8 bufPtr = buf->Des();
+
+       if ( KMaxX500DN >= aSubj.Length() )
+           {
+           bufPtr.Copy( aSubj );
+           }
+       else
+           {
+           User::Leave( KErrArgument );
+           }
+
+       i=0;
+
        //update subjectname acoording to updateArr array.
        if ( updateArr->Count()>0 )
            {
            while (i<updateArrCount)
                {
-               if ( resultBuf.Length()<256 )
-                   resultBuf.Insert(updateArr->At(i) + i, KReplacementChar);
+               if ( bufPtr.Length()<KMaxX500DN )
+                   bufPtr.Insert(updateArr->At(i) + i, KReplacementChar);
                else
                    User::Leave(KErrNotSupported);
                i++;
                }
            }
        
-       CleanupStack::Pop(updateArr);
-       CleanupStack::Pop(commaSignArr);
-       CleanupStack::Pop(equalSignArr);
+       CleanupStack::Pop( buf );
+
+       CleanupStack::PopAndDestroy(updateArr);
+       CleanupStack::PopAndDestroy(commaSignArr);
+       CleanupStack::PopAndDestroy(equalSignArr);
        
-       delete equalSignArr;
-       equalSignArr=NULL;
-       
-       delete commaSignArr;
-       commaSignArr=NULL;
-       
-       delete updateArr;
-       updateArr=NULL;
-       
-       HBufC8* resultHeap = resultBuf.AllocL();
-       
-       return resultHeap;
+       return buf;
     }
 
 

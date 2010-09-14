@@ -51,8 +51,6 @@ class CListenerContainer;
 */
 class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
     {
-    friend class CEventMediatorSession; // Friend class
-
     public: //Methods
 
     // Constructors and destructor
@@ -77,6 +75,10 @@ class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
         */
         CSession2* NewSessionL(const TVersion& aVersion, const RMessage2& aMessage) const;
 
+        /**
+         * Notifies the server that a session has been deleted.
+         */
+        void SessionDeleted(TBool aIsSitSession);
     // Other methods
         
         /**
@@ -98,7 +100,7 @@ class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
          * Finds out whether the specified client thread is a SIT
          * thread or not
          */
-        TBool IsClientTheSitL(const RMessage2& aMessage);
+        TBool IsClientTheSitL(const RMessage2& aMessage) const;
 
         /**
          * Starts the SIT thread if it is not running
@@ -208,6 +210,14 @@ class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
 
         TPtrC EventLogFileName(void);
         
+        /**
+         * Copies data describing an event to the client.
+         * @param aMessge: a message from client side sent by RConnection::FetchData
+         * @return error code, KErrNone if successfull
+         */
+        TInt CopyEventDataL(const RMessage2& aMessage);    
+        
+        
    public: // From MSitDeathListener
         void SitDied();
 
@@ -231,23 +241,11 @@ class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
         /**
          * Perform the second phase construction of a CVpnManagerServer
          * object.
-         * @param aServer Pointer to the server itself.
          */
-        void ConstructL(CEventMediatorServer* aServer);
+        void ConstructL();
 
     // Other methods
 
-        /**
-         * Stops the server if the session count is zero.
-         */
-        void StopEventMediator(void);
-
-        /**
-         * Copies data describing an event to the client.
-         * @param aMessge: a message from client side sent by RConnection::FetchData
-         * @return error code, KErrNone if successfull
-         */
-        TInt CopyEventDataL(const RMessage2& aMessage);    
 
         /**
          * Reduces listener count of a stored event by one and destroys it if count becomes zero.
@@ -255,16 +253,11 @@ class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
          */
         void MarkStoredEventListened(TInt aIndex);
 
-        /**
-         * Sets the iShuttingDown flag.
-         */
-        void SetShuttingDown(TBool aShuttingDown);
-
     private: //Data
         // List of Events that have been reported but not handled by all listeners.
         CArrayFixFlat<TEventContainer*> iStoredEvents;
         // Number of currently existing sessions.
-        TInt iSessionCount;
+        mutable TInt iSessionCount;
         // Log writer
         CEventLogger* iLogger;
         // The next event specification ID
@@ -290,231 +283,6 @@ class CEventMediatorServer : public CPolicyServer, public MSitDeathListener
 
     };
 
-// CLASS DECLARATION
-
-/**
-* Defines the session to the VPN manager server. 
-*/
-class CEventMediatorSession : public CSession2
-    {
-    public: //Message types
-        enum
-            {
-            KEventMediatorListen,
-            KEventMediatorListenWithSpec,
-            KEventMediatorCancel,
-            KEventMediatorCancelWithSpec,
-            KEventMediatorCancelAll,
-            KEventMediatorReportEvent,
-            KEventMediatorReportEventWithSpec,
-            KEventMediatorFetchData,
-            KEventMediatorReportLogEvent,
-            KEventMediatorNewEventSpecId,
-            KEventMediatorDeletePrivateFiles,
-            KEventMediatorGetEventLogSize,
-            KEventMediatorGetEventLogHeader,
-            KEventMediatorGetEventLogData,
-            KEventMediatorClearEventLog
-            };
-    
-    public: // Methods
-
-    // Constructors and destructor
-
-        /**
-        * Static constructor
-        */
-        static CEventMediatorSession* NewL(CEventMediatorServer* aServer, const RMessage2& aMessage);
-        
-        /**
-        * Default destructor
-        */
-        ~CEventMediatorSession(void);
-
-        /**
-        * Wrapper function which Dispatches and executes the client's service calls
-        * (See Message type definition).
-        */
-        void ServiceL(const RMessage2& aMessage);
-
-        /**
-         * Checks if client is listening events of the given type and completes message 
-         * sent by clients ListenToEvent function. The length of the event data and
-         * the pointer to that data are written to the message.
-         * @param aType: type of the event.
-         * @param aSpec: additional info on event.
-         * @param aData: event data.
-         * @return number of listeners for the event was listened.
-         */
-        TInt CheckEventL(const TEventType aType, const TDesC8* aSpec, const TDesC8* aData, TInt aStatus);
-
-        /**
-         * Tries to find a task request that is not being fulfilled
-         * already
-         */
-        CListenerContainer* FindWaitingTaskRequest();
-
-        /**
-         * Retrieves the event listener object, if any, that is using
-         * the SIT that is fulfilling the specified event.
-         */
-        CListenerContainer* FindListener(TEventType aEventType, TInt aEventSpecId);
-        
-        /**
-         * Retrieves the event listener object, if any, that is using
-         * the SIT that is fulfilling the specified event.
-         */
-        CListenerContainer* FindListener(TEventType aEventType, const TDesC8* aEventSpec);
-
-        /**
-         * Completes the specified listener if it is owned by the
-         * session. Returns ETrue is the listener was found and
-         * completed, EFalse otherwise.
-         */
-        void CompleteListener(TEventType aEventType, const TDesC8* aEventSpec, TInt aStatus);
-
-        void CompleteTaskRequests(TInt aStatus);
-
-        TBool IsASitSession();
-        
-    private: //Methods
-    // Constructors and destructor
-
-        /**
-        * Constructor
-        */
-        CEventMediatorSession(CEventMediatorServer* aServer);
-
-        /**
-         * Starts listening events of requesteed type by coping the message to iListenedEvents.
-         * @param aMessage: aMessage sent by clients ListenToEvent function.
-         * @return: error code, KErrNone if successfull.
-         */
-        TInt ListenToEventWithSpecL(const RMessage2& aMessage);
-
-        /**
-         * Starts listening events of requesteed type by coping the message to iListenedEvents.
-         * @param aMessage: aMessage sent by clients ListenToEvent function.
-         * @return: error code, KErrNone if successfull.
-         */
-        TInt ListenToEventL(const RMessage2& aMessage);
-
-        /**
-         * Reports the event contained in the message to the event mediator server.
-         * @param aMessage: aMessage sent by clients ReportEvent function.
-         * @return: error code, KErrNone if successfull.
-         */
-        void ReportEventL(const RMessage2& aMessage);
-
-        /**
-         * Reports a log event contained in the message to the event mediator server.
-         * @param aMessage: aMessage sent by clients ReportLogEvent function.
-         * @return: error code, KErrNone if successfull.
-         */
-        void ReportLogEventL(const RMessage2& aMessage);
-
-        /**
-         * Reports the event contained in the message to the event mediator server.
-         * @param aMessage: aMessage sent by clients ReportEvent function.
-         * @return: error code, KErrNone if successfull.
-         */
-        void ReportEventWithSpecL(const RMessage2& aMessage);
-
-        /**
-         * Cancels listning of one event type.
-         * @param aMessage: aMessage sent by clients CancelListenToEvent function.
-         */
-        void CancelListening(const RMessage2& aMessage);
-
-        /**
-         * Cancels listning of one event type.
-         * @param aMessage: aMessage sent by clients CancelListenToEvent function.
-         */
-        void CancelListeningWithSpecL(const RMessage2& aMessage);
-
-        /**
-         * Cancels all listening.
-         * @param aMessage: aMessage sent by clients CancelAllListening function.
-         */
-        void CancelAll();
-
-        /**
-         * Copies event data from the server to the client.
-         * @param aMessage: aMessage sent by clients FetchData function.
-         * @return: error code, KErrNone if successfull.
-         */
-        TInt FetchDataL(const RMessage2& aMessage);
-
-        /**
-         * Looks up a message from iListenedEvents.
-         * @param aType: type of the event the message is listening to.
-         * @param aIndex: the position of the message in iListenedEvents.
-         * @return ETrue if message exists, EFalse if not.
-         */
-        TBool FindListenerMsg(const TEventType aType,TInt& index);
-
-        /**
-         * Looks up a message from iListenedEvents.
-         * @param aType: type of the event the message is listening to.
-         * @param aIndex: the position of the message in iListenedEvents.
-         * @return ETrue if message exists, EFalse if not.
-         */
-        TBool FindListenerMsg(const TEventType aType,const TDesC8* aSpec,TInt& index);
-
-        /**
-         * Searches for a task request type event listening request
-         */
-        TBool FindTaskRequestListenerMsg(TInt& index);
-        
-        /**
-         * Reads data that was reported with the event from client. Allocates a buffer
-         * for data and gives ownership of that buffer to caller.
-         * @param aMessage: aMessage sent by clients ReportEvent function.
-         * @return pointer to the newly created buffer containig data.
-         */
-        HBufC8* ReadEventDataFromClientL(const RMessage2& aMessage);
-
-        /**
-         * Reads specification describing the event from client. Allocates a buffer
-         * for secification and gives ownership of that buffer to caller.
-         * @param aMessage: aMessage sent with event specification.
-         * @return pointer to the newly created buffer containig data.
-         */
-        HBufC8* ReadSpecificationFromClientL(const RMessage2& aMessage);
-
-        /**
-         * Completes the specified listener and deletes it from the
-         * listener list
-         */
-        void CompleteListener(TInt aIndex, TInt aStatus);
-
-        /**
-         * Returns to the client a new event specification ID
-         */
-        void NewEventSpecIdL(const RMessage2& aMessage);
-
-        TInt DeletePrivateFiles();
-        void DeletePrivateFilesL();
-        
-        TInt GetEventLogSize(const RMessage2& aMessage);
-        TInt GetEventLogHeader(const RMessage2& aMessage);
-        TInt GetEventLogData(const RMessage2& aMessage);
-        TInt ClearEventLog();
-        
-    private: //Data
-        // List of messages listening to events
-        CArrayFixFlat<CListenerContainer*> iListenedEvents;
-        // Event mediator server
-        CEventMediatorServer* iServer;
-
-        RFs     iFs;
-        RFile   iEventLogFile;
-        TBool   iEventLogFileOpen;
-        // Is this session from a SIT or not
-
-    public:        
-        TBool iIsSitSession;
-    };
 
 // CLASS DECLARATION
 
@@ -549,7 +317,7 @@ class CListenerContainer : public CBase
     public: //Methods
     // Constructors and destructor
         CListenerContainer(const RMessage2& aMessage, TDesC8* aSpec,
-                           CEventMediatorServer* aServer);
+                           CEventMediatorServer& aServer);
         ~CListenerContainer();
 
         inline TEventType Type() {return (TEventType) iMessage.Int0();}
@@ -570,7 +338,7 @@ class CListenerContainer : public CBase
         RMessage2   iMessage;
         TEventType  iEventType;
         // Pointer to the event mediator server
-        CEventMediatorServer* iServer;
+        CEventMediatorServer& iServer;
         // A flag that tells whether the request
         // is being fulfilled by the SIT or not
         TBool iBeingFulfilledBySit;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2005-2010 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -150,7 +150,7 @@ EXPORT_C TBool CIkeV1PkiService::ImportCACertsL(
         delete iCaName;
 
         iCaName     = NULL;
-        iCaName     = HBufC8::NewL(256);
+        iCaName     = HBufC8::NewL( KMaxX500DN );
         iCaNameList = aCAList;
         iCurrIndex  = 0;
         iOperation  = KBuildingCaList;
@@ -1008,36 +1008,34 @@ TBool CIkeV1PkiService::ReadNextInListL()
 
 void CIkeV1PkiService::CertReadCompleted(TBool aCaCert, TInt aStatus, TInt aLine )
 {
-  TBuf<320>DebugMsg;
-  if ( aCaCert )
-  {
+    if ( aCaCert )
+    {
+        DEBUG_LOG2(_L("Trusted CA certificate read completed with status = %d (line = %d)\n"),
+                       aStatus, aLine);
+    
         ASSERT( iCurrIndex < iCaNameList->Count() );
-     DebugMsg.Format(_L("Trusted CA certificate read completed with status = %d (line = %d)"),
-                     aStatus, aLine);
-     DebugMsg.AppendFormat(_L(" ; Search criteria: "));
-     TCertInfo* CertInfo = iCaNameList->At(iCurrIndex);
-     switch ( CertInfo->iFormat )
-     {
-       case CA_NAME:
-         DebugMsg.AppendFormat(_L("CA_NAME = %S\n"), &CertInfo->iData);
-         break;
-       case KEY_ID:
-         DebugMsg.AppendFormat(_L("KEY_ID = %S\n"), &CertInfo->iData);
-         break;
-       default:
-         TBuf<48> KeyIdString;
+    
+        TCertInfo* CertInfo = iCaNameList->At(iCurrIndex);
+    
+        switch ( CertInfo->iFormat )
+        {
+            case CA_NAME:
+            case KEY_ID:
+                DEBUG_LOG1(_L("Search data = %S\n"), &CertInfo->iData);
+                break;
+            default:
+                TBuf<48> KeyIdString;
                 ASSERT( iListIndex < iCaCertList->Count() );
-         HexToString(iCaCertList->At(iListIndex).iSubjectKeyId, KeyIdString);
-         DebugMsg.AppendFormat(_L("APPL_UID/<KEY_ID> = %S\n"), &KeyIdString);
-         break;
-     }
-  }
-  else
-  {
-     DEBUG_LOG2(_L("End user certificate read completed with status = %d (line = %d)\n"),
-                     aStatus, aLine);
-  }
-    DEBUG_LOG(DebugMsg);
+                HexToString(iCaCertList->At(iListIndex).iSubjectKeyId, KeyIdString);
+                DEBUG_LOG1(_L("APPL_UID/<KEY_ID> = %S\n"), &KeyIdString);
+                break;
+        }
+    }
+    else
+    {
+        DEBUG_LOG2(_L("End user certificate read completed with status = %d (line = %d)\n"),
+                       aStatus, aLine);
+    }
 }
 
 void CIkeV1PkiService::HexToString(const TDesC8& aKeyId, TDes16& aKeyIdString)

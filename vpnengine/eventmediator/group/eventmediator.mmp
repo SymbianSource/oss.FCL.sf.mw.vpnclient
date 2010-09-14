@@ -29,6 +29,7 @@ VENDORID   VID_DEFAULT
 
 SOURCEPATH  ../src
 SOURCE      eventmediator.cpp
+SOURCE      eventmediatorsession.cpp
 SOURCE      eventlogger.cpp
 SOURCE      eventmediatorstarter.cpp
 

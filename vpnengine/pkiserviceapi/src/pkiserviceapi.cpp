@@ -415,14 +415,16 @@ EXPORT_C void RPKIServiceAPI::ListCertificatesL(CArrayFix<TCertificateListEntry>
 
 	User::LeaveIfError(SendReceive (PkiService::EGetCertList, TIpcArgs(&ptrList)));
 
-	TCertificateListEntry certInfo;
+	TCertificateListEntry* certInfo = new (ELeave) TCertificateListEntry();
+	CleanupStack::PushL( certInfo );
+	
 	for (TInt i = 0; i < certCount; i++)
 		{
-		list->Read(i * sizeof(TCertificateListEntry), (TAny*)&certInfo, sizeof(TCertificateListEntry));
-		certList->AppendL(certInfo);
+		list->Read(i * sizeof(TCertificateListEntry), (TAny*)certInfo, sizeof(TCertificateListEntry));
+		certList->AppendL(*certInfo);
 		}
 
-	CleanupStack::PopAndDestroy(1);     // list
+	CleanupStack::PopAndDestroy(2);     // list, certInfo
 	CleanupStack::Pop();                // certList
 
 	aCertList = certList;
@@ -481,14 +483,16 @@ EXPORT_C void RPKIServiceAPI::ListApplicableCertificatesL(const RArray<TUid>& aA
 
 	User::LeaveIfError(SendReceive (PkiService::EGetApplicableCertList, TIpcArgs(&ptrList2)));
 
-	TCertificateListEntry certInfo;
+	TCertificateListEntry* certInfo = new (ELeave) TCertificateListEntry();
+	CleanupStack::PushL(certInfo);
+	
 	for (i = 0; i < certCount; i++)
 		{
-		list->Read(i * sizeof(TCertificateListEntry), (TAny*)&certInfo, sizeof(TCertificateListEntry));
-		certList->AppendL(certInfo);
+		list->Read(i * sizeof(TCertificateListEntry), (TAny*)certInfo, sizeof(TCertificateListEntry));
+		certList->AppendL(*certInfo);
 		}
 
-	CleanupStack::PopAndDestroy(1);     // list
+	CleanupStack::PopAndDestroy(2);     // list, certInfo
 	CleanupStack::Pop();                // certList
 
 	aCertList = certList;
@@ -974,8 +978,16 @@ EXPORT_C void RPKIServiceAPI::SetApplicabilityL(const TDesC8& aTrustedAuthority,
 {
     TSecurityObjectDescriptor *certDesc = new (ELeave) TSecurityObjectDescriptor;
     CleanupStack::PushL(certDesc);
+    
     certDesc->SetTrustedAuthority(aTrustedAuthority);
     certDesc->SetSerialNumber(aSerialNumber);
+    
+    if( EFalse == certDesc->iTrustedAuthorityUsed ||
+        EFalse == certDesc->iSerialNumberUsed )
+        {
+        User::Leave( KErrArgument );
+        }
+
     TPckg<TSecurityObjectDescriptor> pckgTSecurityObjectDescriptor(*certDesc);
 
 

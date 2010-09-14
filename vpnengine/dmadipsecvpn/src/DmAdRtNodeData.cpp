@@ -599,6 +599,23 @@ void CDmAdPolicyData::SetNameL(const TDesC8& aName)
     if (aName.Length() > 0)
         {
         iName = CnvUtfConverter::ConvertToUnicodeFromUtf8L(aName);
+
+        if (iContent == NULL)
+            {
+            //If the content has not been set we also generate an empty
+            //dummy policy at this point. The dummy policy is needed in
+            //a case of a large policy. Large policies are delivered using
+            //two separate messages from the OMA DM server. First message 
+            //contains only the policy info details and the second one contains 
+            //the actual data. We have to have the dummy content to handle
+            //the completion of the first message correctly.
+            _LIT8(KEmptyPolicyContent, "SECURITY_FILE_VERSION: 1\n"\
+                                       "[INFO]\n"\
+                                       "%S\n");
+            iContent = HBufC8::NewL(iName->Length() + KEmptyPolicyContent().Length());
+            TPtr8 contentPtr = iContent->Des();
+            contentPtr.Format(KEmptyPolicyContent, iName);
+            }
         }
     }
 

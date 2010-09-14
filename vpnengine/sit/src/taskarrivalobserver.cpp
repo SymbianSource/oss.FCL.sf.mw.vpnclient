@@ -33,7 +33,6 @@ CTaskArrivalObserver* CTaskArrivalObserver::NewL()
     }
     
 CTaskArrivalObserver::CTaskArrivalObserver()
-    : CAsyncOneShot(EPriorityNormal)
     {
     }
 
@@ -49,8 +48,9 @@ CTaskArrivalObserver::~CTaskArrivalObserver()
     LOG(Log::Printf(_L("CTaskArrivalObserver::~CTaskArrivalObserver\n")));
     Cancel();
     iEventMediator.Close();
+    
     if (iTaskHandlerList)
-        {
+        {    
         iTaskHandlerList->ResetAndDestroy();
         delete iTaskHandlerList;
         }
@@ -116,62 +116,25 @@ void CTaskArrivalObserver::LaunchTaskHandlerL(const TTaskArrivedEventData& aEven
     {
     LOG(Log::Printf(_L("CTaskArrivalObserver::LaunchTaskHandlerL\n")));
     // A new task has arrived so create a task handler for it
-    CTaskHandler* taskHandler = CreateTaskHandlerL(aEventSpec);
 
-    // Add the handler to the list of active handlers
-    iTaskHandlerList->AppendL(taskHandler);
-
-    // And start performing the task
-    taskHandler->Start();
-    }
-
-CTaskHandler* CTaskArrivalObserver::CreateTaskHandlerL(const TTaskArrivedEventData& aEventSpec)
-    {
-    LOG(Log::Printf(_L("CTaskArrivalObserver::CreateTaskHandlerL\n")));
-    CTaskHandler* taskHandler = NULL;
-
-    taskHandler = TaskHandlerCreator::CreateTaskHandlerL(this, aEventSpec);
-
+    CTaskHandler* taskHandler = TaskHandlerCreator::CreateTaskHandlerL(this, aEventSpec);
     if (!taskHandler)
         {
         User::Panic(KSitName, EPanicUnknownEventType);
         }
+        
+    // Add the handler to the list of active handlers
+    iTaskHandlerList->AppendL(taskHandler);
 
-    return taskHandler;
-    }
-
-TInt CTaskArrivalObserver::FindTaskHandler(CTaskHandler* aTaskHandler)
-    {
-    TInt foundIndex = KUnfoundIndex;
-    
-    for (TInt i = 0; i < iTaskHandlerList->Count(); i++)
-        {
-        if (iTaskHandlerList->At(i) == aTaskHandler)
-            {
-            foundIndex = i;
-            break;
-            };
-        }
-
-    return foundIndex;
+    //Create the asyncleaner for cleaning the task handler, when the
+    //task is done.
+    CAsyncCleaner* asyncCleaner = new (ELeave) CAsyncCleaner(this, taskHandler);    
+    iAsyncCleanerList->AppendL(asyncCleaner);
+       
+    // And start performing the task
+    taskHandler->Start();
     }
     
-TInt CTaskArrivalObserver::FindAsyncCleaner(CAsyncCleaner* aAsyncCleaner)
-    {
-    TInt foundIndex = KUnfoundIndex;
-    
-    for (TInt i = 0; i < iAsyncCleanerList->Count(); i++)
-        {
-        if (iAsyncCleanerList->At(i) == aAsyncCleaner)
-            {
-            foundIndex = i;
-            break;
-            };
-        }
-
-    return foundIndex;
-    }
-
 void CTaskArrivalObserver::TaskHandlerComplete(CTaskHandler* aTaskHandler)
     {
     LOG(Log::Printf(_L("CTaskArrivalObserver::TaskHandlerComplete\n")));
@@ -181,98 +144,73 @@ void CTaskArrivalObserver::TaskHandlerComplete(CTaskHandler* aTaskHandler)
     // Otherwise we'll get panic E32USER-CBase 42 (SetActive called
     // while active object is already active).
     
-    // NOTE. Each asyncCleaner instance will cause itself to be deleted
-    CAsyncCleaner* asyncCleaner = new CAsyncCleaner(this, aTaskHandler);
-    if (asyncCleaner)
+    //Find the async cleaner for the task handler:
+    TInt i = 0;
+    for (i = 0; i < iAsyncCleanerList->Count(); ++i)
         {
-        // Add the handler to a list of cleaners. This list
-        // is needed to handle some rare cases where the SIT
-        // thread dies before one or more async cleaners get
-        // the chance to delete themselves. Such cleaner
-        // instances get destroyed by the CTaskArrivalObserver
-        // destructor.
-        TRAP_IGNORE(iAsyncCleanerList->AppendL(asyncCleaner));
-        // Initiate the task handler delete operation
-        asyncCleaner->Start();
+        if (iAsyncCleanerList->At(i)->IsMatchingCleaner(*aTaskHandler))
+            {
+            iAsyncCleanerList->At(i)->Start();
+            }
         }
-    else
-        {
-        // Backup - just in case asyncCleaner could not be created
-        AsyncDeleteTaskHandler(aTaskHandler);
-        }
-    }
-
-void CTaskArrivalObserver::AsyncDeleteTaskHandler(CTaskHandler* aTaskHandler)
-    {
-    LOG(Log::Printf(_L("CTaskArrivalObserver::AsyncDeleteTaskHandler\n")));
-    iTaskHandlerToDelete = aTaskHandler;
-    Call();
-    }
-
-void CTaskArrivalObserver::RunL() // Called as a result of AsyncDeleteTaskHandler
-    {
-    LOG(Log::Printf(_L("CTaskArrivalObserver::RunL\n")));
-
-    DeleteTaskHandler(iTaskHandlerToDelete);
-
-    iTaskHandlerToDelete = NULL;    
+    __ASSERT_DEBUG(i <= iAsyncCleanerList->Count(), User::Invariant());
+    
     }
 
 void CTaskArrivalObserver::DeleteTaskHandler(CTaskHandler* aTaskHandler)
     {
     LOG(Log::Printf(_L("CTaskArrivalObserver::DeleteTaskHandler\n")));
     
+    __ASSERT_DEBUG(aTaskHandler != NULL, User::Invariant());
+     
     // The specified task handler has done its
     // job succesfully so it can be deleted
-    TInt taskHandlerIndex = FindTaskHandler(aTaskHandler);
+    TInt taskHandlerIndex = KErrNotFound;
+        
+    for (TInt i = 0; i < iTaskHandlerList->Count(); i++)
+        {
+        if (iTaskHandlerList->At(i) == aTaskHandler)
+            {
+            taskHandlerIndex = i;
+            break;
+            };
+        }
     
-    if (taskHandlerIndex != KUnfoundIndex)
-        {
-        LOG(Log::Printf(_L("CTaskArrivalObserver::DeleteTaskHandler - deleting task handler\n")));
-        // Delete the task handler
-        delete iTaskHandlerList->At(taskHandlerIndex);
-        // Delete the list item
-        iTaskHandlerList->Delete(taskHandlerIndex);
-        // Deleting elements from the array does not cause
-        // the array buffer to be automatically compressed.
-        // Compress it to return excess space to the heap
-        // as task handlers come and go.
-        iTaskHandlerList->Compress();
-        }
-    else
-        {
-        // 
-        delete aTaskHandler;
-        }
+    __ASSERT_DEBUG(taskHandlerIndex >= 0, User::Invariant());
+       
+    LOG(Log::Printf(_L("CTaskArrivalObserver::DeleteTaskHandler - deleting task handler\n")));
+    // Delete the task handler
+    delete aTaskHandler;
+    iTaskHandlerList->Delete(taskHandlerIndex);
+    iTaskHandlerList->Compress();
     }
     
 void CTaskArrivalObserver::DeleteAsyncCleaner(CAsyncCleaner* aAsyncCleaner)
     {
     LOG(Log::Printf(_L("CTaskArrivalObserver::DeleteAsyncCleaner\n")));
     
+    __ASSERT_DEBUG(aAsyncCleaner != NULL, User::Invariant());
+    
     // The specified asynchronous cleaner
     // has done its job and be deleted
-    TInt asyncCleanerIndex = FindAsyncCleaner(aAsyncCleaner);
     
-    if (asyncCleanerIndex != KUnfoundIndex)
+    TInt asyncCleanerIndex = KErrNotFound;
+    for (TInt i = 0; i < iAsyncCleanerList->Count(); i++)
         {
-        LOG(Log::Printf(_L("CTaskArrivalObserver::DeleteAsyncCleaner - deleting async cleaner\n")));
-        // Delete the cleaner object
-        delete iAsyncCleanerList->At(asyncCleanerIndex);
-        // Delete the list item
-        iAsyncCleanerList->Delete(asyncCleanerIndex);
-        // Deleting elements from the array does not cause
-        // the array buffer to be automatically compressed.
-        // Compress it to return excess space to the heap
-        // as cleaner objects come and go.
-        iAsyncCleanerList->Compress();
+        if (iAsyncCleanerList->At(i) == aAsyncCleaner)
+            {
+            asyncCleanerIndex = i;
+            break;
+            };
         }
-    else
-        {
-        // Always delete the cleaner instance even
-        // though it have not been added to the list
-        delete aAsyncCleaner;
-        }
+   
+    __ASSERT_DEBUG(asyncCleanerIndex >= 0, User::Invariant());
+    
+    // Delete the cleaner object
+    delete aAsyncCleaner;
+    iAsyncCleanerList->Delete(asyncCleanerIndex);
+    iAsyncCleanerList->Compress();
+    
     }
 
 void CTaskArrivalObserver::TaskHandlerFatalError(CTaskHandler* /*aTaskHandler*/, TInt /*aError*/)
@@ -309,4 +247,9 @@ void CAsyncCleaner::RunL()
 
     // Delete this cleaner object instance as well
     iTaskArrivalObserver->DeleteAsyncCleaner(this);
+    }
+
+TBool CAsyncCleaner::IsMatchingCleaner(const CTaskHandler& aTaskHandler) const
+    {
+    return iTaskHandlerToDelete == &aTaskHandler;
     }

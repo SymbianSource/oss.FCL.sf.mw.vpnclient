@@ -17,7 +17,7 @@
 
 
 #include <e32std.h>
-#include "eventmediator.h"
+#include "eventmediatorclientservercommon.h"
 #include "eventmediatorapi.h"
 #include "eventlogger.h"
 #include "clistatic.h"
@@ -45,32 +45,44 @@ EXPORT_C REventMediator::REventMediator() : iListenedEvents(NULL)
  *----------------------------------------------------------*/
 EXPORT_C TInt REventMediator::Connect(void)
     {
+    static const TUint KMaxRetryCount = 2;
     TInt ret = KErrNone;
     TRAP(ret, CreateListenedEventsListL());
-    if (ret != KErrNone)
+    if (ret == KErrNone)
         {
-        return ret;
-        }
-    
-    TInt retry=2;
-    for (;;)
-        {
-        TInt r=CreateSession(KEventMediatorServer,
-                             TVersion(KEventMediatorMajorVersionNumber,
-                                      KEventMediatorMinorVersionNumber,
-                                      KEventMediatorBuildVersionNumber),
-                             2 * KDefaultMessageSlots);
-        
-        if (r!=KErrNotFound && r!=KErrServerTerminated)
-            return r;
-        if (--retry==0)
-            return r;
-        r = Launcher::LaunchServer(KEventMediatorServer, KEventMediatorFile,
-                                   KEventMediatorUid3);
+        for (TUint i = 0; i < KMaxRetryCount; i++)
+            {
+            ret = CreateSession(KEventMediatorServer,
+                                TVersion(KEventMediatorMajorVersionNumber,
+                                         KEventMediatorMinorVersionNumber,
+                                         KEventMediatorBuildVersionNumber),
+                                 2 * KDefaultMessageSlots);
+            
+            if ( ret == KErrNotFound )
+                {
+                //do nothing
+                }
+            else if ( ret == KErrServerTerminated )
+                {
+                //Wait for one second so that the Eventmed
+                //and sit has sufficient time to go down.
+                User::After(500000);
+                }
+            else
+                {
+                break;
+                }
 
-        if (r!=KErrNone && r!=KErrAlreadyExists)
-            return r;
+            ret = Launcher::LaunchServer(KEventMediatorServer, KEventMediatorFile,
+                                       KEventMediatorUid3);
+    
+            if ( ret != KErrNone && ret !=KErrAlreadyExists)
+                {
+                break;
+                }
+            }
         }
+    return ret;
     }
 
 void REventMediator::CreateListenedEventsListL()
@@ -108,7 +120,7 @@ EXPORT_C void REventMediator::ListenToEvent(TEventType aType, MEventObserver& aO
         {
         LOG(Log::Printf(_L("REventMediator::ListenToEvent(TEventType aType, MEventObserver& aObserver) - calling SendReceive\n")));
             
-        SendReceive(CEventMediatorSession::KEventMediatorListen,
+        SendReceive(KEventMediatorListen,
                     TIpcArgs(aType,
                              &(listener->iDataLengthPckg),
                              &(listener->iSrvDataPtrPckg)),
@@ -141,7 +153,7 @@ EXPORT_C void REventMediator::ListenToEvent(TEventType aType, TDesC8& aEventSpec
         {
         LOG(Log::Printf(_L("REventMediator::ListenToEvent(TEventType aType, TDesC8& aEventSpec, MEventObserver& aObserver) - calling SendReceive\n")));
         
-        SendReceive(CEventMediatorSession::KEventMediatorListenWithSpec,
+        SendReceive(KEventMediatorListenWithSpec,
                     TIpcArgs(aType,
                              &(listener->iDataLengthPckg),
                              &(listener->iSrvDataPtrPckg),
@@ -198,17 +210,17 @@ EXPORT_C void REventMediator::CancelAllListening()
 
 EXPORT_C TInt REventMediator::ReportEvent(TEventType aType)
     {
-    return SendReceive(CEventMediatorSession::KEventMediatorReportEvent, TIpcArgs(aType, 0, NULL));
+    return SendReceive(KEventMediatorReportEvent, TIpcArgs(aType, 0, NULL));
     }
 
 EXPORT_C TInt REventMediator::ReportEvent(TEventType aType, TDesC8& aData)
     {
-    return SendReceive(CEventMediatorSession::KEventMediatorReportEvent, TIpcArgs(aType, aData.Length(), &aData));
+    return SendReceive(KEventMediatorReportEvent, TIpcArgs(aType, aData.Length(), &aData));
     }
 
 EXPORT_C TInt REventMediator::ReportEvent(TEventType aType, TDesC8& aEventSpec, TDesC8& aData)
     {
-    return SendReceive(CEventMediatorSession::KEventMediatorReportEventWithSpec, TIpcArgs(aType, aData.Length(), &aData, &aEventSpec));
+    return SendReceive(KEventMediatorReportEventWithSpec, TIpcArgs(aType, aData.Length(), &aData, &aEventSpec));
     }
 
 EXPORT_C TInt REventMediator::ReportLogEvent(TUid& aSrc, TLogCategory aCategory, TUint aMsgId, TInt aDesCount,...)
@@ -264,7 +276,7 @@ EXPORT_C TInt REventMediator::NewEventSpecId()
     TInt specId = 0;
     TPckg<TInt> specIdDes(specId);
 
-    SendReceive(CEventMediatorSession::KEventMediatorNewEventSpecId, TIpcArgs(&specIdDes));
+    SendReceive(KEventMediatorNewEventSpecId, TIpcArgs(&specIdDes));
 
     return specId;
     }
@@ -273,14 +285,14 @@ void REventMediator::CancelListenToEvent(TEventType aType)
     {
     LOG(Log::Printf(_L("REventMediator::CancelListenToEvent(TEventType aType)\n")));
     
-    SendReceive(CEventMediatorSession::KEventMediatorCancel, TIpcArgs(aType));
+    SendReceive(KEventMediatorCancel, TIpcArgs(aType));
     }
 
 TInt REventMediator::CancelListenToEvent(TEventType aType, TDesC8& aEventSpec)
     {
     LOG(Log::Printf(_L("REventMediator::CancelListenToEvent(TEventType aType, TDesC8& aEventSpec)\n")));
     
-    return SendReceive(CEventMediatorSession::KEventMediatorCancelWithSpec, TIpcArgs(aType, NULL, NULL, &aEventSpec));
+    return SendReceive(KEventMediatorCancelWithSpec, TIpcArgs(aType, NULL, NULL, &aEventSpec));
     }
 
 TInt REventMediator::FetchData(TAny* aSrvPtr, TDes8& aDataPtr)
@@ -288,7 +300,7 @@ TInt REventMediator::FetchData(TAny* aSrvPtr, TDes8& aDataPtr)
     LOG(Log::Printf(_L("REventMediator::FetchData()\n")));
     
     TRequestStatus status;
-    SendReceive(CEventMediatorSession::KEventMediatorFetchData,
+    SendReceive(KEventMediatorFetchData,
                 TIpcArgs(aSrvPtr, &aDataPtr), status);
     User::WaitForRequest(status);
 
@@ -375,7 +387,7 @@ TInt REventMediator::ReadLogArguments(TInt aCount, VA_LIST aList, TDesC8** aPoin
 
 EXPORT_C TInt REventMediator::DeletePrivateFiles()
     {
-    return SendReceive (CEventMediatorSession::KEventMediatorDeletePrivateFiles, TIpcArgs());
+    return SendReceive (KEventMediatorDeletePrivateFiles, TIpcArgs());
     }
 
     
@@ -383,25 +395,25 @@ EXPORT_C TInt REventMediator::GetEventLogSize(TInt& aEventLogSize)
     {
     TPckg<TInt> eventLogSizePckg(aEventLogSize);
 
-    return SendReceive (CEventMediatorSession::KEventMediatorGetEventLogSize,
+    return SendReceive (KEventMediatorGetEventLogSize,
                         TIpcArgs(&eventLogSizePckg));
     }
 
 EXPORT_C TInt REventMediator::GetEventLogHeader(TDes8& aEventLogHeader)
     {
-    return SendReceive (CEventMediatorSession::KEventMediatorGetEventLogHeader,
+    return SendReceive (KEventMediatorGetEventLogHeader,
                         TIpcArgs(&aEventLogHeader));
     }
 
 EXPORT_C TInt REventMediator::GetEventLogData(TDes8& aEventLogData)
     {
-    return SendReceive (CEventMediatorSession::KEventMediatorGetEventLogData,
+    return SendReceive (KEventMediatorGetEventLogData,
                         TIpcArgs(&aEventLogData));
     }
 
 EXPORT_C TInt REventMediator::ClearEventLog()
     {
-    return SendReceive (CEventMediatorSession::KEventMediatorClearEventLog, TIpcArgs());
+    return SendReceive (KEventMediatorClearEventLog, TIpcArgs());
     }
 
 
