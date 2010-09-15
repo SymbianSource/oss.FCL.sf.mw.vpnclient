@@ -291,7 +291,8 @@ public:
     TOwnCertInfo iOwnCert;
     TCertInfo iPrivKey;
     TCertInfo iPeerCert;
-    TBool     iUseCache;  // Use credential cache
+    TBool     iUseCache;   // Use credential cache
+    TBool     iSoftToken;  // Use soft token
 };
 
 

@@ -68,8 +68,10 @@ MVpnDialog* CVpnDialogManager::LaunchDialogL(MVpnNotifierCallback* aNotifier, TI
             // KMD Dialogs
             case TKmdDialog::EUserPwd:
                 return shower->GetUserPwdDlgL(aNotifier, aInput);
-            case TKmdDialog::ESecurIdPin:
+            case TKmdDialog::ESecurIdCode:
                 return shower->GetSecurIdDlgL(aNotifier, aInput);
+            case TKmdDialog::ESecurIdPin:
+                return shower->GetSecurIdPinDlgL(aNotifier, aInput);
             case TKmdDialog::ESecurIdNextPin:
                 return shower->GetSecurIdNextDlgL(aNotifier, aInput);
 
@@ -125,6 +127,10 @@ TInt CVpnDialogManager::GetNoteTextId(TInt aNoteDialogId)
         // Kmd note dialogs
         case TVpnNoteDialog::EKmdAuthenticationFailed:
         	return R_KMD_CRACK_AUTH_FAILED;
+        case TVpnNoteDialog::EKmdTokenNotFound:
+            return R_KMD_TOKEN_NOT_FOUND;
+        case TVpnNoteDialog::EKmdTokenExpired:
+            return R_KMD_TOKEN_EXPIRED;
         default:
             LOG_(" Calling CVpnDialogManagerBase::GetNoteTextId()");
             return CVpnDialogManager::GetNoteTextId(aNoteDialogId);

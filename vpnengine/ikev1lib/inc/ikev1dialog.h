@@ -76,6 +76,7 @@ public:
 
     void GetAsyncUNPWDialogL(TAny *aUserInfo, MIkeDialogComplete* aCallback);
     void GetAsyncUNAMEDialog(TAny *aUserInfo, MIkeDialogComplete* aCallback);    
+    void GetAsyncSecureidPinDialogL(TAny *aUserInfo, MIkeDialogComplete*  aCallback);
     void GetAsyncSecureidDialogL(TAny *aUserInfo, MIkeDialogComplete*  aCallback);
     void GetAsyncSecureNextPinDialogL(TAny *aUserInfo, MIkeDialogComplete* aCallback);    
     void GetAsyncRespDialog(TPtr8 aChallenge, TAny *aUserInfo, MIkeDialogComplete* aCallback);

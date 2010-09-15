@@ -192,7 +192,7 @@ TInt CIKECRACKNegotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
  *-------------------------------------------------------------------------*/
     if ( iState & WAITING_USER_RSP ) 
     {    
-       iState &= ~(WAITING_USER_RSP + SECURID_NEXT_PIN_MODE);
+       iState &= ~(WAITING_USER_RSP);
        delete iDialog;  /* delete dialog object */
        iDialog = NULL;
        
@@ -211,6 +211,31 @@ TInt CIKECRACKNegotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
        switch ( iLAMType ) 
        {    
            case CRACK_PASSWORD:
+               
+               if (iNegotiation->iHostData->iSoftToken && (iPluginSession->SoftToken() != NULL))
+                   {
+                   HBufC8* password = NULL;
+                   TInt err;
+                   if (iState & SECURID_NEXT_PIN_MODE)
+                       {
+                       iState &= ~(SECURID_NEXT_PIN_MODE);
+                       err = iPluginSession->SoftToken()->CodeL(*aDialogInfo->iSecret, password, ETrue);
+                       }
+                   else
+                       err = iPluginSession->SoftToken()->CodeL(*aDialogInfo->iSecret, password);
+                   if (KErrNone != err)
+                       {
+                       DEBUG_LOG(_L("Failed to get OTP from SoftToken!"));
+                       delete aDialogInfo;  /* release dialog info object */
+                       iDialogInfo = NULL;  /* reset dialog info pointer  */
+                       return CRACK_FAILED;
+                       }
+                   else
+                       {
+                       aDialogInfo->SetSecret(password);
+                       }
+                   }
+                   
                /*--------------------------------------------------
                 *  Possible attributes: User name, Secret, Domain
                 *-------------------------------------------------*/
@@ -276,10 +301,16 @@ TInt CIKECRACKNegotiation::GetDatafromUserL(HBufC8* /*aChallenge*/)
     switch ( iLAMType ) 
     {
         case CRACK_PASSWORD:
+            /*--------------------------------------------------
+             * Request User name and pin from user
+             *-------------------------------------------------*/
+             if (iNegotiation->iHostData->iSoftToken && (iPluginSession->SoftToken() != NULL))
+                 iDialog->GetAsyncSecureidPinDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
              /*--------------------------------------------------
               * Request User name and password (domain) from user
               *-------------------------------------------------*/
-             iDialog->GetAsyncUNPWDialogL(iDialogInfo, (MIkeDialogComplete*)this);
+             else
+                 iDialog->GetAsyncUNPWDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
              break;
 
         default:     
@@ -553,12 +584,13 @@ TInt CIKECRACKNegotiation::DialogCompleteL(
  *  
  *-------------------------------------------------------------------------*/
     TUint32 obj_id = 1;
-    CAuthDialogInfo* info = (CAuthDialogInfo*)aUserInfo;
+    CAuthDialogInfo* info = static_cast<CAuthDialogInfo*>(aUserInfo);
 	DEBUG_LOG1(_L("CIKECRACKNegotiation::DialogCompleteL(), aUserInfo =  %x"), aUserInfo);
 			
     if ( info )
 	{
        obj_id = info->GetObjId();
+       info->iNegotiation = iNegotiation;
 	   DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
        if ( obj_id == DIALOG_INFO_ID )
 	   {

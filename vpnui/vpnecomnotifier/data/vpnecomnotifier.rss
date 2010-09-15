@@ -373,6 +373,50 @@ RESOURCE DIALOG r_kmd_crack_sid_query
         };
     }
 
+RESOURCE DIALOG r_kmd_crack_sid_pin_query
+    {
+    flags=EEikDialogFlagNotifyEsc;
+    buttons=R_AVKON_SOFTKEYS_OK_CANCEL;
+    items=
+        {
+        DLG_LINE
+            {
+            type=EAknCtMultilineQuery;
+            id=EEikCidPassword;
+            control=AVKON_DATA_QUERY
+                {
+                layout = EMultiDataFirstEdwin;
+                label = qtn_vpn_prmpt_gw_username_legacy;
+                control=EDWIN
+                    {
+                    flags=0;
+                    width=5;
+                    lines=1;
+                    maxlength=32;
+                    default_case = EAknEditorLowerCase;
+                    allowed_case_modes = EAknEditorAllCaseModes;
+                    avkon_flags = EAknEditorFlagNoT9  | 
+                        EAknEditorFlagLatinInputModesOnly;                      
+                    };
+                };
+            },
+        DLG_LINE
+            {
+            type=EAknCtMultilineQuery;
+            id=EEikCidPasswordConfirm;
+            control= AVKON_DATA_QUERY
+                {
+                layout = EMultiDataSecondSecEd;
+                label = qtn_vpn_prmpt_gw_securid_pin;
+                control = SECRETED
+                    {
+                    num_letters = 8;
+                    };
+                };
+            }
+        };
+    }
+
 RESOURCE DIALOG r_kmd_crack_sid_next_query
     {
     flags=EEikDialogFlagNotifyEsc;
@@ -422,6 +466,16 @@ RESOURCE DIALOG r_kmd_crack_sid_next_query
 RESOURCE TBUF r_kmd_crack_auth_failed
     {
     buf = qtn_vpn_err_auth_failed;
+    }
+
+RESOURCE TBUF r_kmd_token_not_found
+    {
+    buf = qtn_vpn_err_token_not_found;
+    }
+
+RESOURCE TBUF r_kmd_token_expired
+    {
+    buf = qtn_vpn_err_token_expired;
     }
 
 RESOURCE TBUF r_acu_next_server_identity

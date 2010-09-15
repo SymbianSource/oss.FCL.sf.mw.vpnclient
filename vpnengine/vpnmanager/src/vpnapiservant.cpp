@@ -26,7 +26,6 @@
 #include "pwdchanger.h"
 #include "vpnapidefs.h"
 #include "vpnmanagerserverdefs.h"
-#include "vpnextapiservantdefs.h"
 #include "vpnmaninternal.h"
 #include "log_r6.h"
 #include "agileprovisionws.h"
@@ -575,59 +574,75 @@ void CVpnApiServant::CreateProvisionServerL( const RMessage2& aMessage )
       /* Check if file allready exists and copy policy and vpn iap id to a new file */
       TFileName policyFileName;
       TUint32 agileProvisionAPId=0;
-            
+      
+      HBufC* serverUrlBuf=NULL;
+      
+      HBufC* serverNameBuf=NULL;
+      
+      TBuf<KMaxIapLength> iapIdBuf;
+      
+      TBool serverFileExist=EFalse;
+      
       if ( iFileUtil.FileExists(serverFilePath) )
          {
-          HBufC8* fileData=iFileUtil.LoadFileDataL(serverFilePath);
-          CleanupStack::PushL(fileData);
-             
-          TPtrC8 restOfData = fileData->Des();
-                
-          TInt bofInt;
-          TInt line=1;             
-          while ( (bofInt=restOfData.Find(KCRLF)) != KErrNotFound && line < KPolicyFileLine )
-                {
-                restOfData.Set(restOfData.Mid(bofInt + KCRLF().Length()));
-                line++;                                  
-                }
-          TInt iapIdStart=restOfData.Find(KCRLF);
-          HBufC16* iapIdBuf;
-                 
-          if ( iapIdStart!=KErrNotFound )
+          RFile serverFile;
+          User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
+                                        
+         
+          TFileText tx;
+          tx.Set(serverFile);
+
+          TInt fileSize;
+          User::LeaveIfError(serverFile.Size(fileSize));
+
+          serverUrlBuf = HBufC::NewLC(fileSize);
+                                   
+          TPtr serverUrlPtr=serverUrlBuf->Des();
+                                   
+          User::LeaveIfError(tx.Read(serverUrlPtr));
+                                    
+          serverNameBuf = HBufC::NewLC(fileSize);
+          TPtr serverNamePtr=serverNameBuf->Des();
+                                    
+          User::LeaveIfError(tx.Read(serverNamePtr));
+           
+          TBuf<KMaxIapLength> iapIdData;
+          User::LeaveIfError(tx.Read(iapIdData));
+                         
+          TBuf<KMaxIapLength> iapModeData;
+          User::LeaveIfError(tx.Read(iapModeData));
+          
+          HBufC* policyFileNameBuf = HBufC::NewLC(fileSize);
+          TPtr policyFileNamePtr = policyFileNameBuf->Des();
+          
+          if (  tx.Read(policyFileNamePtr) == KErrNone )
               {
-              TPtrC8 iapIdPtr=restOfData.Mid(iapIdStart + KCRLF().Length(),restOfData.Length()-KCRLF().Length()-iapIdStart);
-              iapIdBuf=iFileUtil.To16BitL(iapIdPtr);
-              CleanupStack::PushL(iapIdBuf);
-              TLex iapIdConverter(*iapIdBuf);
-              iapIdConverter.Val(agileProvisionAPId,EDecimal);     
-              CleanupStack::PopAndDestroy(iapIdBuf);           
-              }
-                 
-          if ( agileProvisionAPId >0)
-              {
-               restOfData.Set(restOfData.Mid(0,iapIdStart));
-               HBufC16* policyFileNameBuf = iFileUtil.To16BitL(restOfData);
+               tx.Read(iapIdBuf);
+               
+               TLex iapIdConverter(iapIdBuf);
+               iapIdConverter.Val(agileProvisionAPId,EDecimal);
                policyFileName = *policyFileNameBuf;
-               delete policyFileNameBuf;
               }
-          CleanupStack::PopAndDestroy(fileData);
+          CleanupStack::PopAndDestroy(policyFileNameBuf);
+          serverFile.Close();
+          serverFileExist = ETrue;
           }
       /* end of saving old values */
       
       //IAP data Max value 255 
-      TBuf<10> iapIdStr;
-      TBuf<10> iapModeStr;
-      TBuf<10> iapAgileIdStr;
+      TBuf<KMaxIapLength> iapIdStr;
+      TBuf<KMaxIapLength> iapModeStr;
+      TBuf<KMaxIapLength> iapAgileIdStr;
       
       iapIdStr.Num(serverAccountLocalData->iSelection.iId);
       iapModeStr.Num(serverAccountLocalData->iSelection.iResult);
       HBufC* serverSettingsDataBuf;
+      _LIT(KCRLF, "\n"); 
       if ( agileProvisionAPId >0 )
           {
-          iapAgileIdStr.Num(agileProvisionAPId);
-                                                                                                                          
+                                                                                                                                    
           serverSettingsDataBuf = HBufC::NewL(serverAccountLocalData->iServerNameLocal.Length() + serverAccountLocalData->iServerAddress.Length() + 
-                                              iapIdStr.Length() + iapModeStr.Length() + policyFileName.Length() + iapAgileIdStr.Length() + 5*(KCRLF().Length()) );
+                                              iapIdStr.Length() + iapModeStr.Length() + policyFileName.Length() + iapIdBuf.Length() + 5*(KCRLF().Length()) );
           }
       else
           {                                                                                                         
@@ -637,7 +652,7 @@ void CVpnApiServant::CreateProvisionServerL( const RMessage2& aMessage )
       CleanupStack::PushL(serverSettingsDataBuf);
       TPtr tPtr(serverSettingsDataBuf->Des());
       tPtr.Copy(serverAccountLocalData->iServerAddress);
-      _LIT(KCRLF, "\r\n"); 
+     
       tPtr.Append(KCRLF);
       tPtr.Append(serverAccountLocalData->iServerNameLocal);
       tPtr.Append(KCRLF);
@@ -649,20 +664,35 @@ void CVpnApiServant::CreateProvisionServerL( const RMessage2& aMessage )
           tPtr.Append(KCRLF);
           tPtr.Append(policyFileName);
           tPtr.Append(KCRLF);
-          tPtr.Append(iapAgileIdStr);
+          tPtr.Append(iapIdBuf);
           }
-     
-      iFileUtil.SaveFileDataL(serverFilePath,tPtr);
-      CleanupStack::PopAndDestroy(3);
+      
+      RFile file;
+      CleanupClosePushL(file);
+
+      User::LeaveIfError(file.Replace(iFs, serverFilePath, EFileWrite));
+      
+      TPtrC8 ptr8 ( (TUint8*) tPtr.Ptr(), tPtr.Size() );
+      file.Write ( ptr8 );
+      file.Close();
+      CleanupStack::PopAndDestroy(1); //file
+      CleanupStack::PopAndDestroy(serverSettingsDataBuf);
+      
+      if ( serverFileExist != EFalse )
+          {
+          CleanupStack::PopAndDestroy(serverNameBuf);
+          CleanupStack::PopAndDestroy(serverUrlBuf);
+          }
+      
+      CleanupStack::PopAndDestroy(serverAccountLocalData);
+      CleanupStack::PopAndDestroy(serverCreate);
+      
       aMessage.Complete(KErrNone);
     }
 
 void CVpnApiServant::ListProvisionServerL( const RMessage2& aMessage )
     {
-      _LIT8(KCRLF, "\r\n");
-      
-      const TInt KEolLen = 2;
-      
+              
       TAgileProvisionApiServerListElem* serverList = new (ELeave) TAgileProvisionApiServerListElem();
       CleanupStack::PushL(serverList);
       TPckg<TAgileProvisionApiServerListElem> serverPckg(*serverList);
@@ -670,29 +700,48 @@ void CVpnApiServant::ListProvisionServerL( const RMessage2& aMessage )
       TFileName serverFilePath;
       User::LeaveIfError(iFs.PrivatePath(serverFilePath));
       serverFilePath.Append(KProvisionServerSettings);   
-      
-      HBufC8* fileData(NULL);
-     
+          
       if ( iFileUtil.FileExists(serverFilePath) )
           {
-          fileData=iFileUtil.LoadFileDataL(serverFilePath);
-          CleanupStack::PushL(fileData);
-          TInt endOfLine=fileData->Find(KCRLF);
-          serverList->iServerUrl=fileData->Mid(0,endOfLine);
+         
+          RFile serverFile;
+          User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
+      
+      
+          TFileText tx;
+          tx.Set(serverFile);
+
+          TInt fileSize;
+          User::LeaveIfError(serverFile.Size(fileSize));
+
+          HBufC* serverUrlBuf = HBufC::NewLC(fileSize);
+         
+          TPtr serverUrlPtr=serverUrlBuf->Des();
+         
+          User::LeaveIfError(tx.Read(serverUrlPtr));
           
-          TInt startOfLine(endOfLine+KEolLen);
-          TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-          endOfLine=nameData.Find(KCRLF);
-          HBufC16* serverName=iFileUtil.To16BitL(nameData.Left(endOfLine));
-          serverList->iServerNameLocal=*serverName;
-          delete serverName;
-          serverName = NULL;
+          HBufC8* serverUrl=iFileUtil.To8BitL(serverUrlPtr);
+          serverList->iServerUrl=*serverUrl;
+          
+          delete serverUrl;
+          serverUrl=NULL;
+          
+          CleanupStack::PopAndDestroy(serverUrlBuf);
+          
+          HBufC* serverNameBuf = HBufC::NewLC(fileSize);
+          TPtr serverNamePtr=serverNameBuf->Des();
+          
+          User::LeaveIfError(tx.Read(serverNamePtr));
+          
+          serverList->iServerNameLocal=serverNamePtr;
+                   
+          CleanupStack::PopAndDestroy(serverNameBuf);
+          
+          serverFile.Close();
           }
       
       aMessage.WriteL(0, serverPckg);
-      if ( iFileUtil.FileExists(serverFilePath) )
-          CleanupStack::PopAndDestroy(fileData);
-      
+          
       CleanupStack::PopAndDestroy(serverList);
       aMessage.Complete(KErrNone);
     }
@@ -704,58 +753,64 @@ void CVpnApiServant::GetProvisionServerDetailsL( const RMessage2& aMessage )
       CleanupStack::PushL(serverList);
       TPckg<TAgileProvisionApiServerSettings> serverPckg(*serverList);
       
-      _LIT8(KCRLF, "\r\n");     
-      
       TFileName serverFilePath;
       User::LeaveIfError(iFs.PrivatePath(serverFilePath));
       serverFilePath.Append(KProvisionServerSettings);  
       
-      HBufC8* fileData(NULL);
-      const TInt KEolLen = 2;
-      TBool serverFileExist = EFalse;
-      
       if ( iFileUtil.FileExists(serverFilePath) )
          {
-          fileData=iFileUtil.LoadFileDataL(serverFilePath);
-          CleanupStack::PushL(fileData);  
-          TInt endOfLine=fileData->Find(KCRLF);
-          serverList->iServerUrl=fileData->Mid(0,endOfLine);
-                
-          TInt startOfLine(endOfLine+2);
-          TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-          endOfLine=nameData.Find(KCRLF);      
-             
-          HBufC16* serverName=iFileUtil.To16BitL(nameData.Left(endOfLine));
-          serverList->iServerNameLocal=*serverName;
-          delete serverName;
-          serverName = NULL;
+          RFile serverFile;
+          User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
+            
+          TFileText tx;
+          tx.Set(serverFile);
+
+          TInt fileSize;
+          User::LeaveIfError(serverFile.Size(fileSize));
           
-          startOfLine = endOfLine + KEolLen;
-          TPtrC8 iapIdData=nameData.Right(nameData.Length()-startOfLine);
-          endOfLine=iapIdData.Find(KCRLF);
-          TLex8 iapIdConverter(iapIdData.Left(endOfLine));
+          HBufC* serverUrlBuf = HBufC::NewLC(fileSize);
+                   
+          TPtr serverUrlPtr=serverUrlBuf->Des();
+                   
+          User::LeaveIfError(tx.Read(serverUrlPtr));
+                    
+          HBufC8* serverUrl=iFileUtil.To8BitL(serverUrlPtr);
+          serverList->iServerUrl=*serverUrl;
+                    
+          delete serverUrl;
+          serverUrl=NULL;
+                    
+          CleanupStack::PopAndDestroy(serverUrlBuf);
+                    
+          HBufC* serverNameBuf = HBufC::NewLC(fileSize);
+          TPtr serverNamePtr=serverNameBuf->Des();
+                    
+          User::LeaveIfError(tx.Read(serverNamePtr));
+                    
+          serverList->iServerNameLocal=serverNamePtr;
+                             
+          CleanupStack::PopAndDestroy(serverNameBuf);
+          
+          TBuf<KMaxIapLength> iapIdData;
+          User::LeaveIfError(tx.Read(iapIdData));
+                    
+          TLex iapIdConverter(iapIdData);
           TUint idInt;
           iapIdConverter.Val(idInt);
           serverList->iSelection.iId = idInt;
         
-          startOfLine = endOfLine + KEolLen;
-          TPtrC8 iapModeData=iapIdData.Right(iapIdData.Length()-startOfLine);
-          TLex8 iapModeConverter;
-          endOfLine=iapModeData.Find(KCRLF);
-          if ( endOfLine==KErrNotFound )
-              iapModeConverter = iapModeData;
-          else
-              iapModeConverter = iapModeData.Left(endOfLine);
-              
+          TBuf<KMaxIapLength> iapModeData;
+          User::LeaveIfError(tx.Read(iapModeData));
+          
+          TLex iapModeConverter = iapModeData;
           iapModeConverter.Val(idInt);
+          
           CMManager::TCmSettingSelectionMode selectionMode = (CMManager::TCmSettingSelectionMode) idInt;
           serverList->iSelection.iResult = selectionMode; 
-          serverFileExist = ETrue;   
+          
+          serverFile.Close();
           }
       aMessage.WriteL(0, serverPckg);
-      
-      if ( serverFileExist )
-          CleanupStack::PopAndDestroy(fileData);
       
       CleanupStack::PopAndDestroy(serverList);
       
@@ -800,62 +855,55 @@ void CVpnApiServant::GetVPNPolicyNameL( const RMessage2& aMessage )
     TAgileProvisionPolicy* policy = new (ELeave) TAgileProvisionPolicy();
     CleanupStack::PushL(policy);
     TPckg<TAgileProvisionPolicy> serverPckg(*policy);
-    
-    _LIT8(KCRLF, "\r\n");
-    
+          
     TFileName serverFilePath;
     User::LeaveIfError(iFs.PrivatePath(serverFilePath));
     serverFilePath.Append(KProvisionServerSettings);  
     
-    HBufC8* fileData(NULL);
-         
-    const TInt KEolLen = 2;
-    TBool serverFileExist = EFalse;
-    
     if ( iFileUtil.FileExists(serverFilePath) )
        {
-        fileData=iFileUtil.LoadFileDataL(serverFilePath);
-        CleanupStack::PushL(fileData);   
-        TInt endOfLine=fileData->Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);
+        RFile serverFile;
+        User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
+                                       
+        TFileText tx;
+        tx.Set(serverFile);
+
+        TInt fileSize;
+        User::LeaveIfError(serverFile.Size(fileSize));
+
+        HBufC* serverUrlBuf = HBufC::NewLC(fileSize);
+                                  
+        TPtr serverUrlPtr=serverUrlBuf->Des();
+                                  
+        User::LeaveIfError(tx.Read(serverUrlPtr));
+                                   
+        HBufC* serverNameBuf = HBufC::NewLC(fileSize);
+        TPtr serverNamePtr=serverNameBuf->Des();
+                                   
+        User::LeaveIfError(tx.Read(serverNamePtr));
+                                   
+        TBuf<KMaxIapLength> iapIdData;
+        User::LeaveIfError(tx.Read(iapIdData));
                         
-        TInt startOfLine(endOfLine + KEolLen);
-        TPtrC8 nameData=fileData->Right(fileData->Length()-startOfLine);
-        endOfLine=nameData.Find(KCRLF);      
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-                
-        startOfLine = endOfLine + KEolLen;
-        TPtrC8 iapIdData=nameData.Right(nameData.Length()-startOfLine);
-        endOfLine=iapIdData.Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-           
-        startOfLine = endOfLine + KEolLen;
-        TPtrC8 iapModeData=iapIdData.Right(iapIdData.Length()-startOfLine);
-        endOfLine=iapModeData.Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
+        TBuf<KMaxIapLength> iapModeData;
+        User::LeaveIfError(tx.Read(iapModeData));
+                                           
+        TBuf<KMaxIapLength> iapIdBuf;
+               
+        HBufC* policyFileNameBuf = HBufC::NewLC(fileSize);
+        TPtr policyFileNamePtr = policyFileNameBuf->Des();
+               
+        User::LeaveIfError(tx.Read(policyFileNamePtr));
+        policy->iPolicyName = policyFileNamePtr;
+        CleanupStack::PopAndDestroy(policyFileNameBuf);
+        serverFile.Close();
         
-        startOfLine = endOfLine + KEolLen;
-        TPtrC8 policyData=iapModeData.Right(iapModeData.Length()-startOfLine);
-        endOfLine=policyData.Find(KCRLF);
-        if (endOfLine<=0)
-            User::Leave(KErrArgument);      
-        
-        HBufC16* policyName = iFileUtil.To16BitL(policyData.Left(endOfLine));
-        policy->iPolicyName = *policyName;
-        delete policyName;
-        policyName=NULL;
-        serverFileExist = ETrue;
+        CleanupStack::PopAndDestroy(serverNameBuf);
+        CleanupStack::PopAndDestroy(serverUrlBuf);
         }
 
     aMessage.WriteL(0, serverPckg);
-    
-    if ( serverFileExist )
-        CleanupStack::PopAndDestroy(fileData);
-    
+           
     CleanupStack::PopAndDestroy(policy);
     
     aMessage.Complete(KErrNone);

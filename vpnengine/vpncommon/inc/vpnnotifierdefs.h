@@ -131,7 +131,8 @@ public:
         {
         EUserPwd = 2000, // MUST be greater than the last value in enum TNoteDialog::TDialogId
         ESecurIdPin,
-        ESecurIdNextPin        
+        ESecurIdNextPin,
+        ESecurIdCode
         };
     };
 
@@ -185,7 +186,9 @@ public:
         EVpnCannotForceDeviceLock,
         EVpnPolicyInstalled,
         // Kmd related notes
-        EKmdAuthenticationFailed = 2000
+        EKmdAuthenticationFailed = 2000,
+        EKmdTokenNotFound,
+        EKmdTokenExpired
         };
     };
 

@@ -38,6 +38,7 @@ class CAgileProvisionWs;
 
 const TInt KMaxExtPolicyIdLength = 256;
 const TInt KDoNotGetKeySize      = -1;
+const TInt KMaxIapLength = 10;
 
 typedef TBuf<KMaxExtPolicyIdLength> TExtVpnPolicyId;
 

@@ -229,6 +229,8 @@ class CVpnManagementUiView : public CGSPluginInterface, public MEikListBoxObserv
         
         TInt iCurrentItem; // currently selected listbox item
         TInt iTopItemIndex; // first item in the listbox
+        
+        HBufC* iCaption; // caption text
     };
 
 #endif // __VPNMANAGEMENTUIVIEW_H__

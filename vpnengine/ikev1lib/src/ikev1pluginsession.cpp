@@ -902,7 +902,7 @@ void CIkev1PluginSession::RemoveNegotiation( CIkev1Negotiation* aNegotiation )
 //    
 TInt CIkev1PluginSession::AuthDialogCompletedL( CAuthDialogInfo* aUserInfo )
     {
-    CIkev1Negotiation* negotiation = FindNegotiation( aUserInfo->SAId() );
+    CIkev1Negotiation* negotiation = aUserInfo->iNegotiation;
     if ( negotiation )
         {
         DEBUG_LOG1( _L("Dialog completed for SAID: %d"),
@@ -920,6 +920,31 @@ TInt CIkev1PluginSession::AuthDialogCompletedL( CAuthDialogInfo* aUserInfo )
     return KErrNotFound;
     }
 
+// ---------------------------------------------------------------------------
+// Handles completion of error dialog processing.
+// ---------------------------------------------------------------------------
+//    
+TInt CIkev1PluginSession::ErrDialogCompletedL( CAuthDialogInfo* aUserInfo )
+    {
+    
+    CIkev1Negotiation* negotiation = aUserInfo->iNegotiation;
+    if ( negotiation )
+        {
+        DEBUG_LOG1( _L("Dialog completed for SAID: %d"),
+                aUserInfo->SAId() );
+        
+        negotiation->ErrDialogCompletedL();
+        if ( negotiation->Finished() )
+            {
+            DeleteNegotiation( negotiation );
+            }   
+        return KErrNone;
+        }   
+    DEBUG_LOG1( _L("Dialog completed, no negotiation found for SAID: %d"),
+            aUserInfo->SAId() );
+            
+    return KErrNotFound;    
+    }
 
 // ---------------------------------------------------------------------------
 // Handles change of internal address.
@@ -1053,6 +1078,16 @@ TUint32 CIkev1PluginSession::Uid()
 MKmdEventLoggerIf& CIkev1PluginSession::EventLogger()
     {
     return iPlugin.EventLogger();
+    }
+
+// ---------------------------------------------------------------------------
+// Returns SoftToken interface.
+// ---------------------------------------------------------------------------
+//
+//MSoftTokenPluginIf* CIkev1PluginSession::SoftToken()
+CSoftTokenPluginIf* CIkev1PluginSession::SoftToken()
+    {
+    return iPlugin.SoftToken();
     }      
 
 // ---------------------------------------------------------------------------

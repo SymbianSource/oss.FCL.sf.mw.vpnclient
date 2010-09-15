@@ -50,6 +50,7 @@
  *---------------------------------------------------------------------------*/
 #define DIALOG_INFO_ID        0xfedcba98
 #define XAUTH_DIALOG_ID       0x76543210
+#define ERROR_DIALOG_ID       0x87654321
 
 class CIkev1Negotiation;
 class TNotificationISAKMP;
@@ -78,7 +79,7 @@ private:
     CIkev1PluginSession* iPluginSession;  // Plugin session pointer  
     TUint32              iSAId;       // SA id of CIkev1Negotiation
     TUint32              iMsgId;      // Transaction exchange message ID
-    
+
 public: 
     /**
      * Username from UI dialog or cache.
@@ -91,6 +92,13 @@ public:
      * Own.
      */    
     HBufC8* iSecret;
+    
+    /**
+     * Negotiation pointer
+     * Not own.
+     */    
+    CIkev1Negotiation*   iNegotiation;
+
     };
 
 

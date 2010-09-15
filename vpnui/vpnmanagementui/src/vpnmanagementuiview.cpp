@@ -72,7 +72,8 @@ CVpnManagementUiView::~CVpnManagementUiView()
         AppUi()->RemoveFromViewStack(*this, iContainer);
         delete iContainer;
         }
-    delete iLoader;
+    delete iLoader;    
+    delete iCaption;
     LOG_("CVpnManagementUiView::~CVpnManagementUiView() exited");
     }
 
@@ -113,8 +114,12 @@ void CVpnManagementUiView::ConstructL()
     LOG_("CVpnManagementUiView::ConstructL() entered");
     iLoader = CVpnUiLoader::NewL(iAvkonViewAppUi->ClientRect(), 
                 KVpnManagementPluginUid, this );
-    BaseConstructL( R_VPNUI_MANAGEMENT_VIEW );
+    
+    iLoader->AddResourceFileL();
+    BaseConstructL( R_VPNUI_MANAGEMENT_VIEW );    
+    iCaption = StringLoader::LoadL( R_VPN_MANAGEMENT_TITLE_BUF );    
     iLoader->ReleaseResource();
+    
     LOG_("CVpnManagementUiView::ConstructL() exited");
     }
 
@@ -124,9 +129,17 @@ void CVpnManagementUiView::ConstructL()
 void CVpnManagementUiView::GetCaptionL( TDes& aCaption ) const
     {
     LOG_("CVpnManagementUiView::GetCaptionL() entered");
-    iLoader->AddResourceFileL();
-    StringLoader::Load( aCaption, R_VPN_MANAGEMENT_TITLE_BUF );
-    iLoader->ReleaseResource();
+    
+    __ASSERT_DEBUG(iCaption != NULL, User::Invariant());
+    
+    if (aCaption.MaxLength() < iCaption->Length())
+        {
+        aCaption = iCaption->Left(aCaption.MaxLength());
+        }
+    else
+        {
+        aCaption = *iCaption;
+        }
     LOG_("CVpnManagementUiView::GetCaptionL() exited");
     }
 
@@ -152,7 +165,8 @@ void CVpnManagementUiView::HandleCommandL(TInt aCommand)
         {
         case EAknSoftkeyBack:
             {
-            iLoader->ChangeViewL( KChangeViewBack ); 
+            iLoader->ChangeViewL( KChangeViewBack );
+            iLoader->ReleaseResource(ETrue);
             break;
             }
         case EAknCmdExit:

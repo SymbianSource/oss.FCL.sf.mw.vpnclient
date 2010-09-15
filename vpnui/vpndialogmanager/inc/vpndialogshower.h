@@ -30,7 +30,7 @@
 
 
 const TInt KMaxAcuInputLength = 50;
-const TInt KMaxAuthenticationInputLength = 32;
+const TInt KMinSecurIDPINLength = 4;
 
 class CVpnDialog;
 class CEikColumnListBox;
@@ -57,6 +57,7 @@ public:
     CVpnInfoDialog* ShowNoteDialogL(MVpnNotifierCallback* aNotifier, TInt aTextId);
 	CVpnMultiLineDialog* GetUserPwdDlgL(MVpnNotifierCallback* aNotifier, const TDesC8& aInput);
     CVpnMultiLineDialog* GetSecurIdDlgL(MVpnNotifierCallback* aNotifier, const TDesC8& aInput);
+    CVpnMultiLineDialog* GetSecurIdPinDlgL(MVpnNotifierCallback* aNotifier, const TDesC8& aInput);
     CVpnMultiLineDialog* GetSecurIdNextDlgL(MVpnNotifierCallback* aNotifier, const TDesC8& aInput);
     
 private: 
@@ -187,6 +188,7 @@ public:
     // NewL
     static CKmdDlg* NewL(MVpnNotifierCallback* aNotifier, TDes& aText1, TDes& aText2, TTone aTone = ENoTone);
     static CKmdDlg* NewL(MVpnNotifierCallback* aNotifier, TDes& aText1, TDes& aText2, const TDesC8& aInput, TTone aTone = ENoTone);
+    void SetResourceId(TInt aResourceId);
 protected:  
     //Construction and destruction
     CKmdDlg(MVpnNotifierCallback* aNotifier, const TTone& aTone);
@@ -195,11 +197,13 @@ private:
 
     void PreLayoutDynInitL();
     void SetInitialCurrentLine();
+    void UpdateLeftSoftKeyL();
     // From CVpnMultiLineDialog
     void GetOutputL(TVpnDialogOutput& aOutput, TInt aButtonId);
 
 private: // Data
     TPtrC8 iInput;
+    TInt iResourceId;
     };
 
 

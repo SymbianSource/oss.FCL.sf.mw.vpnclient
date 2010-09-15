@@ -20,6 +20,7 @@
 #define C_IKEV1PLUGINSESSION_H
 
 #include <in_sock.h>
+#include <softtokenpluginif.h>
 
 #include "vpnmandefs.h"
 #include "ikemsgheader.h"
@@ -273,6 +274,13 @@ public:
      * @return Error value
      */
     TInt AuthDialogCompletedL( CAuthDialogInfo* aUserInfo );  
+
+    /**
+     * Handles completion of error dialog processing.
+     * @param aUserInfo User info
+     * @return Error value
+     */
+    TInt ErrDialogCompletedL( CAuthDialogInfo* aUserInfo );  
     
     /**
      * Handles change of internal address.
@@ -341,7 +349,13 @@ public:
      * @return Eveng logger interface
      */
     MKmdEventLoggerIf& EventLogger();
-    
+
+    /**
+     * Returns SoftToken interface.
+     * @return SoftToken interface
+     */
+    CSoftTokenPluginIf* SoftToken();
+
     /**
      * Returns internal address (NULL if does not exist).
      * @return Internal address. Ownership transferred.

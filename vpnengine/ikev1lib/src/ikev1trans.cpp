@@ -830,7 +830,7 @@ TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
             //
             iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);
             iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
-            iDialog->GetAsyncSecureidDialogL(iDialogInfo, (MIkeDialogComplete*)this);          
+            iDialog->GetAsyncSecureidDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));          
             break;
 
         case ( (1 << (ATTR_USER_NAME - ATTR_XAUTH_TYPE)) | (1 << (ATTR_NEXT_PIN - ATTR_XAUTH_TYPE))):
@@ -839,7 +839,7 @@ TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
             //
 			iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);			
 			iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
-            iDialog->GetAsyncSecureNextPinDialogL(iDialogInfo, (MIkeDialogComplete*)this);
+            iDialog->GetAsyncSecureNextPinDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
             break;
 
         case ( (1 << (ATTR_CHALLENGE - ATTR_XAUTH_TYPE)) ):
@@ -850,7 +850,7 @@ TInt CTransNegotiation::ProcessXauthRequestL(TDataISAKMP* aAttr, TInt aLth)
 			{
 				iDialog     = CIkev1Dialog::NewL(iPluginSession, iPluginSession->DialogAnchor(), iDebug);			
 				iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, XAUTH_DIALOG_ID, iNegotiation->SAId(), iCurrExchange->iMessageId);
-                iDialog->GetAsyncRespDialog(challenge, iDialogInfo, (MIkeDialogComplete*)this);
+                iDialog->GetAsyncRespDialog(challenge, iDialogInfo, static_cast<MIkeDialogComplete*>(this));
             }   
             break;
 
@@ -1158,6 +1158,7 @@ TInt CTransNegotiation::DialogCompleteL(
 	if ( info )
 	{
 		obj_id = info->GetObjId();
+		info->iNegotiation = iNegotiation;
 		DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
 		if ( obj_id == XAUTH_DIALOG_ID )
 		{
@@ -1197,6 +1198,7 @@ void CTransNegotiation::GetCredentialsL()
     if( KErrNone == ret )
     {
         iCredentialType = KCredentialTypeCached;
+        iDialogInfo->iNegotiation = iNegotiation;
         TUint32 id = iPluginSession->AuthDialogCompletedL( iDialogInfo );
     }
     else
@@ -1208,7 +1210,7 @@ void CTransNegotiation::GetCredentialsL()
         iDialog = CIkev1Dialog::NewL(
             iPluginSession, iPluginSession->DialogAnchor(), iDebug );
 
-        iDialog->GetAsyncUNPWDialogL( iDialogInfo, (MIkeDialogComplete*)this );
+        iDialog->GetAsyncUNPWDialogL( iDialogInfo, static_cast<MIkeDialogComplete*>(this) );
     }
 }
 

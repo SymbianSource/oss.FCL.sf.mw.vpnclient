@@ -72,3 +72,4 @@ LIBRARY     ikepolparser.lib
 LIBRARY     ikesocket.lib
 LIBRARY     random.lib
 LIBRARY     ikeutils.lib
+LIBRARY     ecom.lib

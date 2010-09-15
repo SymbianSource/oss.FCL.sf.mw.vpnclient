@@ -116,7 +116,6 @@ void CVpnUiLoader::ConstructL( const TRect& aRect, TUid aViewId )
     {
     LOG_("CVpnUiLoader::ConstructL() - begin");
     
-    AddResourceFileL();
     //Initialization
     iBackFromServerDefinition = EFalse;
     iNewServerDefinition = EFalse;

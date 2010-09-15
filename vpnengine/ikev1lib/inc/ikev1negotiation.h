@@ -155,6 +155,7 @@ public:
 	inline TUint32 SAId() {return iSAId;}			
 	TIkev1IsakmpStream* SaveIkeMsgBfr(TIkev1IsakmpStream* aMsg);
     void AuthDialogCompletedL(CAuthDialogInfo *aUserInfo);
+    void ErrDialogCompletedL();
 	TInt32 RandomMessageId();
 	void SendDeleteL(TUint8 aProtocol, TUint32 aIpsecSPI = 0);   //Send a Delete payload for the negotiation
 	void SendKeepAliveMsgL(TIkev1SAData* aSa);
