@@ -32,13 +32,14 @@ class CAsyncCleaner;
 /**
  * Combined task handler arrival observer and task handler manager.
  */
-NONSHARABLE_CLASS(CTaskArrivalObserver) : public CBase,
-                                          public MEventObserver, 
-                                          public MTaskHandlerManager
+NONSHARABLE_CLASS(CTaskArrivalObserver) : public CAsyncOneShot, public MEventObserver, public MTaskHandlerManager
     {
 public:
     static CTaskArrivalObserver* NewL();
     ~CTaskArrivalObserver();
+
+private: // From CAsyncOneShot
+    void RunL();
     
 public:
     void Start();
@@ -58,12 +59,17 @@ private: // Construction
     void ConstructL();
 
 private: // Implementation
-    void LaunchTaskHandlerL(const TTaskArrivedEventData& aEventSpec);    
+    void LaunchTaskHandlerL(const TTaskArrivedEventData& aEventSpec);
+    CTaskHandler* CreateTaskHandlerL(const TTaskArrivedEventData& aEventSpec);
+    TInt FindTaskHandler(CTaskHandler* aTaskHandler);
+    TInt FindAsyncCleaner(CAsyncCleaner* aAsyncCleaner);
+    void AsyncDeleteTaskHandler(CTaskHandler* aTaskHandler);
 
 private:
     REventMediator iEventMediator;
     CArrayPtrFlat<CTaskHandler>* iTaskHandlerList;
     CArrayPtrFlat<CAsyncCleaner>* iAsyncCleanerList;
+    CTaskHandler* iTaskHandlerToDelete;
     };
 
 NONSHARABLE_CLASS(CAsyncCleaner) : public CAsyncOneShot
@@ -71,8 +77,8 @@ NONSHARABLE_CLASS(CAsyncCleaner) : public CAsyncOneShot
 public:
     CAsyncCleaner(CTaskArrivalObserver* aTaskArrivalObserver,
                   CTaskHandler* aTaskHandlerToDelete);
-    void Start();        
-    TBool IsMatchingCleaner(const CTaskHandler& aTaskHandler) const;
+    void Start();
+        
 private: // From CAsyncOneShot
     void RunL();
 

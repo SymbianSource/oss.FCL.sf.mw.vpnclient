@@ -24,7 +24,6 @@
 #include "vpnapiwrapper.h"
 #include "vpnmanagementuidefs.h"
 #include "uirunner.h"
-#include "vpnextapi.h"
 
 // CONSTANTS
 /**
@@ -204,9 +203,6 @@ class CVpnUiLoader : public CCoeControl, public MCoeControlObserver,
         TInt iCurrentServerIndex;
         TBool iPolicyUpdate;
         TBuf<KMaxUiSelectionNameLength> iSelectionName;
-        
-        TBool iShowWaitNote;
-        RVpnExtApi iVpnExtApi;
     
     private: // data
         
@@ -274,9 +270,6 @@ class CVpnUiLoader : public CCoeControl, public MCoeControlObserver,
         TBool iKeepOpen;
         TBool iPolicyViewVisited;
         TBool iLogViewVisited;
-        TBool iServerViewVisited;
-        TBool iServerSettingsViewVisited;
-       
    };
 
 #endif // __VPNUILOADER_H__

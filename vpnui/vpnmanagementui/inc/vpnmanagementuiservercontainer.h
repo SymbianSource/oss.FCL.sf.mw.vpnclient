@@ -33,8 +33,7 @@
 */
 class CVpnManagementUiServerContainer : public CCoeControl, 
                                         public MCoeControlObserver, 
-                                        public MEikListBoxObserver,
-                                        public MVpnApiWrapperCaller
+                                        public MEikListBoxObserver
     {
     /**
     * Policy Container needs to get access to CVpnManagementUiServerView's DoActivateL
@@ -87,14 +86,14 @@ class CVpnManagementUiServerContainer : public CCoeControl,
         void DeleteServerL(TInt aIndex);
 
         /**
-        * Calls Agile provision web service to Synchronise mVPN configuration
+        * Calls AcuAgent API's SynchroniseServerL
         */
-        void SynchroniseServerL();
+        void SynchroniseServerL(TInt aIndex);
 
-        // from vpnapiwrapper
-
+        // from MAcuApiWrapperCaller
+        void NotifyUpdatePolicyCompleteL(TInt aResult);
         void NotifySynchroniseServerCompleteL(TInt aResult);
-
+        void NotifyStepChangedL(TInt aResult);
 
         void  HandleListBoxEventL (CEikListBox *aListBox, TListBoxEvent aEventType);
 
@@ -123,7 +122,7 @@ class CVpnManagementUiServerContainer : public CCoeControl,
         /**
         * If ETrue, Show Waitnote.
         */
-
+        TBool iShowWaitNote;
 
     private: // functions
 

@@ -98,6 +98,12 @@ class CEventLogger : public CBase
         static CEventLogger* NewL(CEventMediatorServer* aServer);
 
         /**
+        * Constructor
+        * @param aFileMaxLength: maximum length of log file in kbytes
+        */
+        CEventLogger(TInt aFileMaxLength, CEventMediatorServer* aServer);
+
+        /**
         * Destructor
         */
         ~CEventLogger();

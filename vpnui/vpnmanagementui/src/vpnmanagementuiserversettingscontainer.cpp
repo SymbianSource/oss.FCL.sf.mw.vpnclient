@@ -24,8 +24,6 @@
 #include <cmdestinationext.h>
 #include <cmpluginvpndef.h>
 #include <commdb.h>
-#include <e32def.h>
-
 #include <vpnmanagementuirsc.rsg>
 #include "vpnuiloader.h"
 #include "vpnmanagementuiserversettingscontainer.h"
@@ -80,10 +78,12 @@ CServerSettingsContainer::~CServerSettingsContainer()
 // ---------------------------------------------------------------------------
 //
 CAknSettingItem* CServerSettingsContainer::CreateSettingItemL( 
-    TInt aSettingId )
+    TInt /* aSettingId */)
     {
     CAknSettingItem* settingItem(NULL);
-    
+    /*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
     switch (aSettingId)
         {
         case EVpnUiSettingServerName:
@@ -98,53 +98,15 @@ CAknSettingItem* CServerSettingsContainer::CreateSettingItemL(
             settingItem = new (ELeave) CAknTextSettingItem(
                 aSettingId, iServerAddressBuffer );
             break;
-        case EVpnUiSettingIap:              
-            if ( iServerDetails.iSelection.iId <1 )
-                {
-                 RCmManagerExt cmManagerExt;
-                 cmManagerExt.OpenL();        
-                 CleanupClosePushL( cmManagerExt );     
-
-                 //Makes sure that Internet Destination Exists
-                 RArray<TUint32> destinationArray;    
-                 cmManagerExt.AllDestinationsL( destinationArray );
-                 CleanupClosePushL(destinationArray);    
-                            
-                 TUint32 internetDestinationId = 0;
-                 for (TInt i = 0; i < destinationArray.Count(); ++i)
-                     {
-                      RCmDestinationExt destination = cmManagerExt.DestinationL( destinationArray[i] );
-                      CleanupClosePushL(destination);
-                            
-                      TUint32 purposeMetaData = destination.MetadataL( ESnapMetadataPurpose );
-                      if ( ESnapPurposeInternet ==  purposeMetaData )
-                           {
-                            internetDestinationId = destinationArray[i];
-                            CleanupStack::PopAndDestroy(); //destination
-                            break;
-                           }                
-                      CleanupStack::PopAndDestroy(); //destination
-                      }
-                              
-                iServerDetails.iSelection.iId = internetDestinationId;
-                
-                iServerDetails.iSelection.iResult=EDestination;
-                
-                
-                settingItem = new (ELeave) CServerSettingConnectionSettingItem(
-                        aSettingId, iServerDetails.iSelection);
-                CleanupStack::PopAndDestroy(2); //destinationArray,cmManagerExt
-                
-                }
-            else
-                settingItem = new (ELeave) CServerSettingConnectionSettingItem(
-                        aSettingId, iServerDetails.iSelection);
+        case EVpnUiSettingIap:                        
+            settingItem = new (ELeave) CServerSettingConnectionSettingItem(
+                aSettingId, iServerDetails.iSelection);
             break;
         default:
             // Do nothing
             break;
             }
-   
+    ***/
     return settingItem;
     }
     
@@ -157,54 +119,17 @@ void CServerSettingsContainer::ConstructL()
     {
 	// Server settings view sets iServerIndex to -1 when creating a new 
 	// server
+	/*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
 	if ( iServerIndex >= 0 )
 	    {
-	    iLoader.VpnApiWrapperL().GetServerDetailsL( iServerDetails );
+	    iLoader.AcuApiWrapperL().GetServerDetailsL( 
+	        iServerIndex, iServerDetails );
 	    UpdateTitleL( iServerDetails.iServerNameLocal );    
 	    }    
-	ConstructFromResourceL(R_VPN_SERVER_SETTING_LIST);	
-	CAknSettingItem* item = SettingItemArray()->At(EVpnUiSettingIap); 
-	
-	using namespace CMManager;
-	    
-	RCmManagerExt cmManagerExt;
-	cmManagerExt.OpenL();        
-	CleanupClosePushL( cmManagerExt );     
-
-	//Makes sure that Internet Destination Exists
-	RArray<TUint32> destinationArray;    
-	cmManagerExt.AllDestinationsL( destinationArray );
-	CleanupClosePushL(destinationArray);    
-	TBool internetIapExist=EFalse;       
-	TUint32 internetDestinationId = 0;
-	for (TInt i = 0; i < destinationArray.Count(); ++i)
-	        {
-	        RCmDestinationExt destination = cmManagerExt.DestinationL( destinationArray[i] );
-	        CleanupClosePushL(destination);
-	        
-	        TUint32 purposeMetaData = destination.MetadataL( ESnapMetadataPurpose );
-	        if ( ESnapPurposeInternet ==  purposeMetaData )
-	            {
-	            internetDestinationId = destinationArray[i];
-	            CleanupStack::PopAndDestroy(); //destination
-	            internetIapExist=ETrue;
-	            break;
-	            }                
-	        CleanupStack::PopAndDestroy(); //destination
-	        }
-	
-	if ( internetIapExist != EFalse)
-	    {
-        HBufC* defaultConn = GetDestinationNameL(internetDestinationId);
-        CleanupStack::PushL(defaultConn);
-        item->SetEmptyItemTextL(*defaultConn);
-        item->LoadL();
-        item->UpdateListBoxTextL();
-        CleanupStack::PopAndDestroy(defaultConn); 
-	    }
-	
-	CleanupStack::PopAndDestroy(); //destinationArray 
-	CleanupStack::PopAndDestroy(); //cmManagerExt 
+	***/  
+    ConstructFromResourceL(R_VPN_SERVER_SETTING_LIST);	    
 	}
 	
 	
@@ -216,6 +141,34 @@ void CServerSettingsContainer::UpdateTitleL( TDes& aText )
     {
     iLoader.ActivateTitleL(KViewTitleParametersView,aText);
     } 
+
+
+// ---------------------------------------------------------------------------
+// ServerNameExistsL
+// ---------------------------------------------------------------------------
+//
+TBool CServerSettingsContainer::ServerNameExistsL( const TDesC& /* aText */) const
+    {
+    /*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
+    const CArrayFix<TAcuApiServerListElem>* serverList = iLoader.AcuApiWrapperL().ServerListL();
+    TInt count = serverList->Count();
+
+    for (TInt i = 0; i < count; ++i)
+        {
+        //If we are editing name, we don't want to compare itself
+        if(i != iServerIndex)
+            {
+            if (serverList->At(i).iServerNameLocal.Compare(aText)==0)
+                {
+                //Name is already in use
+                return ETrue;
+                }
+            }
+        } ***/
+    return EFalse;
+    }
 
 
 void CServerSettingsContainer::HandleListBoxEventL(CEikListBox* aListBox, TListBoxEvent aEventType)
@@ -238,25 +191,58 @@ void CServerSettingsContainer::HandleListBoxEventL(CEikListBox* aListBox, TListB
 //
 void CServerSettingsContainer::ChangeSettingValueL()
     {
-  
+    /*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
     TInt currentItem( ListBox()->CurrentItemIndex() );
            
     switch(currentItem)
         {        
         case EVpnUiSettingServerName:
             {
-            EditItemL(EVpnUiSettingServerName, ETrue);   
-            SettingItemArray()->At(EVpnUiSettingServerName)->StoreL(); 
-            }
+            TBool alreadyInUse = ETrue;
+            while(alreadyInUse)
+                {
+                EditItemL(EVpnUiSettingServerName, ETrue);   
+                SettingItemArray()->At(EVpnUiSettingServerName)->StoreL(); 
+                alreadyInUse = ServerNameExistsL( iServerDetails.iServerNameLocal );
+                if(alreadyInUse)
+                    {
+                    //Show an information note that server is currently in use
+                    HBufC* noteText;
+                    noteText = StringLoader::LoadLC( R_FLDR_NAME_ALREADY_USED, iServerDetails.iServerNameLocal );
+                    CAknInformationNote* note = new(ELeave)CAknInformationNote(ETrue);
+                    note->SetTimeout(CAknNoteDialog::ELongTimeout); //3sec
+                    note->ExecuteLD(noteText->Des());
+                    CleanupStack::PopAndDestroy();  // noteText                                
+                    }
+
+                }
             if (iServerDetails.iServerNameLocal.Length() > 0)
-            {                
-            UpdateTitleL( iServerDetails.iServerNameLocal );
+                {                
+                UpdateTitleL( iServerDetails.iServerNameLocal );
+                }
             }
-            
             break;            
         case EVpnUiSettingServerAddress:
             {
-            EditItemL(EVpnUiSettingServerAddress, ETrue);    
+            if( iServerDetails.iServerUrlReadOnly )
+                {
+                //Show an information note that server cannot be
+                //modified
+                HBufC* noteText;
+                noteText = StringLoader::LoadLC( 
+                    R_VPN_INFO_CANNOT_MODIFY_SERVER_DEF );
+                CAknInformationNote* note = 
+                    new(ELeave) CAknInformationNote(ETrue);
+                note->SetTimeout(CAknNoteDialog::ELongTimeout); //3sec
+                note->ExecuteLD(noteText->Des());
+                CleanupStack::PopAndDestroy();  // noteText
+                }
+            else
+                {            
+                EditItemL(EVpnUiSettingServerAddress, ETrue);    
+                }
             }
             break;
         case EVpnUiSettingIap:
@@ -267,12 +253,18 @@ void CServerSettingsContainer::ChangeSettingValueL()
         default:            
             User::Invariant();
             break;
-        }
+        } ***/
     }
 
 
-
-const TAgileProvisionApiServerSettings& CServerSettingsContainer::ServerDetailsL()
+// ---------------------------------------------------------------------------
+// ServerDetails
+// ---------------------------------------------------------------------------
+//
+/*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
+const TAcuApiServerDetails& CServerSettingsContainer::ServerDetailsL()
     {
     StoreSettingsL();
     if (iServerAddressBuffer.Length() > 0)
@@ -289,6 +281,8 @@ const TAgileProvisionApiServerSettings& CServerSettingsContainer::ServerDetailsL
         //If the address is already in use as server name, generate
         //a new unique name.                
         TUint16 i = 1;
+        do
+            {
             static const TInt KSuffixLength = 10;
             _LIT(KSuffixFormat, "(%d)");
                         
@@ -313,15 +307,16 @@ const TAgileProvisionApiServerSettings& CServerSettingsContainer::ServerDetailsL
             TPtrC8 serverNameAddress = iServerDetails.iServerUrl.Left(numberOfCharactersCopiedFromAddress);
             iServerDetails.iServerNameLocal.Copy(serverNameAddress);             
             iServerDetails.iServerNameLocal.Append(suffix);                                                             
-   
-        CAknSettingItem* item = SettingItemArray()->At(EVpnUiSettingServerName); 
+                           
+            }while(ServerNameExistsL( iServerDetails.iServerNameLocal) );                                                          
         
+        CAknSettingItem* item = SettingItemArray()->At(EVpnUiSettingServerName); 
         item->LoadL();
         item->UpdateListBoxTextL();        
         }
     return iServerDetails;
     }
-
+***/
 
 // ---------------------------------------------------------------------------
 // GetIapNameL

@@ -20,8 +20,6 @@
 
 #include <aknsettingitemlist.h>
 
-#include "vpnextapi.h"
-
 
 /**
  *  CServerSettingsContainer container control class.
@@ -64,8 +62,10 @@ public: // functions
      */
     void ChangeSettingValueL();
     
-   
-    const TAgileProvisionApiServerSettings& ServerDetailsL();
+    /*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
+    const TAcuApiServerDetails& ServerDetailsL(); ***/
 
     static HBufC* GetDestinationNameL( TUint aId );
     static HBufC* GetConnectionMethodNameL( TUint aId );
@@ -113,7 +113,7 @@ private: // data
 	CVpnUiLoader& iLoader;
 	
 	/// Server details
-	TAgileProvisionApiServerSettings iServerDetails;
+    // TAcuApiServerDetails iServerDetails;
     TBuf<KMaxServerUrlLength> iServerAddressBuffer;
     
    /**

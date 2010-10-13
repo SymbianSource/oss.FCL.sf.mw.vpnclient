@@ -38,7 +38,6 @@ const TInt R_VPN_MSG_VPN_IAP_ACT_START  = KMaxTInt;
 const TInt R_VPN_MSG_VPN_IAP_ACT_END    = KMaxTInt - 1;
 const TInt R_VPN_MSG_VPN_IAP_ACT_CANCEL = KMaxTInt - 2;
 
-class CExtender;
 
 NONSHARABLE_CLASS(CEventLogger) : CBase
   	{
@@ -59,7 +58,6 @@ private:
     REventMediator& iEventMediator;
     TUint32 iVpnIapId;
     TUint32 iRealIapId;
-    CExtender* iExtender;
 	};
 
 #define DEFINE_EVENT_LOGGER         CEventLogger* iEventLogger;

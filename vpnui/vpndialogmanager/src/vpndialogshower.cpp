@@ -103,16 +103,6 @@ CVpnMultiLineDialog* CVpnDialogShower::GetSecurIdDlgL(MVpnNotifierCallback* aNot
     return dialog;
     }
 
-CVpnMultiLineDialog* CVpnDialogShower::GetSecurIdPinDlgL(MVpnNotifierCallback* aNotifier, const TDesC8& aInput)
-    {
-    iValue1 = KNullDesC;
-    iValue2 = KNullDesC;
-    CKmdDlg* dialog = CKmdDlg::NewL(aNotifier, iValue1, iValue2, aInput, CAknQueryDialog::ENoTone);
-    dialog->SetResourceId(R_KMD_CRACK_SID_PIN_QUERY);
-    dialog->ExecuteLD(R_KMD_CRACK_SID_PIN_QUERY);
-    return dialog;
-    }
-
 CVpnMultiLineDialog* CVpnDialogShower::GetSecurIdNextDlgL(MVpnNotifierCallback* aNotifier, const TDesC8& aInput)
     {
     iValue1 = KNullDesC;
@@ -499,14 +489,12 @@ void CVpnInfoDialog::GetOutputL(TVpnDialogOutput& /*aOutput*/, TInt /*aButtonId*
 
 CKmdDlg::CKmdDlg(MVpnNotifierCallback* aNotifier, const TTone& aTone) : CVpnMultiLineDialog(aNotifier, aTone)
     {
-    iResourceId = 0;
     }
 
 CKmdDlg::CKmdDlg(MVpnNotifierCallback* aNotifier, const TDesC8& aInput, const TTone& aTone)
 : CVpnMultiLineDialog(aNotifier, aTone)
     {
     iInput.Set(aInput);
-    iResourceId = 0;
     }
 
 CKmdDlg* CKmdDlg::NewL(MVpnNotifierCallback* aNotifier, TDes& aData1, TDes& aData2, TTone aTone)
@@ -533,18 +521,11 @@ CKmdDlg* CKmdDlg::NewL(MVpnNotifierCallback* aNotifier, TDes& aData1, TDes& aDat
     return self;
     }
 
-void CKmdDlg::SetResourceId(TInt aResourceId)
-    {
-    iResourceId = aResourceId;
-    }
 void CKmdDlg::PreLayoutDynInitL()
     {
-    if (iResourceId == R_KMD_CRACK_SID_PIN_QUERY)
-        {
-        CAknQueryControl* secondControl = static_cast<CAknQueryControl*>(Control(EEikCidPasswordConfirm));
-        CEikSecretEditor* secretEditor = static_cast<CEikSecretEditor*>(secondControl->ControlByLayoutOrNull( EMultiDataSecondSecEd ));
-        secretEditor->SetDefaultInputMode(EAknEditorNumericInputMode);
-        }
+    SetMaxLengthOfFirstEditor(KMaxAuthenticationInputLength);
+    SetMaxLengthOfSecondEditor(KMaxAuthenticationInputLength);
+    
     CAknMultiLineDataQueryDialog::PreLayoutDynInitL();
     
     CAknQueryControl* usernameControl = static_cast<CAknQueryControl*>(Control(EEikCidPassword));
@@ -559,27 +540,6 @@ void CKmdDlg::PreLayoutDynInitL()
         	{
         	MakeLeftSoftkeyVisible(ETrue);
         	}
-        }
-    }
-
-void CKmdDlg::UpdateLeftSoftKeyL()
-    {
-  
-    CAknQueryControl* secondControl = static_cast<CAknQueryControl*>(Control(EEikCidPasswordConfirm));
-    if (iResourceId == R_KMD_CRACK_SID_PIN_QUERY)
-        {
-        if ( (0 == secondControl->GetTextLength()) || 
-             (KMinSecurIDPINLength <= secondControl->GetTextLength()) )
-            MakeLeftSoftkeyVisible(ETrue);
-        else 
-            MakeLeftSoftkeyVisible(EFalse);
-        }
-    else 
-        {
-        if (0 != secondControl->GetTextLength())
-            MakeLeftSoftkeyVisible(ETrue);
-        else
-            MakeLeftSoftkeyVisible(EFalse);
         }
     }
 

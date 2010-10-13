@@ -15,12 +15,10 @@
 *
 */
 
-#include <e32uid.h>
 #include <x509cert.h>
 #include <x500dn.h>
 #include <random.h>
 #include <vpnlogmessages.rsg>
-#include <softtokenpluginif.h>
 
 #include "ikev1negotiation.h"
 #include "ikedebug.h"
@@ -189,8 +187,8 @@ CIkev1Negotiation::~CIkev1Negotiation()
 
     delete iPkiService;     // Trusted CA certificate list
 
-    delete[] iSAPayload;
-    delete[] iPeerIdentPayload;
+    delete iSAPayload;
+    delete iPeerIdentPayload;
     delete iOwnIdentPayload;
     
     //Keys
@@ -1103,15 +1101,6 @@ void CIkev1Negotiation::AuthDialogCompletedL(CAuthDialogInfo *aUserInfo)
     }
 }
 
-//
-// CIkev1Negotiation::ErrDialogCompletedL
-// Error dialog is completed. End negotiation.
-//
-void CIkev1Negotiation::ErrDialogCompletedL( )
-{
-    SendDeleteL(PROTO_ISAKMP);       
-    SetErrorStatus(KKmdIkeAuthFailedErr);
-}
 
 //
 // CIkev1Negotiation::StartCRACKAuthL
@@ -1284,37 +1273,18 @@ TBool CIkev1Negotiation::IsakmpPhase1CompletedL()
 //Sends the initial IKE packets to start the negotiation. PHASE I
 void CIkev1Negotiation::InitNegotiationL()   //Equiv. to stage 1
 {
+    
     if (iProposal_I.iAttrList->iAuthMethod == IKE_A_CRACK &&
         !iHostData->iCRACKLAMUserName && 
         !iHostData->iCRACKLAMPassword &&
         !iCRACKLAMUserName && 
         !iCRACKLAMPassword)
         {
-        if ( (iHostData->iSoftToken) && (iPluginSession->SoftToken() != NULL) )
-            {
-            if (iPluginSession->SoftToken()->DefaultFoundL())
-                {
-                iDialog     = CIkev1Dialog::NewL( iPluginSession, iPluginSession->DialogAnchor(), iDebug );
-                iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, DIALOG_INFO_ID, SAId(), 0);
-                iDialog->GetAsyncSecureidPinDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
-                return;
-                }
-            else
-                {
-                DEBUG_LOG(_L("Failed to find token!"));
-                iDialog     = CIkev1Dialog::NewL( iPluginSession, iPluginSession->DialogAnchor(), iDebug );
-                iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, ERROR_DIALOG_ID, SAId(), 0);
-                iDialog->ShowErrorDialogL(TVpnNoteDialog::EKmdTokenNotFound, iDialogInfo, static_cast<MIkeDialogComplete*>(this));
-                return;
-                }
-            }
-        else
-            {
+            
             iDialog     = CIkev1Dialog::NewL( iPluginSession, iPluginSession->DialogAnchor(), iDebug );
             iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, DIALOG_INFO_ID, SAId(), 0);
-            iDialog->GetAsyncUNPWDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
+            iDialog->GetAsyncUNPWDialogL(iDialogInfo, (MIkeDialogComplete*)this);
             return;
-            }
     }
     TIkev1IsakmpStream* msg = SaveIkeMsgBfr( new (ELeave) TIkev1IsakmpStream(iDebug) );
 	
@@ -8427,32 +8397,6 @@ TInt CIkev1Negotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
 {
     delete iDialog;  /* delete dialog object */
     iDialog = NULL;
-
-    if (iHostData->iSoftToken && (iPluginSession->SoftToken() != NULL))
-        {
-        HBufC8* password = NULL;
-        TInt status;
-        status = iPluginSession->SoftToken()->CodeL(*aDialogInfo->iSecret, password);
-        
-        if (KErrNone != status)
-            {
-            if (KErrNoSecureTime == status)
-                {
-                DEBUG_LOG(_L("Token expired!"));
-                iDialog     = CIkev1Dialog::NewL( iPluginSession, iPluginSession->DialogAnchor(), iDebug );
-                iDialogInfo = new(ELeave) CAuthDialogInfo(iPluginSession, ERROR_DIALOG_ID, SAId(), 0);
-                iDialog->ShowErrorDialogL(TVpnNoteDialog::EKmdTokenExpired, iDialogInfo, static_cast<MIkeDialogComplete*>(this));
-                return status;
-                }
-            DEBUG_LOG(_L("Failed to get OTP from SoftToken!"));
-            SetFinished();
-            return KErrNotFound;
-            }
-        else
-            {
-            aDialogInfo->SetSecret(password);
-            }
-        }
     
     iCRACKLAMUserName = aDialogInfo->iUsername->AllocL();
     iCRACKLAMPassword = aDialogInfo->iSecret->AllocL();
@@ -8465,12 +8409,11 @@ TInt CIkev1Negotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
     return KErrNone;
 
 }
-
 //
 // The implementation for class MIkeDialogComplete virtual function
 //
-TInt CIkev1Negotiation::DialogCompleteL(
-    TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret)
+TInt CIkev1Negotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo,
+                                            HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)
 {
 /*---------------------------------------------------------------------------
  *  
@@ -8487,17 +8430,13 @@ TInt CIkev1Negotiation::DialogCompleteL(
      if ( info )
      {
         obj_id = info->GetObjId();
-        info->iNegotiation = this;
         DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
         if ( obj_id == DIALOG_INFO_ID )
         {
-            info->SetUserName(aUsername);
-            info->SetSecret(aSecret);
-            obj_id = info->PluginSession()->AuthDialogCompletedL(info);
-        }   
-        if ( obj_id == ERROR_DIALOG_ID )
-        {
-           obj_id = info->PluginSession()->ErrDialogCompletedL(info);
+           info->iUsername = aUsername;
+           info->iSecret   = aSecret;
+           info->iDomain   = aDomain;
+           obj_id = info->PluginSession()->AuthDialogCompletedL(info);
         }   
      }
 

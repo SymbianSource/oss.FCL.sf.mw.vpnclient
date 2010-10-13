@@ -26,27 +26,6 @@
 #include "ikepolparser.h"
 
 
-CAuthDialogInfo::~CAuthDialogInfo()
-{
-    delete iUsername;
-    delete iSecret;
-}
-
-
-void CAuthDialogInfo::SetUserName( HBufC8* aUserName )
-{
-    delete iUsername;
-    iUsername = aUserName;
-}
-
-
-void CAuthDialogInfo::SetSecret( HBufC8* aSecret )
-{
-    delete iSecret;
-    iSecret = aSecret;
-}
-
-
 //
 // Class that implements IKE CRACK authentication method
 //
@@ -192,7 +171,7 @@ TInt CIKECRACKNegotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
  *-------------------------------------------------------------------------*/
     if ( iState & WAITING_USER_RSP ) 
     {    
-       iState &= ~(WAITING_USER_RSP);
+       iState &= ~(WAITING_USER_RSP + SECURID_NEXT_PIN_MODE);
        delete iDialog;  /* delete dialog object */
        iDialog = NULL;
        
@@ -211,31 +190,6 @@ TInt CIKECRACKNegotiation::ProcessUserResponseL(CAuthDialogInfo *aDialogInfo )
        switch ( iLAMType ) 
        {    
            case CRACK_PASSWORD:
-               
-               if (iNegotiation->iHostData->iSoftToken && (iPluginSession->SoftToken() != NULL))
-                   {
-                   HBufC8* password = NULL;
-                   TInt err;
-                   if (iState & SECURID_NEXT_PIN_MODE)
-                       {
-                       iState &= ~(SECURID_NEXT_PIN_MODE);
-                       err = iPluginSession->SoftToken()->CodeL(*aDialogInfo->iSecret, password, ETrue);
-                       }
-                   else
-                       err = iPluginSession->SoftToken()->CodeL(*aDialogInfo->iSecret, password);
-                   if (KErrNone != err)
-                       {
-                       DEBUG_LOG(_L("Failed to get OTP from SoftToken!"));
-                       delete aDialogInfo;  /* release dialog info object */
-                       iDialogInfo = NULL;  /* reset dialog info pointer  */
-                       return CRACK_FAILED;
-                       }
-                   else
-                       {
-                       aDialogInfo->SetSecret(password);
-                       }
-                   }
-                   
                /*--------------------------------------------------
                 *  Possible attributes: User name, Secret, Domain
                 *-------------------------------------------------*/
@@ -301,16 +255,10 @@ TInt CIKECRACKNegotiation::GetDatafromUserL(HBufC8* /*aChallenge*/)
     switch ( iLAMType ) 
     {
         case CRACK_PASSWORD:
-            /*--------------------------------------------------
-             * Request User name and pin from user
-             *-------------------------------------------------*/
-             if (iNegotiation->iHostData->iSoftToken && (iPluginSession->SoftToken() != NULL))
-                 iDialog->GetAsyncSecureidPinDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
              /*--------------------------------------------------
               * Request User name and password (domain) from user
               *-------------------------------------------------*/
-             else
-                 iDialog->GetAsyncUNPWDialogL(iDialogInfo, static_cast<MIkeDialogComplete*>(this));
+             iDialog->GetAsyncUNPWDialogL(iDialogInfo, (MIkeDialogComplete*)this);
              break;
 
         default:     
@@ -570,8 +518,8 @@ TInt CIKECRACKNegotiation::CrackAuthenticationFailedL(const TNotificationISAKMP 
 //
 // The implementation for class MIkeDialogComplete virtual function
 //
-TInt CIKECRACKNegotiation::DialogCompleteL(
-    TAny* aUserInfo, HBufC8* aUsername, HBufC8* aSecret)
+TInt CIKECRACKNegotiation::DialogCompleteL(CIkev1Dialog* /*aDialog*/, TAny* aUserInfo,
+                                            HBufC8* aUsername, HBufC8* aSecret, HBufC8* aDomain)
 {
 /*---------------------------------------------------------------------------
  *  
@@ -584,21 +532,23 @@ TInt CIKECRACKNegotiation::DialogCompleteL(
  *  
  *-------------------------------------------------------------------------*/
     TUint32 obj_id = 1;
-    CAuthDialogInfo* info = static_cast<CAuthDialogInfo*>(aUserInfo);
+    CAuthDialogInfo* info = (CAuthDialogInfo*)aUserInfo;
 	DEBUG_LOG1(_L("CIKECRACKNegotiation::DialogCompleteL(), aUserInfo =  %x"), aUserInfo);
 			
     if ( info )
 	{
        obj_id = info->GetObjId();
-       info->iNegotiation = iNegotiation;
 	   DEBUG_LOG1(_L("Preparing to call AuthDialogCompletedL(), ObjId = %x"), obj_id);
        if ( obj_id == DIALOG_INFO_ID )
 	   {
-          info->SetUserName( aUsername );
-          info->SetSecret( aSecret );
+          info->iUsername = aUsername;
+          info->iSecret   = aSecret;
+          info->iDomain   = aDomain;
           obj_id = info->PluginSession()->AuthDialogCompletedL(info);
-       }
+       }   
     }
 
     return obj_id;
 }
+
+

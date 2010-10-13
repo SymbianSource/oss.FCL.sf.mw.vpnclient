@@ -46,7 +46,7 @@
 //d:Item opens Policy servers view
 //l:list_setting_pane_t1
 //
-#define qtn_vpn_policy_servers      "VPN policy server"
+#define qtn_vpn_policy_servers      "VPN policy servers"
 
 //d:Text of a list item in VPN management view
 //d:Item opens VPN log view
@@ -182,7 +182,7 @@
 //d:Name of view for title pane
 //l:title_pane_t2/opt9                    
 //
-#define qtn_vpn_policy_servers_title        "VPN policy server"
+#define qtn_vpn_policy_servers_title        "VPN policy servers"
 
 //d:Policy server view empty list placeholder text
 //l:main_list_empty_pane

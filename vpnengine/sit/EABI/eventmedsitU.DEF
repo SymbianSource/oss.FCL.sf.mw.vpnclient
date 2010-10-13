@@ -12,6 +12,4 @@ EXPORTS
 	_ZN4CSitD2Ev @ 11 NONAME
 	_ZTI4CSit @ 12 NONAME ; #<TI>#
 	_ZTV4CSit @ 13 NONAME ; #<VT>#
-	_ZTI9CExtender @ 14 NONAME
-	_ZTV9CExtender @ 15 NONAME
 

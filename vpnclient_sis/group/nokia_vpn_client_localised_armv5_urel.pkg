@@ -1,5 +1,5 @@
 ;
-; Copyright (c) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+; Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies).
 ; All rights reserved.
 ; This component and the accompanying materials are made available
 ; under the terms of "Eclipse Public License v1.0"
@@ -17,7 +17,7 @@
 
 ; LANGUAGES
 ; - None (English only by default)
-&EN,FR,GE,SP,IT,SW,DA,NO,FI,AM,PO,TU,IC,RU,HU,DU,CS,SK,PL,SL,TC,HK,ZH,JA,TH,AR,TL,BG,HR,ET,FA,CF,EL,HE,IN,LV,LT,MS,BP,RO,SR,LS,UK,UR,VI,44,102,103,65
+&EN,FR,GE,SP,IT,SW,DA,NO,FI,AM,PO,TU,IC,RU,HU,DU,CS,SK,PL,SL,TC,HK,ZH,JA,TH,AR,TL,BG,HR,ET,FA,CF,EL,HE,IN,LV,LT,MS,BP,RO,SR,LS,UK,UR,VI,44,102,103
 
 ; INSTALLATION HEADER 
 ; UID of acuagentcrypto
@@ -68,13 +68,11 @@
   "Nokia VPN client",
   "Nokia VPN",
   "Nokia VPN",
-  "Nokia VPN",
   "Nokia VPN"},
 (0x101F5147),32,08,0124, TYPE=SA, RU
 
 ; Product / platform version compatibility - S60 5.1
 [0x10283160],0,0,0,{
-"Series60ProductID",
 "Series60ProductID",
 "Series60ProductID",
 "Series60ProductID",
@@ -173,12 +171,10 @@
 "Series60ProductID",
 "Series60ProductID",
 "Series60ProductID",
-"Series60ProductID",
 "Series60ProductID"}
 
 ; List of localised vendor names - one per language.
 %{"Nokia",
-"Nokia",
 "Nokia",
 "Nokia",
 "Nokia",
@@ -271,11 +267,6 @@
 "\epoc32\release\armv5\urel\dmadpki.dll"-"!:\sys\bin\dmadpki.dll"
 "\epoc32\data\z\resource\plugins\dmadpki.rsc"-"!:\resource\plugins\dmadpki.rsc"
 
-; Agile Provision
-"\epoc32\release\armv5\urel\agileprovisionws.dll"-"!:\sys\bin\agileprovisionws.dll"
-
-; VPN EXT API
-"\epoc32\release\armv5\urel\vpnextapi.dll"-"!:\sys\bin\vpnextapi.dll"
 
 ; VPN API (comes with platform)
 ;"\epoc32\release\armv5\urel\vpnapi.dll"-"!:\sys\bin\vpnapi.dll"
@@ -335,35 +326,84 @@
 "\epoc32\data\z\resource\vpnmanagementuirsc.r44"
 "\epoc32\data\z\resource\vpnmanagementuirsc.r102"
 "\epoc32\data\z\resource\vpnmanagementuirsc.r103"
-"\epoc32\data\z\resource\vpnmanagementuirsc.r65"
 }-"!:\resource\vpnmanagementuirsc.rsc"
 
 ; icon and GS plugin registration file
 "\epoc32\data\z\resource\apps\vpnmanagementui.mif"-"!:\resource\apps\vpnmanagementui.mif"
 "\epoc32\data\Z\resource\plugins\vpnmanagementui.rsc"-"!:\resource\plugins\vpnmanagementui.rsc"
 
+; VPN help resources (not localized yet)
+; Help resources should be already in ROM but content can be updated from SIS package
+;"\epoc32\data\Z\resource\xhtml\01\0x10200EC4\contents.zip"-"!:\resource\xhtml\01\0x10200EC4\contents.zip"
+;"\epoc32\data\Z\resource\xhtml\01\0x10200EC4\index.xml"-"!:\resource\xhtml\01\0x10200EC4\index.xml"
+;"\epoc32\data\Z\resource\xhtml\01\0x10200EC4\keywords.xml"-"!:\resource\xhtml\01\0x10200EC4\keywords.xml"
+;"\epoc32\data\Z\resource\xhtml\01\0x10200EC4\meta.xml"-"!:\resource\xhtml\01\0x10200EC4\meta.xml"
+;{
+;"\epoc32\data\z\resource\help\vpn.h01"
+;"\epoc32\data\z\resource\help\vpn.h02"
+;"\epoc32\data\z\resource\help\vpn.h03"
+;"\epoc32\data\z\resource\help\vpn.h04"
+;"\epoc32\data\z\resource\help\vpn.h05"
+;"\epoc32\data\z\resource\help\vpn.h06"
+;"\epoc32\data\z\resource\help\vpn.h07"
+;"\epoc32\data\z\resource\help\vpn.h08"
+;"\epoc32\data\z\resource\help\vpn.h09"
+;"\epoc32\data\z\resource\help\vpn.h10"
+;"\epoc32\data\z\resource\help\vpn.h13"
+;"\epoc32\data\z\resource\help\vpn.h14"
+;"\epoc32\data\z\resource\help\vpn.h15"
+;"\epoc32\data\z\resource\help\vpn.h16"
+;"\epoc32\data\z\resource\help\vpn.h17"
+;"\epoc32\data\z\resource\help\vpn.h18"
+;"\epoc32\data\z\resource\help\vpn.h25"
+;"\epoc32\data\z\resource\help\vpn.h26"
+;"\epoc32\data\z\resource\help\vpn.h27"
+;"\epoc32\data\z\resource\help\vpn.h28"
+;"\epoc32\data\z\resource\help\vpn.h29"
+;"\epoc32\data\z\resource\help\vpn.h30"
+;"\epoc32\data\z\resource\help\vpn.h31"
+;"\epoc32\data\z\resource\help\vpn.h32"
+;"\epoc32\data\z\resource\help\vpn.h33"
+;"\epoc32\data\z\resource\help\vpn.h37"
+;"\epoc32\data\z\resource\help\vpn.h39"
+;"\epoc32\data\z\resource\help\vpn.h42"
+;"\epoc32\data\z\resource\help\vpn.h45"
+;"\epoc32\data\z\resource\help\vpn.h49"
+;"\epoc32\data\z\resource\help\vpn.h01"
+;"\epoc32\data\z\resource\help\vpn.h51"
+;"\epoc32\data\z\resource\help\vpn.h54"
+;"\epoc32\data\z\resource\help\vpn.h57"
+;"\epoc32\data\z\resource\help\vpn.h01"
+;"\epoc32\data\z\resource\help\vpn.h59"
+;"\epoc32\data\z\resource\help\vpn.h67"
+;"\epoc32\data\z\resource\help\vpn.h68"
+;"\epoc32\data\z\resource\help\vpn.h70"
+;"\epoc32\data\z\resource\help\vpn.h76"
+;"\epoc32\data\z\resource\help\vpn.h78"
+;"\epoc32\data\z\resource\help\vpn.h79"
+;"\epoc32\data\z\resource\help\vpn.h83"
+;"\epoc32\data\z\resource\help\vpn.h93"
+;"\epoc32\data\z\resource\help\vpn.h01"
+;"\epoc32\data\z\resource\help\vpn.h01"
+;}-"!:\resource\help\vpn.hlp"
 
 ; PKI Services Server
 "\epoc32\release\armv5\urel\pkiservice.exe"-"!:\sys\bin\pkiservice.exe"
-
 ; PKI Services API
 "\epoc32\release\armv5\urel\pkiserviceapi.dll"-"!:\sys\bin\pkiserviceapi.dll"
 
+
 ; PKCS#10 Module
 "\epoc32\release\armv5\urel\utlpkcs10.dll"-"!:\sys\bin\utlpkcs10.dll"
-
 ; PKCS#12 Module
 "\epoc32\release\armv5\urel\utlpkcs12.dll"-"!:\sys\bin\utlpkcs12.dll"
-
 ; Base64 Module
 "\epoc32\release\armv5\urel\utlbase64.dll"-"!:\sys\bin\utlbase64.dll"
-
 ; Socket Interaction Thread
 "\epoc32\release\armv5\urel\eventmedsit.dll"-"!:\sys\bin\eventmedsit.dll"
-
 ; Event Viewer
 "\epoc32\release\armv5\urel\eventviewer.dll"-"!:\sys\bin\eventviewer.dll"
-
+;
 "\epoc32\data\z\resource\vpnlogmessages.rsc"-"!:\resource\vpnlogmessages.rsc"
 
 ; Terminal control stubs (for downwards compatibility)
@@ -426,13 +466,12 @@
 "\epoc32\data\z\resource\vpnecomnotifier.r44"
 "\epoc32\data\z\resource\vpnecomnotifier.r102"
 "\epoc32\data\z\resource\vpnecomnotifier.r103"
-"\epoc32\data\z\resource\vpnecomnotifier.r65"
 }-"!:\resource\vpnecomnotifier.rsc"
 
 ; XML Parser
 "\epoc32\release\armv5\urel\utlxml.dll"-"!:\sys\bin\utlxml.dll"
 
-; Install only languages that device supports
+; Install only languages that HW supports
 ; EN - 01 - English  
 IF EXISTS ("z:\resource\avkon.r01")
 "\epoc32\data\z\resource\vpnecomnotifier.r01"-"!:\resource\vpnecomnotifier.r01"
@@ -673,41 +712,51 @@ ENDIF
 IF EXISTS ("z:\resource\avkon.r102")
 "\epoc32\data\z\resource\vpnecomnotifier.r102"-"!:\resource\vpnecomnotifier.r102"
 "\epoc32\data\z\resource\vpnmanagementuirsc.r102"-"!:\resource\vpnmanagementui.r102"
+; Helps do not support language id 102 yet
+;IF NOT EXISTS ("z:\resource\xhtml\102\0x10200EC4\index.xml")
+;"\epoc32\data\Z\resource\xhtml\102\0x10200EC4\index.xml"-"!:\resource\xhtml\102\0x10200EC4\index.xml"
+;"\epoc32\data\Z\resource\xhtml\102\0x10200EC4\keywords.xml"-"!:\resource\xhtml\102\0x10200EC4\keywords.xml"
+;"\epoc32\data\Z\resource\xhtml\102\0x10200EC4\meta.xml"-"!:\resource\xhtml\102\0x10200EC4\meta.xml"
+;"\epoc32\data\Z\resource\xhtml\102\0x10200EC4\contents.zip"-"!:\resource\xhtml\102\0x10200EC4\contents.zip"
+;ENDIF
 ENDIF
 ; - 103 - Galicia
 IF EXISTS ("z:\resource\avkon.r103")
 "\epoc32\data\z\resource\vpnecomnotifier.r103"-"!:\resource\vpnecomnotifier.r103"
 "\epoc32\data\z\resource\vpnmanagementuirsc.r103"-"!:\resource\vpnmanagementui.r103"
+; Helps do not support language 103 yet
+;IF NOT EXISTS ("z:\resource\xhtml\103\0x10200EC4\index.xml")
+;"\epoc32\data\Z\resource\xhtml\103\0x10200EC4\index.xml"-"!:\resource\xhtml\103\0x10200EC4\index.xml"
+;"\epoc32\data\Z\resource\xhtml\103\0x10200EC4\keywords.xml"-"!:\resource\xhtml\103\0x10200EC4\keywords.xml"
+;"\epoc32\data\Z\resource\xhtml\103\0x10200EC4\meta.xml"-"!:\resource\xhtml\103\0x10200EC4\meta.xml"
+;"\epoc32\data\Z\resource\xhtml\103\0x10200EC4\contents.zip"-"!:\resource\xhtml\103\0x10200EC4\contents.zip"
+;ENDIF
 ENDIF
-; - 65 - Korean
-IF EXISTS ("z:\resource\avkon.r65")
-"\epoc32\data\z\resource\vpnecomnotifier.r65"-"!:\resource\vpnecomnotifier.r65"
-"\epoc32\data\z\resource\vpnmanagementuirsc.r65"-"!:\resource\vpnmanagementui.r65"
-ENDIF
-
 
 "\epoc32\release\armv5\urel\vpnpolicyrecognizer.dll"-"!:\sys\bin\vpnpolicyrecognizer.dll"
 "\epoc32\data\z\resource\plugins\vpnpolicyrecognizer.rsc"-"!:\resource\plugins\vpnpolicyrecognizer.rsc"
 
+
 "\epoc32\release\armv5\urel\vpnpolins.exe"-"!:\sys\bin\vpnpolins.exe"
 "\epoc32\data\z\private\10003a3f\apps\vpnpolins_reg.rsc"-"!:\Private\10003a3f\import\apps\vpnpolins_reg.rsc"
-
 ; Embedded VPN Policy Installer sis file
 @"mVPN_vpnpolins_armv5.sis",(0xA0000131)
 
+;
 ; VPN Cleaner
+;
 "\epoc32\release\armv5\urel\vpncleaner.exe"-"!:\sys\bin\vpncleaner.exe",FR,RR,RW
-
+;
 ; The following modules must not be deleted before VPN Cleaner has been run:
-
 ; VPN Manager
 "\epoc32\release\armv5\urel\vpnmanager.exe"-"!:\sys\bin\vpnmanager.exe"
 
 ; Event Mediator
 "\epoc32\release\armv5\urel\eventmed.exe"-"!:\sys\bin\eventmed.exe"
-
+; "\epoc32\winscw\c\private\101FD288\backup_registration.xml"-"!:\Private\101FD288\backup_registration.xml"
 ; Event Mediator API
 "\epoc32\release\armv5\urel\eventmedapi.dll"-"!:\sys\bin\eventmedapi.dll"
 
 ; VPN Installer
+; "101f877b.txt"-"c:\Private\10202be9\persists\101f877b.txt"
 "\epoc32\release\armv5\urel\vpnins.exe"-"!:\sys\bin\vpnins.exe",FR,RI,RW

@@ -37,6 +37,14 @@ CEventLogger* CEventLogger::NewL(CEventMediatorServer* aServer)
     return server;
     }
 
+CEventLogger::CEventLogger(TInt aFileMaxLength, CEventMediatorServer* aServer)
+{
+    iServer = aServer;
+    if ( aFileMaxLength == 0 || aFileMaxLength > LOGFILE_MAX_LTH )
+         iFileMaxLength = KBYTES_TO_BYTES * LOGFILE_MAX_LTH;           
+    else iFileMaxLength = KBYTES_TO_BYTES * aFileMaxLength; 
+}
+
 CEventLogger::~CEventLogger()
 {
 }

@@ -189,9 +189,12 @@ void CIkev1Dialog::RunL()
     if ( iCallback )
 	{
 		TInt err;
-		TRAP(err, delete_obj = iCallback->DialogCompleteL(
-		    iUserInfo, un_bfr, pw_bfr));
-	    
+		TRAP(err, delete_obj = iCallback->DialogCompleteL(this, iUserInfo,
+								                          un_bfr,               //User name
+			                                              pw_bfr,               //Password
+			                                              NULL));               //domain
+	    delete un_bfr; 
+	    delete pw_bfr;
 	    if ( err != KErrNone )
 		  delete_obj = 1;
     }
@@ -270,42 +273,22 @@ void CIkev1Dialog::GetAsyncUNPWDialogL(TAny *aUserInfo, MIkeDialogComplete*  aCa
 
 /*--------------------------------------------------------------------
  *
- *  Get user name and Secure ID code data for Legacy authentication
+ *  Get user name and Secure ID pin data for Legacy authentication
  *
  *---------------------------------------------------------------------*/
 void CIkev1Dialog::GetAsyncSecureidDialogL(TAny *aUserInfo, MIkeDialogComplete*  aCallback)
 {
 	DEBUG_LOG2(_L("CIkev1Dialog::GetAsyncSecureidDialogL(), aUserInfo =  %x, aCallback = %x"), aUserInfo, aCallback);
 	
-    iDialogType = TKMDDialog::ESecurIdCode;
-    iUserInfo   = aUserInfo;
-    iCallback   = aCallback; // For asynchronous dialog RunL
-
-	TIPSecDialogInfo dialog_input(TKMDDialog::ESecurIdCode, 0);		
-	iInputData = CreateDialogInput(dialog_input, ETrue);// TRUE = Use user name cache    	
-    if ( iInputData )
-       LaunchDialogL();   //launch the dialog
-}
-
-/*--------------------------------------------------------------------
- *
- *  Get user name and Secure ID pin data for Legacy authentication
- *
- *---------------------------------------------------------------------*/
-void CIkev1Dialog::GetAsyncSecureidPinDialogL(TAny *aUserInfo, MIkeDialogComplete*  aCallback)
-{
-    DEBUG_LOG2(_L("CIkev1Dialog::GetAsyncSecureidPinDialogL(), aUserInfo =  %x, aCallback = %x"), aUserInfo, aCallback);
-    
     iDialogType = TKMDDialog::ESecurIdPin;
     iUserInfo   = aUserInfo;
     iCallback   = aCallback; // For asynchronous dialog RunL
 
-    TIPSecDialogInfo dialog_input(TKMDDialog::ESecurIdPin, 0);      
-    iInputData = CreateDialogInput(dialog_input, ETrue);// TRUE = Use user name cache       
+	TIPSecDialogInfo dialog_input(TKMDDialog::ESecurIdPin, 0);		
+	iInputData = CreateDialogInput(dialog_input, ETrue);// TRUE = Use user name cache    	
     if ( iInputData )
        LaunchDialogL();   //launch the dialog
 }
-
 
 /*--------------------------------------------------------------------
  *
@@ -624,9 +607,11 @@ void CDialogTimeout::RunL()
     {
 		TInt err;
 		DEBUG_LOG2(_L("Calling DialogCompleteL(), UserInfo = %x, Callback = %x"), (TUint32)iDialog->UserInfo(), (TUint32)Callback);					
-        TRAP(err, delete_dialog = Callback->DialogCompleteL(
-            iDialog->UserInfo(), NULL, NULL));
-
+        TRAP(err, delete_dialog = Callback->DialogCompleteL(iDialog,
+                                                            iDialog->UserInfo(),
+                                                            NULL,               //User name
+                                                            NULL,               //Password
+                                                            NULL));             //domain
 		DEBUG_LOG2(_L("DialogCompleteL() completed, err = %d, delete_dialog = %d"), err, delete_dialog);			
 		if ( err != KErrNone )
 			delete_dialog = 1;

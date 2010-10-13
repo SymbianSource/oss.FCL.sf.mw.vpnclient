@@ -19,15 +19,13 @@
 #define __VPNAPIWRAPPER_H__
 
 #include <e32base.h>
-
-#include "vpnextapi.h"
+#include "vpnapi.h"
 
 
 class MVpnApiWrapperCaller
     {
 public:
-  
-    virtual void NotifySynchroniseServerCompleteL(TInt aResult) = 0;
+    virtual void NotifyPolicyImportComplete(TInt aResult) = 0;
     };
 
 /**
@@ -67,18 +65,23 @@ public:
         TInt aPolicyIndex, TVpnPolicyDetails& aPolicyDetails);
     
     /**
-     * Cretes the specified server definition.
+     * Imports a new VPN policy to the policy store.
      *
-     * @param aServerDetails [in] Server details structure
-    */
-     TInt CreateServer( const TAgileProvisionApiServerSettings& aServerDetails );
-     
-     TAgileProvisionApiServerListElem& ServerListL();
-     
-     void GetServerDetailsL( TAgileProvisionApiServerSettings& aServerDetails );
-     TInt DeleteServer();
-     void SynchroniseServerL(  MVpnApiWrapperCaller* aCaller  );
-     void CancelSynchronise( );
+     * @param aImportDir An absolute path to the VPN policy files directory
+     * 
+     * @param aCaller
+     */
+    void ImportPolicyL(
+        const TDesC& aImportDir, MVpnApiWrapperCaller* aCaller);
+
+    /**
+     * Gets the last update time of the specified policy.
+     * @param aPolicyIndex Index of the listbox in the policy view.
+     * @param aTime Last update time to be returned.
+     * @return Returns KErrNone if succeed.
+     * Otherwise it returns KErrNotFound.
+     */
+    TInt GetLastUpdateTime(TInt aPolicyIndex, TTime& aTime);
 
 protected: // From CActive
     void DoCancel();
@@ -100,27 +103,16 @@ private:
      */
     void BuildPolicyListL();
 
-    /**
-     * Deletes all VPN AP that referes to policy aPolicyId.
-     * Ignores possible errors --> In case of an error the remaining
-     * APs are not deleted.
-     */
-    void DeleteReferringVpnAps(const TVpnPolicyId& aPolicyId) const;
-    void DeleteReferringVpnApsL(const TVpnPolicyId& aPolicyId) const;
-    
 private:
 
     enum TTask
         {
         ETaskNone = 1,
-        ETaskSynchroniseServer,
-
+        ETaskImportPolicies
         };
 
+    RVpnApi iVpnApi;
 
-    RVpnExtApi iVpnExtApi;
-    TAgileProvisionApiServerSettings iPolicyServer;
-    TAgileProvisionApiServerListElem iVpnPolicyServerList;
     CArrayFixFlat<TVpnPolicyInfo>* iPolicyList;
     TFileName iImportDir;
 

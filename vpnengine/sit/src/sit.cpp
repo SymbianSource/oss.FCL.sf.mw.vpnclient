@@ -157,8 +157,7 @@ void CSit::StartWorkingL()
     CActiveScheduler::Start();
 
     // Cleanup the task handler and scheduler
-    CleanupStack::PopAndDestroy(taskArrivalObserver);
-    CleanupStack::PopAndDestroy(scheduler);
+    CleanupStack::PopAndDestroy(2); // taskArrivalObserver, scheduler
 
     LOG(Log::Printf(_L("CSit::StartWorkingL - end\n")));
     }

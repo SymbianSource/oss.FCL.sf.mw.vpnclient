@@ -16,7 +16,7 @@
 
 ; LANGUAGES
 ; - None (English only by default)
-&EN,FR,GE,SP,IT,SW,DA,NO,FI,AM,PO,TU,IC,RU,HU,DU,CS,SK,PL,SL,TC,HK,ZH,JA,TH,AR,TL,BG,HR,ET,FA,CF,EL,HE,IN,LV,LT,MS,BP,RO,SR,LS,UK,UR,VI,44,102,103,65
+&EN,FR,GE,SP,IT,SW,DA,NO,FI,AM,PO,TU,IC,RU,HU,DU,CS,SK,PL,SL,TC,HK,ZH,JA,TH,AR,TL,BG,HR,ET,FA,CF,EL,HE,IN,LV,LT,MS,BP,RO,SR,LS,UK,UR,VI,44,102,103
 
 ; INSTALLATION HEADER 
 ; UID of acuagentcrypto
@@ -67,13 +67,11 @@
   "Nokia VPN client",
   "Nokia VPN",
   "Nokia VPN",
-  "Nokia VPN",
   "Nokia VPN"},
 (0x101F5147),32,08,0124, TYPE=SA, RU
 
 ; Product / platform version compatibility - S60 5.1
 [0x10283160],0,0,0,{
-"Series60ProductID",
 "Series60ProductID",
 "Series60ProductID",
 "Series60ProductID",
@@ -172,12 +170,10 @@
 "Series60ProductID",
 "Series60ProductID",
 "Series60ProductID",
-"Series60ProductID",
 "Series60ProductID"}
 
 ; List of localised vendor names - one per language.
 %{"Nokia",
-"Nokia",
 "Nokia",
 "Nokia",
 "Nokia",

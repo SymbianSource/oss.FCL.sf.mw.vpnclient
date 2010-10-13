@@ -96,8 +96,9 @@ class CVpnManagementUiView : public CGSPluginInterface, public MEikListBoxObserv
         */
         void HandleCommandL(TInt aCommand);
 
+        // from MAcuApiWrapperCaller
+        void NotifyPolicyImportComplete(TInt aResult);
         
-        void NotifySynchroniseServerCompleteL(TInt aResult);
     public:
     
         /**
@@ -229,8 +230,6 @@ class CVpnManagementUiView : public CGSPluginInterface, public MEikListBoxObserv
         
         TInt iCurrentItem; // currently selected listbox item
         TInt iTopItemIndex; // first item in the listbox
-        
-        HBufC* iCaption; // caption text
     };
 
 #endif // __VPNMANAGEMENTUIVIEW_H__

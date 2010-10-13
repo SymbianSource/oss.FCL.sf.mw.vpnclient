@@ -157,8 +157,8 @@ class CPKISupport : public CActive
         void DoRunOperationL();
         void DoRunLoggedInOperationL();
         
-        // Function to remove all "Java Trust Root" certificates from the 
-        // local listing ("Java Trust Root" certs shouldn't be supported by VPN)
+        // Function to remove all MIDP2 certificates from the 
+        // local listing (MIDP2 certs shouldn't be supported by VPN)
         void CleanupCertListL();
 
         // CActive methods

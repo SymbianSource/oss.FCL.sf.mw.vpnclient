@@ -24,6 +24,3 @@ PRJ_EXPORTS
   ../inc/vpnapidefs.h             MW_LAYER_PLATFORM_EXPORT_PATH(vpnapidefs.h)
   ../inc/vpnapi.h                 MW_LAYER_PLATFORM_EXPORT_PATH(vpnapi.h)
   ../inc/vpnsipobserverpskeys.h   MW_LAYER_PLATFORM_EXPORT_PATH(vpnsipobserverpskeys.h)
-  ../inc/softtokenpluginif.h      MW_LAYER_PLATFORM_EXPORT_PATH(softtokenpluginif.h)
-  ../inc/softtokenpluginif.inl    MW_LAYER_PLATFORM_EXPORT_PATH(softtokenpluginif.inl)
-  

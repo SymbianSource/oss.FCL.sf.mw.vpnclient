@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2003-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003-2008 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -263,7 +263,7 @@ void CPKISupport::SaveCertInfoToCacheL()
     CleanupStack::PushL(newMapping);
     
     newMapping->SetMapDeletable(currentCertInfo->IsDeletable());
-    newMapping->SetMapApplicationsL(iApplUids);
+    newMapping->SetMapApplications(iApplUids);
     iApplUids.Reset();
     User::LeaveIfError(iMapper.AddMapping(newMapping));
             
@@ -433,7 +433,7 @@ void CPKISupport::RunL()
 	if((iSupportStatus == KErrNotSupported) && 
 	    iToggleSwitch && (iInitState == EInitCompleteImportCerts))
 		{
-		// Some implementations of "Java Trust Root" certstore return KErrNotSupported
+		// Some implementations of MIDP2 certstore return KErrNotSupported
 		// when calling iCertStore->Applications()
 		LOG_1("CPKISupport::RunL ignore error :%d", iSupportStatus);
 		iSupportStatus = KErrNone;		
@@ -767,25 +767,25 @@ void CPKISupport::ContinueRetrieveCertificate()
 /**
     Removes all unnecessary certificates from the certificate
     list before generating the local mapping data.
-    More specifically, all "Java Trust Root" and non X509 certificates are removed.
-    ("Java Trust Root" certificates can never have a "VPN" trust setting.)
+    More specifically, all MIDP2 and non X509 certificates are removed.
+    (MIDP2 certificates can never have a "VPN" trust setting.)
     
     iListCleaned instance variable is used to limit the frequency
     of this cleanup - it's only necessary once, during PKI startup.
 */
 void CPKISupport::CleanupCertListL() 
     {
-    LOG_("Removing invalid certs (\"Java Trust Root\" certs)");
+    LOG_("Removing invalid certs (MIDP2 certs)");
 
     TInt certcount = iCerts.Count();
-    _LIT(KJavaTrustRootLabel, "Java Trust Root");
+    _LIT(KMidp2Label, "MIDP2");
     LOG_1("Total cert count, before cleanup: %d", iCerts.Count());
     RMPointerArray<CCTCertInfo> removedInfos;
     CleanupClosePushL(removedInfos);
     for (TInt i = certcount - 1; i >= 0; i--) 
         {
         CCTCertInfo* info = iCerts[i];
-        if (info->Label().Compare(KJavaTrustRootLabel) == 0 ||
+        if (info->Label().Compare(KMidp2Label) == 0 ||
             info->CertificateFormat() != EX509Certificate) 
             {
             // CCTCertInfo has private destructor
@@ -833,7 +833,7 @@ void CPKISupport::DoRunOperationL()
             break;
         case EInitRetrieveCertList:
             LOG_("CPKISupport::DoRunOperationL() EInitRetrieveCertList");
-            // Cert list might be new. Remove all "Java Trust Root" certificates first,
+            // Cert list might be new. Remove all MIDP2 certificates first,
             // if it hasn't been already done
             CleanupCertListL();
             iInitState = EInitCompleteImportCerts;
@@ -1019,7 +1019,7 @@ void CPKISupport::DoRunLoggedInOperationL()
                 case ESSComplete:
                     if(iCurrentFunction == PkiService::EApplications)
                         {
-                        iWrapper.SetApplicationsL(iApplUids);
+                        iWrapper.SetApplications(iApplUids);
                         }
                             
                     iSubState = ESSCompleteRequest;
@@ -1162,7 +1162,7 @@ void CPKISupport::SetApplicabilityL(const TDesC &aLabel,
 	iApplUids.Close();
 	for(TInt i = 0;i<aApplUids.Count();i++)
 		{
-		iApplUids.AppendL(aApplUids[i]);
+		iApplUids.Append(aApplUids[i]);
 		}
     SetCallerStatusPending( aStatus );
     SelectCertificateL(aLabel);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2003 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -16,10 +16,7 @@
 */
 
 
-#include <e32std.h>
-#include <f32file.h>
 
-#include "fileutil.h"
 #include "vpnapiservant.h"
 #include "policystore.h"
 #include "policyimporter.h"
@@ -28,9 +25,6 @@
 #include "vpnmanagerserverdefs.h"
 #include "vpnmaninternal.h"
 #include "log_r6.h"
-#include "agileprovisionws.h"
-#include "agileprovisiondefs.h"
-#include "cmmanagerutils.h"
 
 
 CVpnApiServant* CVpnApiServant::NewL(RFs& aFs)
@@ -42,7 +36,7 @@ CVpnApiServant* CVpnApiServant::NewL(RFs& aFs)
     return self;
     }
 
-CVpnApiServant::CVpnApiServant(RFs& aFs) : iFs(aFs), iFileUtil(aFs)
+CVpnApiServant::CVpnApiServant(RFs& aFs) : iFs(aFs)
     {
     }
 
@@ -119,36 +113,6 @@ TBool CVpnApiServant::ServiceL(const RMessage2& aMessage)
             UpdatePolicyDataL(aMessage);
             break;
             
-        
-        //Policy Provision Methods
-        case EExtCreateProvisionServer:
-            CreateProvisionServerL(aMessage);
-            break;
-         
-        case EExtVPNPolicyServerList:
-            ListProvisionServerL(aMessage);
-            break;
-            
-        case EExtVPNPolicyServerDetails:
-            GetProvisionServerDetailsL(aMessage);
-            break;
-            
-        case EExtSynchronizePolicyServer:
-            SynchronizeVPNPolicyServerL(aMessage);
-            break;
-            
-        case EExtDeletePolicyServer:
-             DeleteVPNPolicyServerL(aMessage);
-             break;
-        
-        case EExtCancelSynchronize:
-             CancelSynchronize(aMessage);
-             break;
-        
-        case EExtGetPolicyName:
-             GetVPNPolicyNameL(aMessage);
-             break;
-             
         default:
             requestHandled = EFalse;
             break;
@@ -280,7 +244,7 @@ void CVpnApiServant::GetPolicyDetailsL(const RMessage2& aMessage)
             
     aMessage.Complete(ret);
     
-    LOG(Log::Printf(_L("CVpnApiServant::GetPolicyDetailsL: aMessage completed withd %d"), ret));    
+    LOG(Log::Printf(_L("CVpnApiServant::GetPolicyDetailsL: aMesage completed withd %d"), ret));    
     }
 
 void CVpnApiServant::DeletePolicyL(const RMessage2& aMessage)
@@ -552,359 +516,5 @@ void CVpnApiServant::UpdatePolicyDataL(const RMessage2& aMessage)
     }
     CleanupStack::PopAndDestroy(); // policyData
 
-    aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::CreateProvisionServerL( const RMessage2& aMessage )
-    {
-      TAgileProvisionApiServerSettings* serverCreate = new (ELeave) TAgileProvisionApiServerSettings();
-      CleanupStack::PushL(serverCreate);
-      TPckg<TAgileProvisionApiServerSettings> pckgServerCreate(*serverCreate);
-      aMessage.ReadL(0, pckgServerCreate);
-      TAgileProvisionServerLocals* serverAccountLocalData = new (ELeave) TAgileProvisionServerLocals();
-      CleanupStack::PushL(serverAccountLocalData);
-      serverAccountLocalData->iSelection = serverCreate->iSelection;
-      serverAccountLocalData->iServerAddress.Copy(serverCreate->iServerUrl);
-      serverAccountLocalData->iServerNameLocal.Copy(serverCreate->iServerNameLocal);
-  
-      TFileName serverFilePath;
-      User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-      serverFilePath.Append(KProvisionServerSettings);   
-         
-      /* Check if file allready exists and copy policy and vpn iap id to a new file */
-      TFileName policyFileName;
-      TUint32 agileProvisionAPId=0;
-      
-      HBufC* serverUrlBuf=NULL;
-      
-      HBufC* serverNameBuf=NULL;
-      
-      TBuf<KMaxIapLength> iapIdBuf;
-      
-      TBool serverFileExist=EFalse;
-      
-      if ( iFileUtil.FileExists(serverFilePath) )
-         {
-          RFile serverFile;
-          User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
-                                        
-         
-          TFileText tx;
-          tx.Set(serverFile);
-
-          TInt fileSize;
-          User::LeaveIfError(serverFile.Size(fileSize));
-
-          serverUrlBuf = HBufC::NewLC(fileSize);
-                                   
-          TPtr serverUrlPtr=serverUrlBuf->Des();
-                                   
-          User::LeaveIfError(tx.Read(serverUrlPtr));
-                                    
-          serverNameBuf = HBufC::NewLC(fileSize);
-          TPtr serverNamePtr=serverNameBuf->Des();
-                                    
-          User::LeaveIfError(tx.Read(serverNamePtr));
-           
-          TBuf<KMaxIapLength> iapIdData;
-          User::LeaveIfError(tx.Read(iapIdData));
-                         
-          TBuf<KMaxIapLength> iapModeData;
-          User::LeaveIfError(tx.Read(iapModeData));
-          
-          HBufC* policyFileNameBuf = HBufC::NewLC(fileSize);
-          TPtr policyFileNamePtr = policyFileNameBuf->Des();
-          
-          if (  tx.Read(policyFileNamePtr) == KErrNone )
-              {
-               tx.Read(iapIdBuf);
-               
-               TLex iapIdConverter(iapIdBuf);
-               iapIdConverter.Val(agileProvisionAPId,EDecimal);
-               policyFileName = *policyFileNameBuf;
-              }
-          CleanupStack::PopAndDestroy(policyFileNameBuf);
-          serverFile.Close();
-          serverFileExist = ETrue;
-          }
-      /* end of saving old values */
-      
-      //IAP data Max value 255 
-      TBuf<KMaxIapLength> iapIdStr;
-      TBuf<KMaxIapLength> iapModeStr;
-      TBuf<KMaxIapLength> iapAgileIdStr;
-      
-      iapIdStr.Num(serverAccountLocalData->iSelection.iId);
-      iapModeStr.Num(serverAccountLocalData->iSelection.iResult);
-      HBufC* serverSettingsDataBuf;
-      _LIT(KCRLF, "\n"); 
-      if ( agileProvisionAPId >0 )
-          {
-                                                                                                                                    
-          serverSettingsDataBuf = HBufC::NewL(serverAccountLocalData->iServerNameLocal.Length() + serverAccountLocalData->iServerAddress.Length() + 
-                                              iapIdStr.Length() + iapModeStr.Length() + policyFileName.Length() + iapIdBuf.Length() + 5*(KCRLF().Length()) );
-          }
-      else
-          {                                                                                                         
-          serverSettingsDataBuf = HBufC::NewL(serverAccountLocalData->iServerNameLocal.Length() + serverAccountLocalData->iServerAddress.Length() +
-                                              iapIdStr.Length() + iapModeStr.Length() + 3*(KCRLF().Length()) );
-          }
-      CleanupStack::PushL(serverSettingsDataBuf);
-      TPtr tPtr(serverSettingsDataBuf->Des());
-      tPtr.Copy(serverAccountLocalData->iServerAddress);
-     
-      tPtr.Append(KCRLF);
-      tPtr.Append(serverAccountLocalData->iServerNameLocal);
-      tPtr.Append(KCRLF);
-      tPtr.Append(iapIdStr);
-      tPtr.Append(KCRLF);
-      tPtr.Append(iapModeStr);
-      if ( agileProvisionAPId >0 )
-          {
-          tPtr.Append(KCRLF);
-          tPtr.Append(policyFileName);
-          tPtr.Append(KCRLF);
-          tPtr.Append(iapIdBuf);
-          }
-      
-      RFile file;
-      CleanupClosePushL(file);
-
-      User::LeaveIfError(file.Replace(iFs, serverFilePath, EFileWrite));
-      
-      TPtrC8 ptr8 ( (TUint8*) tPtr.Ptr(), tPtr.Size() );
-      file.Write ( ptr8 );
-      file.Close();
-      CleanupStack::PopAndDestroy(1); //file
-      CleanupStack::PopAndDestroy(serverSettingsDataBuf);
-      
-      if ( serverFileExist != EFalse )
-          {
-          CleanupStack::PopAndDestroy(serverNameBuf);
-          CleanupStack::PopAndDestroy(serverUrlBuf);
-          }
-      
-      CleanupStack::PopAndDestroy(serverAccountLocalData);
-      CleanupStack::PopAndDestroy(serverCreate);
-      
-      aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::ListProvisionServerL( const RMessage2& aMessage )
-    {
-              
-      TAgileProvisionApiServerListElem* serverList = new (ELeave) TAgileProvisionApiServerListElem();
-      CleanupStack::PushL(serverList);
-      TPckg<TAgileProvisionApiServerListElem> serverPckg(*serverList);
-          
-      TFileName serverFilePath;
-      User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-      serverFilePath.Append(KProvisionServerSettings);   
-          
-      if ( iFileUtil.FileExists(serverFilePath) )
-          {
-         
-          RFile serverFile;
-          User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
-      
-      
-          TFileText tx;
-          tx.Set(serverFile);
-
-          TInt fileSize;
-          User::LeaveIfError(serverFile.Size(fileSize));
-
-          HBufC* serverUrlBuf = HBufC::NewLC(fileSize);
-         
-          TPtr serverUrlPtr=serverUrlBuf->Des();
-         
-          User::LeaveIfError(tx.Read(serverUrlPtr));
-          
-          HBufC8* serverUrl=iFileUtil.To8BitL(serverUrlPtr);
-          serverList->iServerUrl=*serverUrl;
-          
-          delete serverUrl;
-          serverUrl=NULL;
-          
-          CleanupStack::PopAndDestroy(serverUrlBuf);
-          
-          HBufC* serverNameBuf = HBufC::NewLC(fileSize);
-          TPtr serverNamePtr=serverNameBuf->Des();
-          
-          User::LeaveIfError(tx.Read(serverNamePtr));
-          
-          serverList->iServerNameLocal=serverNamePtr;
-                   
-          CleanupStack::PopAndDestroy(serverNameBuf);
-          
-          serverFile.Close();
-          }
-      
-      aMessage.WriteL(0, serverPckg);
-          
-      CleanupStack::PopAndDestroy(serverList);
-      aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::GetProvisionServerDetailsL( const RMessage2& aMessage )
-    {
-     
-      TAgileProvisionApiServerSettings* serverList = new (ELeave) TAgileProvisionApiServerSettings();
-      CleanupStack::PushL(serverList);
-      TPckg<TAgileProvisionApiServerSettings> serverPckg(*serverList);
-      
-      TFileName serverFilePath;
-      User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-      serverFilePath.Append(KProvisionServerSettings);  
-      
-      if ( iFileUtil.FileExists(serverFilePath) )
-         {
-          RFile serverFile;
-          User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
-            
-          TFileText tx;
-          tx.Set(serverFile);
-
-          TInt fileSize;
-          User::LeaveIfError(serverFile.Size(fileSize));
-          
-          HBufC* serverUrlBuf = HBufC::NewLC(fileSize);
-                   
-          TPtr serverUrlPtr=serverUrlBuf->Des();
-                   
-          User::LeaveIfError(tx.Read(serverUrlPtr));
-                    
-          HBufC8* serverUrl=iFileUtil.To8BitL(serverUrlPtr);
-          serverList->iServerUrl=*serverUrl;
-                    
-          delete serverUrl;
-          serverUrl=NULL;
-                    
-          CleanupStack::PopAndDestroy(serverUrlBuf);
-                    
-          HBufC* serverNameBuf = HBufC::NewLC(fileSize);
-          TPtr serverNamePtr=serverNameBuf->Des();
-                    
-          User::LeaveIfError(tx.Read(serverNamePtr));
-                    
-          serverList->iServerNameLocal=serverNamePtr;
-                             
-          CleanupStack::PopAndDestroy(serverNameBuf);
-          
-          TBuf<KMaxIapLength> iapIdData;
-          User::LeaveIfError(tx.Read(iapIdData));
-                    
-          TLex iapIdConverter(iapIdData);
-          TUint idInt;
-          iapIdConverter.Val(idInt);
-          serverList->iSelection.iId = idInt;
-        
-          TBuf<KMaxIapLength> iapModeData;
-          User::LeaveIfError(tx.Read(iapModeData));
-          
-          TLex iapModeConverter = iapModeData;
-          iapModeConverter.Val(idInt);
-          
-          CMManager::TCmSettingSelectionMode selectionMode = (CMManager::TCmSettingSelectionMode) idInt;
-          serverList->iSelection.iResult = selectionMode; 
-          
-          serverFile.Close();
-          }
-      aMessage.WriteL(0, serverPckg);
-      
-      CleanupStack::PopAndDestroy(serverList);
-      
-      aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::SynchronizeVPNPolicyServerL( const RMessage2& aMessage )
-    {
-    iPolicyImporter = CPolicyImporter::NewL(aMessage, *this, *iPolicyStore, iFs);
-    
-    //Asynchronous call
-    iPolicyImporter->SynchronizeVpnPolicyServerL();
-    }
-
-void CVpnApiServant::DeleteVPNPolicyServerL( const RMessage2& aMessage )
-    {
-    TFileName serverFilePath;
-    User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-    serverFilePath.Append(KProvisionServerSettings);  
-    iFileUtil.DeleteFileL(serverFilePath);
-    aMessage.Complete(KErrNone);
-    }
-
-void CVpnApiServant::CancelSynchronize( const RMessage2& aMessage )
-    {
-    if (iPolicyImporter)
-        {
-        if ( iPolicyImporter->iAgileProvisionWs != NULL )
-            {
-            CAgileProvisionWs* ws = iPolicyImporter->iAgileProvisionWs;
-            ws->CancelGetPolicy();
-            }
-        iPolicyImporter->Cancel();
-        delete iPolicyImporter;
-        iPolicyImporter = NULL;
-        }
-    aMessage.Complete(KErrCancel);
-    }
-
-void CVpnApiServant::GetVPNPolicyNameL( const RMessage2& aMessage )
-    {
-    TAgileProvisionPolicy* policy = new (ELeave) TAgileProvisionPolicy();
-    CleanupStack::PushL(policy);
-    TPckg<TAgileProvisionPolicy> serverPckg(*policy);
-          
-    TFileName serverFilePath;
-    User::LeaveIfError(iFs.PrivatePath(serverFilePath));
-    serverFilePath.Append(KProvisionServerSettings);  
-    
-    if ( iFileUtil.FileExists(serverFilePath) )
-       {
-        RFile serverFile;
-        User::LeaveIfError(serverFile.Open(iFs,serverFilePath, EFileRead));
-                                       
-        TFileText tx;
-        tx.Set(serverFile);
-
-        TInt fileSize;
-        User::LeaveIfError(serverFile.Size(fileSize));
-
-        HBufC* serverUrlBuf = HBufC::NewLC(fileSize);
-                                  
-        TPtr serverUrlPtr=serverUrlBuf->Des();
-                                  
-        User::LeaveIfError(tx.Read(serverUrlPtr));
-                                   
-        HBufC* serverNameBuf = HBufC::NewLC(fileSize);
-        TPtr serverNamePtr=serverNameBuf->Des();
-                                   
-        User::LeaveIfError(tx.Read(serverNamePtr));
-                                   
-        TBuf<KMaxIapLength> iapIdData;
-        User::LeaveIfError(tx.Read(iapIdData));
-                        
-        TBuf<KMaxIapLength> iapModeData;
-        User::LeaveIfError(tx.Read(iapModeData));
-                                           
-        TBuf<KMaxIapLength> iapIdBuf;
-               
-        HBufC* policyFileNameBuf = HBufC::NewLC(fileSize);
-        TPtr policyFileNamePtr = policyFileNameBuf->Des();
-               
-        User::LeaveIfError(tx.Read(policyFileNamePtr));
-        policy->iPolicyName = policyFileNamePtr;
-        CleanupStack::PopAndDestroy(policyFileNameBuf);
-        serverFile.Close();
-        
-        CleanupStack::PopAndDestroy(serverNameBuf);
-        CleanupStack::PopAndDestroy(serverUrlBuf);
-        }
-
-    aMessage.WriteL(0, serverPckg);
-           
-    CleanupStack::PopAndDestroy(policy);
-    
     aMessage.Complete(KErrNone);
     }

@@ -49,7 +49,6 @@ LIBRARY         eikcoctl.lib
 LIBRARY         eikcore.lib // For Infowin
 LIBRARY         eiksrvui.lib // Eikon server ui (for suppressing app -key)
 LIBRARY         efsrv.lib
-LIBRARY         eikctl.lib
 LIBRARY         commonengine.lib
 LIBRARY         cdlengine.lib
 

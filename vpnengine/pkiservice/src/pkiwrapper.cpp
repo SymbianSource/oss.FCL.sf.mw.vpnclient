@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006 - 2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2006 - 2008 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -151,12 +151,12 @@ void CPKIWrapper::SetTrusted(TBool aValue)
     iTrusted = aValue;
 }
 
-void CPKIWrapper::SetApplicationsL(const RArray<TUid>& aApplUids)
+void CPKIWrapper::SetApplications(const RArray<TUid>& aApplUids)
 {
     iUidArray.Close();
 	for(TInt i=0;i<aApplUids.Count();i++)
 		{
-		User::LeaveIfError(iUidArray.Append(aApplUids[i]));
+		iUidArray.Append(aApplUids[i]);
 		}
 }
 
@@ -265,7 +265,7 @@ void CPKIWrapper::StartSetApplicabilityL()
         for (TUint i = 0; i < iCount; i++)
             {
             list->Read(i * sizeof(TUid), (TAny*)&tempUid, sizeof(TUid));
-            iUidArray.AppendL(tempUid);
+            iUidArray.Append(tempUid);
             }
         }
     CleanupStack::PopAndDestroy(1);     // list
@@ -592,7 +592,7 @@ void CPKIWrapper::CompleteRequestAndCleanupL()
 		case PkiService::ESetApplicability:
 			if (iCurrentStatus == KErrNone)
 				{
-				iMapper.GetMapDescriptorAtIndex(iIndex).SetMapApplicationsL(iUidArray); 
+				iMapper.GetMapDescriptorAtIndex(iIndex).SetMapApplications(iUidArray); 
 				}
 			break;
 

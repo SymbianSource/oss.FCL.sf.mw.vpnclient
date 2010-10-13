@@ -28,7 +28,6 @@
 #include <sysutil.h>
 #include <ErrorUI.h>
 #include <bautils.h>
-#include <e32def.h>
 #include <vpnmanagementuirsc.rsg>
 #include "vpnuiloader.h"
 #include "vpnmanagementuiview.h"
@@ -71,7 +70,10 @@ CVpnUiLoader::~CVpnUiLoader()
     {
     LOG_("CVpnUiLoader::~CVpnUiLoader()");
     iVpnManagementUiView = NULL;
-     
+       
+    delete iVpnManagementUiParametersView;
+    delete iVpnManagementUiServerView;
+        
     if(iVersionInfoInNaviPane)
         {
         delete iVersionInfoInNaviPane; 
@@ -116,6 +118,7 @@ void CVpnUiLoader::ConstructL( const TRect& aRect, TUid aViewId )
     {
     LOG_("CVpnUiLoader::ConstructL() - begin");
     
+    AddResourceFileL();
     //Initialization
     iBackFromServerDefinition = EFalse;
     iNewServerDefinition = EFalse;
@@ -130,8 +133,10 @@ void CVpnUiLoader::ConstructL( const TRect& aRect, TUid aViewId )
     
 	iPreviousAppViewId = aViewId;
 	CreateWindowL();
-    
-    User::LeaveIfError( iVpnExtApi.Connect() );
+    iVpnManagementUiServerView = CVpnManagementUiServerView::NewL( 
+        aRect, *this);
+    iVpnManagementUiParametersView = CServerSettingsView::NewL( aRect, *this);
+
 	SetRect(aRect);
 
     LOG(Log::Printf(_L("CVpnUiLoader::ConstructL() - end\n")));
@@ -181,14 +186,12 @@ void CVpnUiLoader::ChangeViewL(TInt aNewTab, TInt aSelectionIndex)
 			break;
             }
 		case KChangeViewBack:
-		    ((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiPolicyViewId);
+      ((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiPolicyViewId);
 		    iPolicyViewVisited = EFalse;
 			((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiLogViewId);
 			iLogViewVisited = EFalse;
 			((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiParametersViewId);
-			iServerSettingsViewVisited = EFalse;
 			((CAknViewAppUi*)iAvkonAppUi)->RemoveView(KVpnManagementUiServerViewId);
-			iServerViewVisited = EFalse;
 			((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL( iGsViewId.iViewUid );
             if(iObserver)
                 {
@@ -226,13 +229,8 @@ void CVpnUiLoader::ChangeViewL(TInt aNewTab, TInt aSelectionIndex)
                 localCurrentViewId );
 
 			iPreviousViewId = localCurrentViewId.iViewUid;
-			if ( iServerViewVisited == EFalse)
-			    {
-			    TRect rect;
-			    iVpnManagementUiServerView = CVpnManagementUiServerView::NewL( rect, *this);
-			    ((CAknViewAppUi*)iAvkonAppUi)->AddViewL(iVpnManagementUiServerView);
-			    } 
-			iServerViewVisited = ETrue;
+
+			((CAknViewAppUi*)iAvkonAppUi)->AddViewL(iVpnManagementUiServerView);
 			((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL( 
                   KVpnManagementUiServerViewId ); 
 			break;
@@ -267,14 +265,8 @@ void CVpnUiLoader::ChangeViewL(TInt aNewTab, TInt aSelectionIndex)
                 localCurrentViewId );
 
 			iPreviousViewId = localCurrentViewId.iViewUid;
-            //Put selected server to CustomMessageId
-			if ( iServerSettingsViewVisited == EFalse)
-			   {
-			    TRect rect;
-			    iVpnManagementUiParametersView = CServerSettingsView::NewL( rect, *this);
-			    ((CAknViewAppUi*)iAvkonAppUi)->AddViewL(iVpnManagementUiParametersView);
-			   }
-			iServerSettingsViewVisited = ETrue;
+            //Put selected server to CustomMessageId 
+			((CAknViewAppUi*)iAvkonAppUi)->AddViewL(iVpnManagementUiParametersView);
 			((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL(
                   KVpnManagementUiParametersViewId,
                 TUid::Uid( aSelectionIndex), KNullDesC8 );
@@ -453,11 +445,6 @@ void CVpnUiLoader::DialogDismissedL( TInt /*aButtonId*/ )
     TVwsViewId activeViewId;
     ((CAknViewAppUi*)iAvkonAppUi)->GetActiveViewId(activeViewId);
     ((CAknViewAppUi*)iAvkonAppUi)->ActivateLocalViewL(activeViewId.iViewUid);
-    
-    if ( !iShowWaitNote )
-        {
-        iVpnApiWrapper->CancelSynchronise( );
-        }
     }
 
 // ---------------------------------------------------------
@@ -467,6 +454,7 @@ void CVpnUiLoader::DialogDismissedL( TInt /*aButtonId*/ )
 void CVpnUiLoader::ShowWaitNoteL()
     {
     // Initialization (before the progress dialog is shown)
+    iTextToShow = EConnectingVia; // "Connecting via '%U'"
     iWaitNoteStartTime.UniversalTime();
             
     if ( iWaitDialog )
@@ -497,18 +485,40 @@ void CVpnUiLoader::DeleteWaitNoteL()
         delete iWaitDialog;
         }
     iWaitDialog = NULL;
-    iShowWaitNote = EFalse;
     }
 
 void CVpnUiLoader::SetTextL()
     {
 	LOG(Log::Printf(_L("CVpnUiLoader::SetTextL()\n")));
 
-       
-        HBufC* string = StringLoader::LoadLC( R_VPN_WAIT_IMPORTING_POLICY );
+    TTime now;
+    now.UniversalTime();
+
+    TTimeIntervalSeconds secondsPassed;
+    now.SecondsFrom(iWaitNoteStartTime, secondsPassed);
+    
+    if (secondsPassed.Int() < KSecondsToShowConnectingVia)
+        {
+        iTextToShow = EConnectingVia; //0
+        }
+    else
+        {
+        iTextToShow = EProcessingStepN; //1
+        iStateCodeToShow = 0;
+        }
+    
+    if (iTextToShow == EConnectingVia)
+        {
+        HBufC* string = StringLoader::LoadLC( R_VPN_CONNECTING_VIA_AP, iSelectionName );
         iWaitDialog->SetTextL( *string ); 
         CleanupStack::PopAndDestroy( string );
-   
+        }
+    else
+        {
+        HBufC* string = StringLoader::LoadLC( R_VPN_WAIT_POLICY_DL_PROCESSING, iStateCodeToShow );
+        iWaitDialog->SetTextL( *string ); 
+        CleanupStack::PopAndDestroy( string );
+        }
     }
 
 

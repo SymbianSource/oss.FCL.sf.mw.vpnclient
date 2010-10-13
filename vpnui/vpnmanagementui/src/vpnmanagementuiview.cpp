@@ -45,7 +45,6 @@ _LIT( KFileIcons, "vpnmanagementui.mbm");
 enum TVpnUiCommands 
     {
     KVpnUiPolicyViewListItemId,
-    KVpnUiServerViewListItemId,
     KVpnUiLogViewListItemId
     };
 
@@ -72,8 +71,7 @@ CVpnManagementUiView::~CVpnManagementUiView()
         AppUi()->RemoveFromViewStack(*this, iContainer);
         delete iContainer;
         }
-    delete iLoader;    
-    delete iCaption;
+    delete iLoader;
     LOG_("CVpnManagementUiView::~CVpnManagementUiView() exited");
     }
 
@@ -114,12 +112,8 @@ void CVpnManagementUiView::ConstructL()
     LOG_("CVpnManagementUiView::ConstructL() entered");
     iLoader = CVpnUiLoader::NewL(iAvkonViewAppUi->ClientRect(), 
                 KVpnManagementPluginUid, this );
-    
-    iLoader->AddResourceFileL();
-    BaseConstructL( R_VPNUI_MANAGEMENT_VIEW );    
-    iCaption = StringLoader::LoadL( R_VPN_MANAGEMENT_TITLE_BUF );    
+    BaseConstructL( R_VPNUI_MANAGEMENT_VIEW );
     iLoader->ReleaseResource();
-    
     LOG_("CVpnManagementUiView::ConstructL() exited");
     }
 
@@ -129,17 +123,9 @@ void CVpnManagementUiView::ConstructL()
 void CVpnManagementUiView::GetCaptionL( TDes& aCaption ) const
     {
     LOG_("CVpnManagementUiView::GetCaptionL() entered");
-    
-    __ASSERT_DEBUG(iCaption != NULL, User::Invariant());
-    
-    if (aCaption.MaxLength() < iCaption->Length())
-        {
-        aCaption = iCaption->Left(aCaption.MaxLength());
-        }
-    else
-        {
-        aCaption = *iCaption;
-        }
+    iLoader->AddResourceFileL();
+    StringLoader::Load( aCaption, R_VPN_MANAGEMENT_TITLE_BUF );
+    iLoader->ReleaseResource();
     LOG_("CVpnManagementUiView::GetCaptionL() exited");
     }
 
@@ -165,8 +151,7 @@ void CVpnManagementUiView::HandleCommandL(TInt aCommand)
         {
         case EAknSoftkeyBack:
             {
-            iLoader->ChangeViewL( KChangeViewBack );
-            iLoader->ReleaseResource(ETrue);
+            iLoader->ChangeViewL( KChangeViewBack ); 
             break;
             }
         case EAknCmdExit:
@@ -309,11 +294,13 @@ void CVpnManagementUiView::HandleListBoxSelectionL()
             iLoader->ChangeViewL(KChangeViewPolicy);            
             break;
 
-        
+        /*** NSSM support is discontinued. The code is left here in comments
+             because the server view might be used for another purpose in
+             future.
         case KVpnUiServerViewListItemId:
             iLoader->ChangeViewL(KChangeViewServer);
             break;
-        
+        ***/
 
         case KVpnUiLogViewListItemId:
             iLoader->ChangeViewL(KChangeViewLog);
@@ -326,11 +313,13 @@ void CVpnManagementUiView::HandleListBoxSelectionL()
     }
 
 
-
-void CVpnManagementUiView::NotifySynchroniseServerCompleteL(TInt aResult)
+// ---------------------------------------------------------------------------
+// CVpnManagementUiView::NotifyPolicyImportComplete()
+// ---------------------------------------------------------------------------
+void CVpnManagementUiView::NotifyPolicyImportComplete(TInt aResult)
     {
     if ( aResult != KErrNone)
-           LOG_1("CVpnManagementUiView::NotifySynchroniseServerCompleteL:%d", aResult);
+        LOG_1("CVpnManagementUiView::NotifyPolicyImportComplete:%d", aResult);
     }
 
 // ---------------------------------------------------------------------------

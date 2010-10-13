@@ -116,9 +116,11 @@ TUid CServerSettingsView::Id() const
 // Handles Softkey and Options list commands
 // ---------------------------------------------------------
 //
-void CServerSettingsView::HandleCommandL( TInt aCommand)
+void CServerSettingsView::HandleCommandL( TInt /* aCommand */)
     {
-   
+    /*** NSSM support is discontinued.
+         Code is kept in comments temporarily because similar UI functionality
+         might be needed for another purpose.
     TBool ffs(EFalse);
     switch ( aCommand )
         {
@@ -127,7 +129,7 @@ void CServerSettingsView::HandleCommandL( TInt aCommand)
             //GET CURRENT ADDRESS
             ASSERT( iContainer );
             
-            const TAgileProvisionApiServerSettings& serverDetails = iContainer->ServerDetailsL();
+            const TAcuApiServerDetails& serverDetails = iContainer->ServerDetailsL();
 
             ffs = iLoader.FFSSpaceBelowCriticalLevelL( ETrue, 0 );
             if (ffs)
@@ -147,11 +149,20 @@ void CServerSettingsView::HandleCommandL( TInt aCommand)
                 }
             else
                 {
-              
-	                        int aResult = iLoader.VpnApiWrapperL().CreateServer(serverDetails);
+                TBool createServer = ETrue;
+                if(createServer)
+                    {
+                    //Creating a new VPN policy server
+                    if( iContainer->ServerIndex() == -1)
+                        {
+	                        int aResult = iLoader.AcuApiWrapperL().CreateServer(serverDetails);
 	                        if (aResult == KErrNone)
 		                        {
-		                    
+		                        //Update iServerList of CAcuApiWrapper 
+		                        //After that we can call Synchronise server from 
+		                        //CVpnManagementUiPolicyContainer::ActivateL()
+		                        
+		                        iLoader.AcuApiWrapperL().ServerListL();
 		                        
 		                        iLoader.iNewServerDefinition = ETrue;
 		                        }
@@ -160,16 +171,23 @@ void CServerSettingsView::HandleCommandL( TInt aCommand)
 			                    iLoader.iShowDefineQuery = EFalse;
 			                    iLoader.iBackFromServerDefinition = ETrue;
 	                    		iLoader.iNewServerDefinition = EFalse;
+	    	    				createServer = EFalse;
 
 						    	CErrorUI* errorUi = CErrorUI::NewLC( *(CCoeEnv::Static()) );
 						        errorUi->ShowGlobalErrorNoteL( aResult );
 						        CleanupStack::PopAndDestroy();  // errorUi
 		                    	}
-           
+                        }
+                    //Editing an existing policy server
+                    else
+                        {
+                        iLoader.AcuApiWrapperL().SaveServerDetails(serverDetails);
+                        }  
                     }
 
 			    iLoader.ChangeViewL( KChangeViewPrevious );
-                break;
+                }
+            break;
             }
 		case EAknCmdExit:
 			{
@@ -196,7 +214,7 @@ void CServerSettingsView::HandleCommandL( TInt aCommand)
             AppUi()->HandleCommandL( aCommand );
             break;
             }
-        }
+        } ***/
     }
 
 // ---------------------------------------------------------

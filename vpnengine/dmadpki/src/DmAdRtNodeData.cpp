@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2000-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2000-2008 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -644,7 +644,7 @@ void CDmAdRtNodeData::ParseApplicabilityL(const TDesC8& aApplicabilityData,
         TUid uid = { TDmAdUtil::DesToInt(attribute) };
         DEBUG_LOG1(_L("Uid: 0x%x"), uid.iUid);
         
-        aApplicabilityList.AppendL(uid);
+        aApplicabilityList.Append(uid);
         parser->NextL();
         
         while (parser->State() == CXmlPullParser::EStateText)

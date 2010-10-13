@@ -72,12 +72,6 @@
 //
 #define qtn_vpn_prmpt_gw_password_legacy "VPN password:"
 
-//d:SecurID PIN in VPN gateway user authentication query
-//d:SecurID based authentication
-//l:popup_query_data_window/opt5
-//
-#define qtn_vpn_prmpt_gw_securid_pin "SecurID (C) PIN:"
-
 //d:User identity query presented to the user during VPN certificate enrollment (fetching)
 //d:%U is replaced during run-time with a domain name such as "company.com" or "OU=Unit, O=Company" 
 //l:popup_query_data_window/opt5
@@ -115,16 +109,6 @@
 //l:popup_note_window
 //
 #define qtn_vpn_err_auth_failed "Authentication failed"
-
-//d:SecurID software token is not installed.
-//l:popup_note_window
-//
-#define qtn_vpn_err_token_not_found "SecurID (C) token not found"
-
-//d:SecurID software token is expired.
-//l:popup_note_window
-//
-#define qtn_vpn_err_token_expired "SecurID (C) token expired"
 
 //d:Incorrect characters were entered
 //l:popup_note_window

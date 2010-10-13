@@ -35,8 +35,6 @@ SOURCE          vpnconnstarter.cpp
 SOURCE          realiapconnobserver.cpp
 SOURCE          vpnconncloser.cpp
 SOURCE          eventlogger.cpp
-SOURCE		extender.cpp
-SOURCE		extenderhelper.cpp
 
 USERINCLUDE     ../inc
 USERINCLUDE     ../../../vpnapiimpl/inc
@@ -47,7 +45,6 @@ USERINCLUDE     ../../eventmediatorapi/inc
 USERINCLUDE     ../../vpnmanager/inc
 USERINCLUDE     ../../vpncommon/inc
 USERINCLUDE     ../../eventviewer/inc
-USERINCLUDE	../../vpnextapi/inc
 USERINCLUDE     ../../pkiserviceapi/inc
 USERINCLUDE     ../../../vpnui/vpnecomnotifier/inc
 
@@ -66,6 +63,5 @@ LIBRARY         vpnipsecpolparser.lib
 LIBRARY         eventviewer.lib
 LIBRARY         featmgr.lib
 LIBRARY         cmmanager.lib
-LIBRARY		vpnextapi.lib
 
 DEBUGLIBRARY    flogger.lib

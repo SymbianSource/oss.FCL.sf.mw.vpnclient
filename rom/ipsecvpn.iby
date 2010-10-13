@@ -22,9 +22,13 @@
 
 #ifdef FF_VPN_CLIENT
 
+#ifndef FF_GENERIC_ACCESS_NETWORK // UMA not supported
+
 data=ZSYSTEM\install\ipsecvpn.sis               system\install\ipsecvpn.sis
 data=ZSYSTEM\install\ipsecvpn_vpnpolins.sis     system\install\ipsecvpn_vpnpolins.sis
 
 #endif
+
+#endif // FF_VPN_CLIENT
 
 #endif // __IPSECVPN_IBY__

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 1999-2010 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 1999-2009 Nokia Corporation and/or its subsidiary(-ies).
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -11,9 +11,11 @@
 *
 * Contributors:
 *
-* Description:  IKE policy parser main module
+* Description:   IKE policy parser main module
 *
 */
+
+
 
 #ifndef __IKEPOLPARSER_H
 #define __IKEPOLPARSER_H
@@ -291,8 +293,7 @@ public:
     TOwnCertInfo iOwnCert;
     TCertInfo iPrivKey;
     TCertInfo iPeerCert;
-    TBool     iUseCache;   // Use credential cache
-    TBool     iSoftToken;  // Use soft token
+
 };
 
 

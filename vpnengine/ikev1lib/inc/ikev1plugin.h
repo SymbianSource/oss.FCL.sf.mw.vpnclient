@@ -19,7 +19,6 @@
 #define C_IKEV1PLUGIN_H
 
 #include <e32base.h>
-#include <softtokenpluginif.h>
 
 #include "ikepluginif.h"
 #include "pfkeysocketif.h"
@@ -91,11 +90,7 @@ public:
      * Returns event logger interface.
      */
     MKmdEventLoggerIf& EventLogger();
-
-    /** 
-      * Returns SoftToken interface.
-      */
-    CSoftTokenPluginIf* SoftToken();
+    
 	
 // Methods to build and send PFKEY API primitives to IPsec
     
@@ -175,13 +170,6 @@ private:
      * Not own.
      */
 	MIkeDebug&                      iDebug;
-
-    /**
-     * SoftToken plugin.
-     * Own.
-     */
-    CSoftTokenPluginIf* iSoftToken;
-
     };
 
 

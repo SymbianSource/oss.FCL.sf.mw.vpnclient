@@ -29,12 +29,10 @@
 static const TUint KMaxDestinationNameLength = 32;
 
 
-TUint32 CmManagerUtils::CreateVPNConnectionMethodToIntranetL(const TVpnPolicyInfo& aVpnPolicyInfo,
+void CmManagerUtils::CreateVPNConnectionMethodToIntranetL(const TVpnPolicyInfo& aVpnPolicyInfo,
                                                           CEventLogger& aEventLogger)
     {
     LOG_("CmManagerUtils::CreateVPNConnectionMethodToIntranetL \n");
-    
-    TUint32 connectionMethodId(0);
     
     using namespace CMManager;
     
@@ -77,7 +75,7 @@ TUint32 CmManagerUtils::CreateVPNConnectionMethodToIntranetL(const TVpnPolicyInf
                                                  internetDestinationId);                        
             
         CleanupClosePushL( vpnConnectionMethod );
-        connectionMethodId = vpnConnectionMethod.GetIntAttributeL( ECmId );
+        TUint32 connectionMethodId = vpnConnectionMethod.GetIntAttributeL( ECmId );
         aEventLogger.LogEvent(R_VPN_MSG_CREATED_VPN_ACCESS_POINT_WITH_SNAP,
                               &(aVpnPolicyInfo.iId), NULL,
                               connectionMethodId, internetDestinationId);
@@ -93,8 +91,6 @@ TUint32 CmManagerUtils::CreateVPNConnectionMethodToIntranetL(const TVpnPolicyInf
     CleanupStack::PopAndDestroy(); //cmManagerExt
     
     LOG_("CmManagerUtils::CreateVPNConnectionMethodToIntranetL - end \n");
-    return connectionMethodId;
-    
     }
 
 void CmManagerUtils::SetVpnConnectionMethodAttributesL(RCmConnectionMethodExt& aConnectionMethod,
@@ -106,7 +102,7 @@ void CmManagerUtils::SetVpnConnectionMethodAttributesL(RCmConnectionMethodExt& a
     
     LOG_("CmManagerUtils::SetVpnConnectionMethodAttributesL \n");                                                   
     
-    aConnectionMethod.SetIntAttributeL( ECmNamingMethod, ENamingUnique );
+    aConnectionMethod.SetIntAttributeL( ECmNamingMethod, ENamingNothing );
     aConnectionMethod.SetStringAttributeL( ECmName, aConnectionMethodName );
     aConnectionMethod.SetStringAttributeL( EVpnServicePolicy, aPolicyId );      
     aConnectionMethod.SetIntAttributeL( ECmNextLayerSNAPId, aInternetDestinationId );
@@ -263,42 +259,3 @@ RCmConnectionMethodExt CmManagerUtils::CreateNewConnectionMethodToIntranetL(RCmM
     LOG_("CmManagerUtils::CreateNewConnectionMethodToIntranetL - end \n");
     return vpnConnectionMethod;
     }
-
-TBool CmManagerUtils::ProvisionIAPNameExistL(TUint32 aAgileProvisionAPId)
-    {
-    TBool apExist=EFalse;
-    using namespace CMManager;
-    RCmManagerExt cmManagerExt;
-    cmManagerExt.OpenL();        
-    CleanupClosePushL( cmManagerExt ); 
-    
-    RArray<TUint32> aps;
-
-    TBool supportedBearersOnly = ETrue;
-    TBool legacyCmsOnly        = EFalse;
-
-    cmManagerExt.ConnectionMethodL( aps, supportedBearersOnly, legacyCmsOnly );
-    CleanupClosePushL( aps );
-
-    for( TInt i = 0; i < aps.Count(); ++i )
-        {
-        RCmConnectionMethodExt ap = cmManagerExt.ConnectionMethodL( aps[i] );
-        CleanupClosePushL( ap );
-        
-        if( KPluginVPNBearerTypeUid == ap.GetIntAttributeL( ECmBearerType ) )
-           if ( ap.GetIntAttributeL(ECmId) == aAgileProvisionAPId )
-              {
-              apExist=ETrue;
-              }
-        CleanupStack::PopAndDestroy();  // ap
-      }    
-      
-      CleanupStack::PopAndDestroy();  // aps
-    
-    
-    CleanupStack::PopAndDestroy(); //cmManagerExt
-       
-    return apExist;
-    }
-
-

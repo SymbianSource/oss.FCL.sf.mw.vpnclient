@@ -65,7 +65,6 @@ CIkev1Plugin::~CIkev1Plugin()
     iPluginSessions.Close();    
     delete iPFKeySocket;
     delete iIpsecPolicyUtil;
-    delete iSoftToken;
     }
 
 // ---------------------------------------------------------------------------
@@ -89,14 +88,6 @@ void CIkev1Plugin::ConstructL()
                                          iDebug );
     
     iIpsecPolicyUtil = CIpsecPolicyUtil::NewL();
-
-    TInt err(KErrNone);
-    TRAP(err, iSoftToken = CSoftTokenPluginIf::NewL());
-#ifdef _DEBUG            
-             if (err != KErrNone)
-                 DEBUG_LOG(_L("SoftTokenPlugin not found"));
-#endif // _DEBUG             
-
     }
     
 // ---------------------------------------------------------------------------
@@ -246,15 +237,4 @@ MKmdEventLoggerIf& CIkev1Plugin::EventLogger()
     {
     return iEventLogger;
     }
-
-// ---------------------------------------------------------------------------
-// Returns SoftToken interface.
-// ---------------------------------------------------------------------------
-//
-//MSoftTokenPluginIf* CIkev1Plugin::SoftToken()
-CSoftTokenPluginIf* CIkev1Plugin::SoftToken()
-    {
-    return iSoftToken;
-    }
-
 

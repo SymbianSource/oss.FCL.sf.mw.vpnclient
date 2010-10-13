@@ -432,9 +432,11 @@ TInt CPKIMapper::ResolveCertMappingL(TSecurityObjectDescriptor &aDescriptor, TDe
         if(mapping->IsMatchingL(aDescriptor, aInfoOnly, aStoreType))
             {
             // If we found a match, process it further
-            _LIT(KJavaTrustRootLabel, "Java Trust Root");
-            // Discard all "Java Trust Root" certificates to avoid label-mapping problem
-            if (mapping->Label().Compare(KJavaTrustRootLabel) != 0)
+            _LIT(KMidp2Label, "MIDP2");
+            TBuf<12> buf;
+            buf.Append(KMidp2Label);
+            // Discard all MIDP2 certificates to avoid label-mapping problem
+            if (buf.Compare(mapping->Label()) != 0)
                 {
                 if(mapping->EndTime() > furthestEndTime)
                     {
@@ -446,7 +448,7 @@ TInt CPKIMapper::ResolveCertMappingL(TSecurityObjectDescriptor &aDescriptor, TDe
                 }
             else 
                 {
-                LOG(Log::Printf(_L("Found a cert, but it was a \"Java Trust Root\" one - continuing search")));
+                LOG(Log::Printf(_L("Found a cert, but it was a MIDP2 one - continuing search")));
                 }
             }
         }
